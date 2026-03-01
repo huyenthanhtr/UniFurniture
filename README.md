@@ -1,4 +1,4 @@
-# 🛋️ Dự án UniFurniture - Group 10
+# 🛋️ Dự án U-HOME FURNI - Group 10
 
 Hệ thống Website Nội thất cá nhân hóa (AR & Keyword) - Tham khảo mô hình MOHO.
 
