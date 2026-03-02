@@ -1,0 +1,87 @@
+<div class="admin">
+    <aside class="sidebar">
+        <div class="sidebar-header-mobile">
+            <div class="sidebar-logo-mobile">
+                <img src="assets/images/logo_ngang_trang_no_bg.png" alt="U-Home Furni">
+            </div>
+            <button class="sidebar-toggle" (click)="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <div class="sidebar-menu-container" [class.show]="isMobileMenuOpen">
+            <div class="sidebar-logo-desktop">
+                <img src="assets/images/logo_ngang_trang_no_bg.png" alt="U-Home Furni">
+            </div>
+
+            <ul class="sidebar-menu">
+                <li routerLink="/admin/dashboard" [class.active]="isLinkActive('/admin/dashboard')" (click)="toggleMobileMenu()">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </li>
+                <li routerLink="/admin/products" [class.active]="isLinkActive('/admin/products')" (click)="toggleMobileMenu()">
+                    <i class="fas fa-couch"></i> Sản phẩm
+                </li>
+                <li routerLink="/admin/orders" [class.active]="isLinkActive('/admin/orders')" (click)="toggleMobileMenu()">
+                    <i class="fas fa-shopping-cart"></i> Đơn hàng
+                </li>
+                <li routerLink="/admin/customers" [class.active]="isLinkActive('/admin/customers')" (click)="toggleMobileMenu()">
+                    <i class="fas fa-users"></i> Khách hàng
+                </li>
+                <li routerLink="/admin/promotions" [class.active]="isLinkActive('/admin/promotions')" (click)="toggleMobileMenu()">
+                    <i class="fas fa-percentage"></i> Khuyến mãi
+                </li>
+                <li routerLink="/admin/categories" [class.active]="isLinkActive('/admin/categories')" (click)="toggleMobileMenu()">
+                    <i class="fas fa-layer-group"></i> Danh mục
+                </li>
+                <li routerLink="/admin/collections" [class.active]="isLinkActive('/admin/collections')" (click)="toggleMobileMenu()">
+                    <i class="fas fa-images"></i> Bộ sưu tập
+                </li>
+                <li routerLink="/admin/posts" [class.active]="isLinkActive('/admin/posts')" (click)="toggleMobileMenu()">
+                    <i class="fas fa-newspaper"></i> Bài đăng
+                </li>
+                <li routerLink="/admin/keywords" [class.active]="isLinkActive('/admin/keywords')" (click)="toggleMobileMenu()">
+                    <i class="fas fa-search"></i> Keyword
+                </li>
+            </ul>
+
+            <div class="admin-footer">
+                <div class="admin-user-info" (click)="toggleUserOptions($event)" [class.active]="showUserOptions">
+                    <img src="assets/images/logo_icon_no_bg.png" alt="Admin" class="admin-avatar">
+                    <div class="admin-details">
+                        <span class="admin-name">{{ currentUser?.fullname || 'Admin Nội Thất' }}</span>
+                        <span class="admin-role">{{ currentUser?.role || 'Quản trị viên' }}</span>
+                    </div>
+                    <i class="fas fa-chevron-right arrow-icon" [class.rotate]="showUserOptions"></i>
+                </div>
+
+                <div class="user-options-menu" *ngIf="showUserOptions">
+                    <div class="option-item" (click)="goToHomePage()">
+                        <i class="fas fa-external-link-alt"></i> Xem trang chủ
+                    </div>
+                    <div class="option-item logout" (click)="logout()">
+                        <i class="fas fa-power-off"></i> Đăng xuất
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="menu-overlay" [class.show]="isMobileMenuOpen" (click)="toggleMobileMenu()"></div>
+
+    <main class="main">
+        <div class="content-surface">
+            <router-outlet></router-outlet>
+        </div>
+    </main>
+
+    <div class="popup-overlay" *ngIf="showLogoutConfirmPopup">
+        <div class="popup-container">
+            <h2>Xác nhận</h2>
+            <p>Bạn có chắc chắn muốn đăng xuất không?</p>
+            <div class="popup-actions">
+                <button (click)="cancelLogout()" class="btn-popup-cancel">Hủy</button>
+                <button (click)="confirmLogout()" class="btn-popup-danger">Đăng xuất</button>
+            </div>
+        </div>
+    </div>
+</div>

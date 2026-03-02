@@ -1,0 +1,330 @@
+/* 1. RESET & LAYOUT CHÍNH */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    width: 100vw;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden; /* Ngăn chặn scroll toàn trang */
+}
+
+.admin {
+    display: flex;
+    background-color: #908372; /* Mã màu chủ đạo nội thất */
+    height: 100vh;
+    width: 100vw;
+}
+
+/* 2. SIDEBAR */
+.sidebar {
+    width: 260px;
+    height: 100vh;
+    background-color: #908372;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Header cho Mobile */
+.sidebar-header-mobile {
+    display: none; /* Mặc định ẩn trên Desktop */
+}
+
+/* Logo Desktop */
+.sidebar-logo-desktop {
+    padding: 20px 10px;
+    text-align: center;
+}
+
+.sidebar-logo-desktop img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+/* 3. MENU CHÍNH */
+.sidebar-menu-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0 12px;
+    overflow-y: auto; /* Chỉ scroll trong vùng menu nếu danh mục quá dài */
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    padding: 10px 15px;
+    margin-bottom: 4px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    transition: 0.3s;
+    font-size: 14px;
+}
+
+.sidebar-menu li:hover, 
+.sidebar-menu li.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.sidebar-menu li i {
+    width: 20px;
+    text-align: center;
+    font-size: 16px;
+}
+
+/* 4. ADMIN FOOTER & USER OPTIONS */
+.admin-footer {
+    margin-top: auto; /* Đẩy xuống đáy sidebar */
+    position: relative;
+    padding: 15px 0;
+}
+
+.admin-user-info {
+    padding: 12px;
+    margin: 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.15); /* Làm đậm vùng user để tách biệt */
+    cursor: pointer;
+    transition: 0.3s;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.admin-user-info:hover, 
+.admin-user-info.active {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-details {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.admin-name { 
+    font-size: 14px; 
+    font-weight: 600; 
+    color: #fff;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.admin-role { 
+    font-size: 11px; 
+    color: rgba(255, 255, 255, 0.6); 
+}
+
+.arrow-icon {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    transition: 0.3s ease;
+}
+
+.arrow-icon.rotate {
+    transform: rotate(90deg);
+}
+
+/* Khung lựa chọn (Popup menu) */
+.user-options-menu {
+    position: absolute;
+    bottom: 75px; /* Hiển thị phía trên vùng admin-info */
+    left: 8px;
+    right: 8px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    z-index: 100;
+    animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.option-item {
+    padding: 12px 16px;
+    color: #444;
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.option-item:hover {
+    background: #f8f6f4;
+    color: #908372;
+}
+
+.option-item.logout {
+    color: #dc3545;
+    border-top: 1px solid #f0f0f0;
+}
+
+/* 5. VÙNG NỘI DUNG CHÍNH (MAIN) */
+.main {
+    flex: 1;
+    height: 100vh;
+    padding: 20px;
+    background-color: #f6f4f2; /* Màu nền xám kem sang trọng */
+    overflow-y: auto;
+}
+
+.content-surface {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 25px;
+    min-height: 100%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+/* 6. RESPONSIVE MOBILE */
+@media (max-width: 992px) {
+    /* Chuyển Sidebar thành dạng Side-drawer ẩn đi */
+    .sidebar {
+        position: fixed;
+        left: -260px; /* Ẩn sang trái */
+        top: 0;
+        z-index: 1001;
+    }
+
+    /* Khi Mobile Menu Open, Sidebar trượt ra */
+    .sidebar-menu-container.show-sidebar {
+        left: 0;
+    }
+
+    /* Hiện Header Mobile trên cùng */
+    .sidebar-header-mobile {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+        background: #908372;
+        position: fixed;
+        top: 0; left: 0;
+        z-index: 999;
+        height: 60px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar-logo-mobile img {
+        height: 45px;
+        width: auto;
+    }
+
+    .sidebar-toggle {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    /* Đẩy vùng Main xuống dưới Header Mobile */
+    .main {
+        padding: 80px 15px 20px 15px; /* Thêm padding top để không bị đè */
+    }
+
+    /* Sidebar khi mở trên Mobile */
+    .sidebar-menu-container {
+        position: fixed;
+        top: 0;
+        left: -200px;
+        width: 200px;
+        height: 100vh;
+        background: #908372;
+        transition: 0.3s ease;
+        padding-top: 20px;
+    }
+
+    .sidebar-menu-container.show {
+        left: 0;
+    }
+
+    .sidebar-logo-desktop {
+        display: none; /* Trên mobile dùng logo header */
+    }
+
+    .content-surface {
+        padding: 15px;
+        border-radius: 16px;
+    }
+}
+
+/* Nhỏ hơn nữa (Mobile nhỏ) */
+@media (max-width: 480px) {
+    .main { padding: 75px 10px 10px 10px; }
+}
+/* 7. POPUP XÁC NHẬN ĐĂNG XUẤT */
+.popup-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.popup-container {
+    background: #fff;
+    padding: 35px;
+    border-radius: 20px;
+    text-align: center;
+    width: 90%;
+    max-width: 380px;
+}
+
+.btn-popup-danger {
+    background: #908372;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-popup-cancel {
+    background: #f0f0f0;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 10px;
+    margin-right: 10px;
+    cursor: pointer;
+}
