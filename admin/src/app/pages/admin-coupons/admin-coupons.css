@@ -1,0 +1,15 @@
+.custom-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+.custom-table tr {
+    background: #fdfdfd;
+    transition: 0.3s;
+}
+.custom-table tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.badge.active { background: #e6f4ea; color: #1e7e34; padding: 4px 12px; border-radius: 20px; }
+.badge.expired { background: #fce8e8; color: #d93025; padding: 4px 12px; border-radius: 20px; }
