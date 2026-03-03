@@ -2,14 +2,19 @@ const mongoose = require("mongoose");
 
 const ProfileSchema = new mongoose.Schema(
   {
-    account_id: { type: mongoose.Schema.Types.ObjectId, ref: "Account" },
-    full_name: String,
-    avatar_url: String,
-    gender: String,
-    date_of_birth: Date,
-    address: String,
+    phone: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true, lowercase: true },
+    password_hash: { type: String, required: true },
+    role: { type: String, required: true, enum: ["customer", "admin", "staff"], default: "customer" },
+    account_status: { type: String, required: true, enum: ["active", "inactive", "banned"], default: "active" },
+    full_name: { type: String, required: true },
+    avatar_url: { type: String, default: null },
+    gender: { type: String, enum: ["male", "female", "other"], required: true },
+    date_of_birth: { type: Date, required: true },
+    address: { type: String, required: true },
+    customer_id: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", default: null }
   },
-  { timestamps: true }
+  { timestamps: true, collection: "profiles" }
 );
 
 module.exports = mongoose.model("Profile", ProfileSchema, "profiles");
