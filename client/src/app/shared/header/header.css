@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+/* ===== HEADER ===== */
+.moho-header {
+  background: #FFFFFF;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  height: 110px;
+  padding: 0 150px;
+  gap: 24px;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Logo */
+.header-logo {
+  text-decoration: none;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.header-logo-img {
+  height: 112px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* Search */
+.header-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  max-width: 580px;
+  height: 42px;
+  border: 1px solid #ECECEC;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #FFFFFF;
+}
+
+.search-input-wrapper {
+  flex: 1;
+  padding: 0 21px;
+}
+
+.search-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  color: #333;
+  background: transparent;
+}
+
+.search-input::placeholder {
+  color: #757575;
+}
+
+.search-btn {
+  width: 52px;
+  height: 42px;
+  background: #434343;
+  border: none;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.search-btn:hover {
+  background: #222;
+}
+
+/* Actions */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.header-action-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  padding: 0 16px;
+  height: 40px;
+  color: #333333;
+  transition: color 0.2s;
+}
+
+/* Button variant — same look as link */
+.header-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.header-action-link:hover,
+.header-action-btn:hover {
+  color: #EF683A;
+}
+
+.action-icon {
+  flex-shrink: 0;
+}
+
+.action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.action-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #333333;
+}
+
+.action-sublabel {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: #666;
+}
+
+.action-caret {
+  font-size: 18px;
+  color: #333;
+  margin-left: 2px;
+  line-height: 1;
+}
+
+/* Cart */
+.cart-link {
+  margin-left: 8px;
+}
+
+.cart-icon-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: #EF683A;
+  color: #FFFFFF;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 20px;
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #333333;
+}

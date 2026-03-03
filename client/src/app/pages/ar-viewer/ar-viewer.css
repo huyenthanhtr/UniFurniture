@@ -1,0 +1,512 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+/* ===== Variables (UniFurniture brand) ===== */
+:host {
+    --uf-orange: #EF683A;
+    --uf-dark: #222222;
+    --uf-gray: #434343;
+    --uf-muted: #757575;
+    --uf-bg: #F8F8F8;
+    --uf-white: #FFFFFF;
+    --uf-border: #ECECEC;
+    --uf-card-bg: #FFFFFF;
+    display: block;
+    font-family: 'Montserrat', sans-serif;
+}
+
+/* ===== HERO ===== */
+.ar-hero {
+    background: #222222;
+    padding: 60px 150px;
+    display: flex;
+    align-items: center;
+    gap: 60px;
+    justify-content: space-between;
+}
+
+.ar-hero-text h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 42px;
+    line-height: 1.15;
+    color: #FFFFFF;
+    margin: 0 0 16px 0;
+}
+
+.ar-hero-text h1 em {
+    color: var(--uf-orange);
+    font-style: normal;
+}
+
+.ar-hero-text p {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.65);
+    max-width: 440px;
+    margin: 0 0 32px 0;
+}
+
+.ar-hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--uf-orange);
+    color: #FFFFFF;
+    padding: 13px 28px;
+    border-radius: 4px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.ar-hero-cta:hover {
+    background: #d45520;
+    transform: translateY(-2px);
+}
+
+.ar-hero-visual {
+    flex-shrink: 0;
+    width: 400px;
+    height: 280px;
+    background: linear-gradient(135deg, #333 0%, #444 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ar-visual-icon {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.ar-visual-icon span {
+    display: block;
+    font-size: 56px;
+    margin-bottom: 10px;
+}
+
+.ar-visual-icon p {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+}
+
+.ar-ready-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: var(--uf-orange);
+    color: #FFFFFF;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 3px;
+}
+
+/* ===== HOW IT WORKS ===== */
+.ar-steps {
+    background: var(--uf-bg);
+    border-bottom: 1px solid var(--uf-border);
+    padding: 40px 150px;
+    display: flex;
+    gap: 0;
+}
+
+.ar-step {
+    flex: 1;
+    padding: 0 30px;
+    border-right: 1px solid var(--uf-border);
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.ar-step:first-child {
+    padding-left: 0;
+}
+
+.ar-step:last-child {
+    border-right: none;
+}
+
+.step-num-badge {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    background: var(--uf-orange);
+    color: #FFFFFF;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ar-step-text h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--uf-dark);
+    margin: 6px 0 6px;
+}
+
+.ar-step-text p {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 13px;
+    color: var(--uf-muted);
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* ===== PRODUCTS SECTION ===== */
+.ar-products {
+    background: var(--uf-white);
+    padding: 50px 150px;
+}
+
+.ar-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 24px;
+}
+
+.ar-section-header h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    color: var(--uf-dark);
+    margin: 0;
+}
+
+.ar-section-header h2 span {
+    color: var(--uf-orange);
+}
+
+.ar-product-count {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    color: var(--uf-muted);
+}
+
+/* Filters */
+.ar-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 7px 20px;
+    border-radius: 3px;
+    border: 1px solid var(--uf-border);
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--uf-gray);
+    transition: all 0.2s;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    background: var(--uf-orange);
+    color: #FFFFFF;
+    border-color: var(--uf-orange);
+}
+
+/* Grid */
+.ar-product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+/* Card */
+.ar-product-card {
+    background: var(--uf-card-bg);
+    border: 1px solid var(--uf-border);
+    border-radius: 4px;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.ar-product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* Viewer */
+.viewer-wrap {
+    position: relative;
+    background: #F8F8F8;
+    height: 260px;
+}
+
+model-viewer {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    --poster-color: transparent;
+}
+
+model-viewer::part(default-progress-bar) {
+    display: none;
+}
+
+.loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #F8F8F8;
+    transition: opacity 0.4s;
+    pointer-events: none;
+}
+
+.loading-overlay.hidden {
+    opacity: 0;
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--uf-border);
+    border-top-color: var(--uf-orange);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 8px;
+}
+
+.loading-overlay span {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    color: var(--uf-muted);
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* AR launch button */
+.ar-launch-btn {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: var(--uf-dark);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 3px;
+    padding: 8px 16px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+    z-index: 10;
+}
+
+.ar-launch-btn:hover {
+    background: var(--uf-orange);
+}
+
+/* Color swatches */
+.color-row {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    display: flex;
+    gap: 6px;
+}
+
+.swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.swatch:hover,
+.swatch.active {
+    transform: scale(1.2);
+    border-color: var(--uf-dark);
+}
+
+/* Card info */
+.card-info {
+    padding: 16px 18px 18px;
+}
+
+.card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.card-name {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--uf-dark);
+    line-height: 1.3;
+}
+
+.card-category {
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--uf-muted);
+    background: var(--uf-bg);
+    padding: 3px 9px;
+    border-radius: 2px;
+    white-space: nowrap;
+}
+
+.card-desc {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    color: var(--uf-muted);
+    line-height: 1.6;
+    margin: 0 0 12px 0;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-price {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--uf-orange);
+}
+
+.card-dims {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    color: var(--uf-muted);
+}
+
+/* ===== REQUIREMENTS ===== */
+.ar-requirements {
+    background: var(--uf-bg);
+    border-top: 1px solid var(--uf-border);
+    padding: 50px 150px;
+}
+
+.ar-requirements h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    color: var(--uf-dark);
+    margin: 0 0 6px 0;
+}
+
+.ar-requirements>p {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    color: var(--uf-muted);
+    margin: 0 0 32px 0;
+}
+
+.req-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.req-card {
+    background: var(--uf-white);
+    border: 1px solid var(--uf-border);
+    border-radius: 4px;
+    padding: 24px;
+}
+
+.req-card h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--uf-orange);
+    margin: 0 0 16px 0;
+}
+
+.req-card ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.req-card ul li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--uf-border);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    color: var(--uf-gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.req-card ul li:last-child {
+    border-bottom: none;
+}
+
+.req-card ul li span {
+    font-size: 12px;
+    color: var(--uf-muted);
+}
+
+.tag-good {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 2px 9px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.tag-warn {
+    background: #fff3e0;
+    color: #e65100;
+    padding: 2px 9px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}

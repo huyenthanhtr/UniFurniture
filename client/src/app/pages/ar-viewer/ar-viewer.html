@@ -1,0 +1,111 @@
+<!-- AR VIEWER – UniFurniture Brand -->
+
+<!-- HERO -->
+<section class="ar-hero">
+    <div class="ar-hero-text">
+        <h1>Thử <em>nội thất</em><br>ngay tại nhà bạn</h1>
+        <p>
+            Không cần đến showroom. Mở điện thoại, hướng camera vào phòng
+            và đặt thử bất kỳ sản phẩm — trực tiếp trong không gian thực của bạn.
+        </p>
+        <a href="#ar-products" class="ar-hero-cta">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            Khám phá bộ sưu tập
+        </a>
+    </div>
+    <div class="ar-hero-visual">
+        <div class="ar-ready-badge">AR Ready</div>
+        <div class="ar-visual-icon">
+            <span>🛋️</span>
+            <p>Xem trước trong phòng bạn</p>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="ar-steps">
+    <div class="ar-step">
+        <div class="step-num-badge">01</div>
+        <div class="ar-step-text">
+            <h3>Chọn sản phẩm</h3>
+            <p>Duyệt qua bộ sưu tập, xem 3D và đổi màu sắc theo ý thích.</p>
+        </div>
+    </div>
+    <div class="ar-step">
+        <div class="step-num-badge">02</div>
+        <div class="ar-step-text">
+            <h3>Nhấn "Thử AR"</h3>
+            <p>Bấm nút trên điện thoại. Camera tự nhận diện sàn nhà bạn.</p>
+        </div>
+    </div>
+    <div class="ar-step">
+        <div class="step-num-badge">03</div>
+        <div class="ar-step-text">
+            <h3>Đặt & quyết định</h3>
+            <p>Tap để đặt, di chuyển và xoay theo ý muốn. Vừa ý thì đặt mua!</p>
+        </div>
+    </div>
+</section>
+
+<!-- PRODUCTS -->
+<section class="ar-products" id="ar-products">
+    <div class="ar-section-header">
+        <h2>Bộ sưu tập <span>AR</span> nổi bật</h2>
+        <span class="ar-product-count">{{ filteredProducts.length }} sản phẩm · AR Ready</span>
+    </div>
+
+    <div class="ar-filters">
+        <button class="filter-btn" [class.active]="activeFilter === 'all'" (click)="setFilter('all')">Tất cả</button>
+        <button class="filter-btn" [class.active]="activeFilter === 'sofa'" (click)="setFilter('sofa')">Sofa</button>
+        <button class="filter-btn" [class.active]="activeFilter === 'chair'" (click)="setFilter('chair')">Ghế</button>
+        <button class="filter-btn" [class.active]="activeFilter === 'table'" (click)="setFilter('table')">Bàn</button>
+    </div>
+
+    <div class="ar-product-grid">
+        @for (product of filteredProducts; track product.id) {
+        <div class="ar-product-card">
+            <div class="viewer-wrap">
+
+                <div class="loading-overlay" [id]="'loading-' + product.id">
+                    <div class="loading-spinner"></div>
+                    <span>Đang tải model...</span>
+                </div>
+
+                <model-viewer [id]="'mv-' + product.id" [src]="product.src" [poster]="product.poster" ar
+                    ar-modes="webxr scene-viewer quick-look" camera-controls auto-rotate auto-rotate-delay="1000"
+                    rotation-per-second="30deg" shadow-intensity="1" exposure="1" [alt]="product.name">
+                </model-viewer>
+
+                <!-- Color Swatches -->
+                <div class="color-row">
+                    @for (color of product.colors; track color; let i = $index) {
+                    <div class="swatch" [class.active]="i === 0" [style.background]="color" [title]="color"></div>
+                    }
+                </div>
+
+                <!-- AR Button -->
+                <button class="ar-launch-btn" (click)="launchAR(product.id)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                    </svg>
+                    Thử AR
+                </button>
+            </div>
+
+            <div class="card-info">
+                <div class="card-meta">
+                    <div class="card-name">{{ product.name }}</div>
+                    <div class="card-category">{{ product.category }}</div>
+                </div>
+                <p class="card-desc">{{ product.desc }}</p>
+                <div class="card-footer">
+                    <div class="card-price">{{ product.price }}</div>
+                    <div class="card-dims">{{ product.dims }}</div>
+                </div>
+            </div>
+        </div>
+        }
+    </div>
+</section>

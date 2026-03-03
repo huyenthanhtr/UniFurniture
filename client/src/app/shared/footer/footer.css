@@ -1,0 +1,430 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+/* ===========================
+   PARTNER LOGOS SECTION
+=========================== */
+.partner-section {
+    background: #FFFFFF;
+    padding: 40px 0 30px;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.partner-container {
+    max-width: 1170px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+.partner-heading {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 25px;
+    line-height: 40px;
+    color: #000000;
+    margin: 0 0 24px 0;
+}
+
+.partner-logos {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.partner-logo-item {
+    flex: 0 0 auto;
+}
+
+.partner-img {
+    width: 130px;
+    height: 80px;
+    object-fit: contain;
+    display: block;
+}
+
+/* ===========================
+   SERVICE BANNER
+=========================== */
+.service-banner {
+    background: #FFFFFF;
+    padding: 30px 0 40px;
+    font-family: 'Montserrat', sans-serif;
+    border-top: 1px solid #F4F4F7;
+    border-bottom: 1px solid #F4F4F7;
+}
+
+.service-container {
+    max-width: 1170px;
+    margin: 0 auto;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 135px;
+}
+
+.service-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0;
+    padding: 0 10px;
+}
+
+.service-divider {
+    width: 1px;
+    height: 100%;
+    background: #F4F4F7;
+    flex-shrink: 0;
+}
+
+.service-icon-wrap {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.service-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 18px;
+    line-height: 25px;
+    color: #666666;
+    margin: 0;
+}
+
+.service-sub {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    color: #666666;
+    margin: 4px 0 0 0;
+}
+
+/* ===========================
+   FOOTER MAIN
+=========================== */
+.moho-footer {
+    background: #F8F8F8;
+    font-family: 'Montserrat', sans-serif;
+    width: 100%;
+}
+
+.footer-main {
+    padding: 40px 150px 20px;
+}
+
+.container-footer {
+    display: flex;
+    gap: 0;
+    align-items: flex-start;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #EEEEEE;
+}
+
+/* --- Columns --- */
+.footer-col {
+    flex: 1;
+    padding-right: 20px;
+}
+
+.footer-col--brand {
+    flex: 1.05;
+}
+
+.footer-col--fanpage {
+    flex: 1.05;
+    padding-right: 0;
+}
+
+/* --- Headings --- */
+.footer-heading {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 17px;
+    line-height: 18px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #222222;
+    margin: 0 0 18px 0;
+}
+
+/* --- Brand desc --- */
+.footer-desc {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 14.5px;
+    line-height: 21px;
+    color: #434343;
+    margin: 0 0 20px 0;
+}
+
+/* --- Badges --- */
+.footer-badge-link {
+    display: inline-block;
+    text-decoration: none;
+    margin-bottom: 8px;
+}
+
+.footer-bct-img {
+    height: 70px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
+.footer-dmca-img {
+    height: 55px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+    margin-top: 6px;
+}
+
+/* --- Policy list --- */
+.footer-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.footer-link {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 14.5px;
+    line-height: 22px;
+    color: #434343;
+    text-decoration: none;
+    display: block;
+    padding: 1px 0;
+    transition: color 0.2s;
+}
+
+.footer-link:hover {
+    color: #EF683A;
+}
+
+.footer-link--sm {
+    font-size: 13px;
+    line-height: 20px;
+}
+
+/* --- Contact list --- */
+.footer-contact-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.footer-contact-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.contact-bullet {
+    font-size: 5px;
+    color: #434343;
+    margin-top: 8px;
+    flex-shrink: 0;
+}
+
+.contact-label {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 22px;
+    color: #434343;
+    display: block;
+}
+
+/* --- Fanpage widget --- */
+.fanpage-box {
+    border: 1px solid #EBEDF0;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #fff;
+    max-width: 263px;
+}
+
+.fanpage-profile {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 9px;
+}
+
+.fanpage-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.img-placeholder {
+    background: linear-gradient(135deg, #d0d0d0 0%, #aaa 100%);
+}
+
+.fanpage-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.fanpage-name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 17px;
+    line-height: 24px;
+    color: #365899;
+    text-decoration: none;
+}
+
+.fanpage-followers {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 11.6px;
+    color: #1D2129;
+}
+
+.fanpage-action {
+    border-top: 1px solid #EBEDF0;
+    background: #F5F6F7;
+    padding: 9px;
+}
+
+.fanpage-follow-btn {
+    background: #F5F6F7;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 2px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 11.6px;
+    color: #4B4F56;
+    padding: 4px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    justify-content: center;
+}
+
+/* --- Social icons --- */
+.footer-social-wrap {
+    padding-top: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.footer-social {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.social-btn {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.2s;
+    flex-shrink: 0;
+}
+
+.social-btn:hover {
+    opacity: 0.85;
+    transform: scale(1.08);
+}
+
+.social-btn--fb {
+    background: #3B5999;
+}
+
+.social-btn--yt {
+    background: #F70000;
+}
+
+.social-btn--ig {
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+}
+
+.social-btn--tt {
+    background: #010101;
+}
+
+.social-icon-text {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+    line-height: 1;
+}
+
+.footer-maps-link {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 14.5px;
+    line-height: 25px;
+    color: #666666;
+    text-decoration: none;
+}
+
+.footer-maps-link:hover {
+    color: #EF683A;
+    text-decoration: underline;
+}
+
+/* ===========================
+   FOOTER BOTTOM BAR
+=========================== */
+.footer-bottom {
+    background: #151515;
+    height: 61px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer-bottom-inner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.copyright,
+.footer-bottom-link,
+.footer-bottom-sep {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 21px;
+    color: #FFFFFF;
+}
+
+.footer-bottom-link {
+    text-decoration: none;
+}
+
+.footer-bottom-link:hover {
+    color: #EF683A;
+}
