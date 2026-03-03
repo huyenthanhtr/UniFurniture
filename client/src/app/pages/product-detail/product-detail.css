@@ -1,0 +1,88 @@
+.detail-page {
+    max-width: 1200px;
+    margin: auto;
+    padding: 40px 20px;
+}
+
+.detail-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+}
+
+.gallery img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.info h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.price {
+    margin-bottom: 20px;
+}
+
+.sale {
+    color: #e84b2c;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.old {
+    margin-left: 10px;
+    text-decoration: line-through;
+    color: #888;
+}
+
+.buttons {
+    margin-top: 20px;
+}
+
+.btn-add {
+    width: 100%;
+    padding: 14px;
+    background: #1f5b7a;
+    color: white;
+    border: none;
+    margin-bottom: 10px;
+    border-radius: 6px;
+}
+
+.btn-buy {
+    width: 100%;
+    padding: 14px;
+    background: #ea6b38;
+    color: white;
+    border: none;
+    border-radius: 6px;
+}
+
+.tabs {
+    margin-top: 50px;
+}
+
+.tab-header {
+    display: flex;
+    gap: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.tab-header button {
+    background: none;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.tab-header .active {
+    border-bottom: 2px solid black;
+}
+
+.tab-content {
+    padding: 20px 0;
+}
+
+/* Responsive */

@@ -1,13 +1,19 @@
 <div class="product-grid">
-    @if(products && products.length > 0) {
-    @for(product of products; track product.id) {
-    <app-product-card [product]="product"></app-product-card>
-    }
-    } @else {
-    <!-- Placeholders for UI representation based on design request -->
-    <app-product-card></app-product-card>
-    <app-product-card></app-product-card>
-    <app-product-card></app-product-card>
-    <app-product-card></app-product-card>
-    }
+
+    <!-- Khi có sản phẩm -->
+    <ng-container *ngIf="products && products.length > 0; else emptyState">
+
+        <app-product-card *ngFor="let product of products; trackBy: trackById" [product]="product">
+        </app-product-card>
+
+    </ng-container>
+
+    <!-- Khi không có sản phẩm -->
+    <ng-template #emptyState>
+        <app-product-card></app-product-card>
+        <app-product-card></app-product-card>
+        <app-product-card></app-product-card>
+        <app-product-card></app-product-card>
+    </ng-template>
+
 </div>

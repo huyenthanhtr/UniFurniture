@@ -1,6 +1,5 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Product } from '../models/product.model';
 
 @Component({
     selector: 'app-product-card',
@@ -10,10 +9,11 @@ import { Product } from '../models/product.model';
     styleUrl: './product-card.css'
 })
 export class ProductCardComponent {
-    @Input() product?: Product;
 
-    // Use a default mock product internally so it looks like the design when used as a placeholder
-    get displayProduct(): Product {
+    @Input() product?: any;
+
+    // Mock mặc định nếu không truyền product
+    get displayProduct() {
         return this.product || {
             id: 'mock',
             name: 'Giường Ngủ Gỗ Tràm DALUMD 301 Ver 2 Màu Nâu Hạnh Nhân',
@@ -27,4 +27,5 @@ export class ProductCardComponent {
             colors: ['#8D7B68', '#F8EDE3']
         };
     }
+
 }

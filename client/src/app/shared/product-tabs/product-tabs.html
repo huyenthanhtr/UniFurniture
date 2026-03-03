@@ -1,0 +1,30 @@
+<div class="pt-wrap">
+    <div class="pt-nav">
+        <button class="tab" [class.active]="active==='desc'" (click)="setTab('desc')">Mô tả</button>
+        <button class="tab" [class.active]="active==='review'" (click)="setTab('review')">Đánh giá</button>
+        <button class="tab" [class.active]="active==='policy'" (click)="setTab('policy')">Chính sách</button>
+    </div>
+
+    <div class="pt-body">
+        <div *ngIf="active==='desc'" class="panel">
+            <div class="title">Thông tin sản phẩm</div>
+            <div class="content" *ngIf="shortDescription" [innerText]="shortDescription"></div>
+            <div class="content" *ngIf="description" [innerText]="description"></div>
+            <div class="empty" *ngIf="!shortDescription && !description">Chưa có mô tả.</div>
+        </div>
+
+        <div *ngIf="active==='review'" class="panel">
+            <div class="title">Đánh giá</div>
+            <div class="empty">Chưa có đánh giá cho sản phẩm này.</div>
+        </div>
+
+        <div *ngIf="active==='policy'" class="panel">
+            <div class="title">Chính sách</div>
+            <ul class="policy">
+                <li>Miễn phí tư vấn thiết kế.</li>
+                <li>Hỗ trợ đổi trả theo điều kiện sản phẩm.</li>
+                <li>Bảo hành: <b>{{ warrantyMonths ?? 0 }}</b> tháng (theo thông tin sản phẩm).</li>
+            </ul>
+        </div>
+    </div>
+</div>
