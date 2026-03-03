@@ -1,0 +1,13 @@
+<div class="product-grid">
+    @if(products && products.length > 0) {
+    @for(product of products; track product.id) {
+    <app-product-card [product]="product"></app-product-card>
+    }
+    } @else {
+    <!-- Placeholders for UI representation based on design request -->
+    <app-product-card></app-product-card>
+    <app-product-card></app-product-card>
+    <app-product-card></app-product-card>
+    <app-product-card></app-product-card>
+    }
+</div>

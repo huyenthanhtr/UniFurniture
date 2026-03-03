@@ -1,0 +1,45 @@
+.product-filter {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    padding: 16px 0;
+}
+
+.filter-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #333;
+}
+
+.heading-text {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 120px;
+    justify-content: space-between;
+}
+
+.filter-btn:hover {
+    border-color: #999;
+}
