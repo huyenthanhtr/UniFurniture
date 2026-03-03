@@ -1,0 +1,36 @@
+<div class="detail-page">
+
+    <div class="detail-container">
+
+        <app-product-gallery [images]="[
+    'https://picsum.photos/800/600?1',
+    'https://picsum.photos/800/600?2',
+    'https://picsum.photos/800/600?3'
+  ]"></app-product-gallery>
+
+        <app-product-info [product]="product"></app-product-info>
+
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <div class="tab-header">
+            <button (click)="activeTab='desc'" [class.active]="activeTab==='desc'">Mô tả</button>
+            <button (click)="activeTab='review'" [class.active]="activeTab==='review'">Đánh giá</button>
+            <button (click)="activeTab='policy'" [class.active]="activeTab==='policy'">Chính sách</button>
+        </div>
+
+        <div class="tab-content" *ngIf="activeTab==='desc'">
+            <p>{{ product.description }}</p>
+        </div>
+
+        <div class="tab-content" *ngIf="activeTab==='review'">
+            <p>Chưa có đánh giá.</p>
+        </div>
+
+        <div class="tab-content" *ngIf="activeTab==='policy'">
+            <p>Bảo hành 5 năm theo chính sách MOHO.</p>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,43 @@
+<div class="info-wrapper">
+
+    <h1>{{ product.name }}</h1>
+
+    <!-- Rating -->
+    <div class="rating">
+        ★★★★★ <span>(5)</span>
+    </div>
+
+    <!-- Price -->
+    <div class="price">
+        <span class="sale">{{ product.price | number }}đ</span>
+        <span class="old">{{ product.oldPrice | number }}đ</span>
+    </div>
+
+    <!-- Color -->
+    <div class="section">
+        <div class="label">Màu sắc</div>
+        <div class="colors">
+            <span class="color black"></span>
+            <span class="color gray"></span>
+            <span class="color beige"></span>
+        </div>
+    </div>
+
+    <!-- Size -->
+    <div class="section">
+        <div class="label">Kích thước</div>
+        <div>Dài 180cm x Rộng 85cm x Cao 78cm</div>
+    </div>
+
+    <!-- Quantity -->
+    <div class="quantity">
+        <button (click)="decrease()">-</button>
+        <span>{{ quantity }}</span>
+        <button (click)="increase()">+</button>
+    </div>
+
+    <!-- Buttons -->
+    <button class="btn-add">THÊM VÀO GIỎ</button>
+    <button class="btn-buy">MUA NGAY</button>
+
+</div>

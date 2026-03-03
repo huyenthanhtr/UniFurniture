@@ -1,0 +1,53 @@
+.pt-wrap {
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.pt-nav {
+    display: flex;
+    gap: 6px;
+    border-bottom: 1px solid #eee;
+}
+
+.tab {
+    border: none;
+    background: transparent;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-weight: 700;
+    color: #666;
+}
+
+.tab.active {
+    color: #111;
+    border-bottom: 2px solid #111;
+}
+
+.pt-body {
+    padding: 14px 0;
+}
+
+.panel .title {
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: #111;
+}
+
+.content {
+    color: #444;
+    line-height: 1.7;
+    font-size: 14px;
+    white-space: pre-line;
+}
+
+.empty {
+    color: #888;
+    font-size: 13px;
+}
+
+.policy {
+    margin: 0;
+    padding-left: 18px;
+    color: #444;
+    line-height: 1.7;
+}

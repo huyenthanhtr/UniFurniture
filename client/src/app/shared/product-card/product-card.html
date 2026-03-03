@@ -1,17 +1,30 @@
 <div class="product-card">
+
     <div class="image-wrapper">
         <img [src]="displayProduct.imageUrl" [alt]="displayProduct.name" class="product-image">
-        <div class="badge" *ngIf="displayProduct.discountBadge">{{ displayProduct.discountBadge }}</div>
+        <div class="badge" *ngIf="displayProduct.discountBadge">
+            {{ displayProduct.discountBadge }}
+        </div>
     </div>
+
     <div class="product-info">
-        <h3 class="product-name">{{ displayProduct.name }}</h3>
+
+        <h3 class="product-name">
+            {{ displayProduct.name }}
+        </h3>
+
         <div class="product-price">
-            <span class="current-price">{{ displayProduct.price | number }}đ</span>
-            <span class="original-price" *ngIf="displayProduct.originalPrice">{{ displayProduct.originalPrice | number
-                }}đ</span>
+            <span class="current-price">
+                {{ displayProduct.price | number }}đ
+            </span>
+
+            <span class="original-price" *ngIf="displayProduct.originalPrice">
+                {{ displayProduct.originalPrice | number }}đ
+            </span>
         </div>
 
         <div class="product-meta">
+
             <div class="rating-box">
                 <span class="stars">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="#ff5722" *ngFor="let i of [1,2,3,4,5]">
@@ -19,14 +32,23 @@
                             d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                     </svg>
                 </span>
-                <span class="reviews-count">({{ displayProduct.reviewsCount || 0 }})</span>
+
+                <span class="reviews-count">
+                    ({{ displayProduct.reviewsCount || 0 }})
+                </span>
             </div>
-            <div class="sold-count">Đã bán {{ displayProduct.soldCount || 0 }}</div>
+
+            <div class="sold-count">
+                Đã bán {{ displayProduct.soldCount || 0 }}
+            </div>
+
         </div>
 
         <div class="product-colors" *ngIf="displayProduct.colors && displayProduct.colors.length > 0">
             <span *ngFor="let color of displayProduct.colors; let first = first" class="color-swatch"
                 [class.border-active]="first" [style.background-color]="color"></span>
         </div>
+
     </div>
+
 </div>

@@ -1,0 +1,14 @@
+<div class="gallery-wrapper">
+
+    <!-- Thumbnails -->
+    <div class="thumbnails">
+        <img *ngFor="let img of images; let i = index" [src]="img" (click)="select(i)"
+            [class.active]="i === selectedIndex" />
+    </div>
+
+    <!-- Main Image -->
+    <div class="main-image">
+        <img [src]="images[selectedIndex]" />
+    </div>
+
+</div>
