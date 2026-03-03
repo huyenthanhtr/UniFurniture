@@ -1,0 +1,55 @@
+@if (ui.isCartOpen()) {
+<div class="cart-overlay" (click)="closeOnBackdrop($event)">
+    <div class="cart-drawer">
+
+        <!-- Header -->
+        <div class="cart-header">
+            <h2 class="cart-title">Giỏ hàng</h2>
+            <button class="cart-close" (click)="ui.closeCart()" aria-label="Đóng">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Cart Body -->
+        <div class="cart-body">
+            @if (cartItems.length === 0) {
+            <div class="cart-empty">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.2">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <path d="M16 10a4 4 0 0 1-8 0" />
+                </svg>
+                <p>Giỏ hàng của bạn đang trống</p>
+                <button class="cart-shop-btn" (click)="ui.closeCart()">Tiếp tục mua sắm</button>
+            </div>
+            } @else {
+            <div class="cart-items">
+                @for (item of cartItems; track $index) {
+                <div class="cart-item">
+                    <div class="cart-item-img img-placeholder"></div>
+                    <div class="cart-item-info">
+                        <span class="cart-item-name">{{ item }}</span>
+                    </div>
+                </div>
+                }
+            </div>
+            }
+        </div>
+
+        <!-- Footer -->
+        @if (cartItems.length > 0) {
+        <div class="cart-footer">
+            <div class="cart-total-row">
+                <span class="cart-total-label">Tổng tiền:</span>
+                <span class="cart-total-price">0đ</span>
+            </div>
+            <button class="cart-checkout-btn">Tiến hành thanh toán</button>
+        </div>
+        }
+
+    </div>
+</div>
+}

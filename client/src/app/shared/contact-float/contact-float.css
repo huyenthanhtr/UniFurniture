@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap');
+
+/* ===== WRAPPER ===== */
+.contact-float-wrap {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 998;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+/* ===== CHAT CHANNELS ===== */
+.contact-channels {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    animation: fadeSlide 0.22s ease;
+}
+
+@keyframes fadeSlide {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.contact-channel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px 9px 12px;
+    border-radius: 28px;
+    text-decoration: none;
+    color: #FFFFFF;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+    transition: transform 0.18s, box-shadow 0.18s;
+    white-space: nowrap;
+}
+
+.contact-channel:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.24);
+}
+
+.contact-channel--messenger {
+    background: #0084FF;
+}
+
+.contact-channel--zalo {
+    background: #0068FF;
+}
+
+.contact-channel--phone {
+    background: #EF683A;
+}
+
+.contact-channel--email {
+    background: #434343;
+}
+
+.channel-label {
+    line-height: 1;
+}
+
+/* ===== TOGGLE BUTTON ===== */
+.contact-toggle-btn {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: #EF683A;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(239, 104, 58, 0.45);
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    animation: pulse 2.5s ease-in-out infinite;
+}
+
+.contact-toggle-btn.open {
+    background: #222222;
+    animation: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.contact-toggle-btn:hover {
+    transform: scale(1.08);
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 16px rgba(239, 104, 58, 0.45);
+    }
+
+    50% {
+        box-shadow: 0 4px 28px rgba(239, 104, 58, 0.7);
+    }
+}

@@ -1,0 +1,102 @@
+@if (ui.isAuthOpen()) {
+<!-- Overlay -->
+<div class="auth-overlay" (click)="closeOnBackdrop($event)">
+    <div class="auth-modal">
+
+        <!-- Close Button -->
+        <button class="auth-close" (click)="ui.closeAuth()" aria-label="Đóng">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+        </button>
+
+        <!-- Logo -->
+        <div class="auth-logo">
+            <img src="assets/images/logo_ngang_no_bg.png" alt="UniFurniture" class="auth-logo-img" />
+        </div>
+
+        <!-- Tabs -->
+        <div class="auth-tabs">
+            <button class="auth-tab" [class.active]="ui.authTab() === 'login'" (click)="switchTab('login')">Đăng
+                nhập</button>
+            <button class="auth-tab" [class.active]="ui.authTab() === 'register'" (click)="switchTab('register')">Đăng
+                ký</button>
+        </div>
+
+        <!-- LOGIN FORM -->
+        @if (ui.authTab() === 'login') {
+        <form class="auth-form" (ngSubmit)="onLogin()">
+            <p class="auth-subtitle">Nhập email và mật khẩu của bạn:</p>
+
+            <div class="form-group">
+                <input type="text" class="form-input" placeholder="Nhập email hoặc số điện thoại"
+                    [(ngModel)]="loginData.email" name="email" required />
+            </div>
+
+            <div class="form-group">
+                <input [type]="showPassword ? 'text' : 'password'" class="form-input" placeholder="Mật khẩu"
+                    [(ngModel)]="loginData.password" name="password" required />
+            </div>
+
+            <div class="auth-disclaimer">
+                <a href="#" class="auth-link">Điều khoản dịch vụ</a>
+                <span> · Website được bảo vệ bởi reCAPTCHA</span>
+            </div>
+
+            <button type="submit" class="auth-submit-btn">Đăng nhập</button>
+
+            <div class="auth-footer-links">
+                <span>Khách hàng mới? <a href="#" class="auth-link" (click)="switchTab('register')">Tạo tài
+                        khoản</a></span>
+                <span>Quên mật khẩu? <a href="#" class="auth-link">Khôi phục mật khẩu</a></span>
+            </div>
+        </form>
+        }
+
+        <!-- REGISTER FORM -->
+        @if (ui.authTab() === 'register') {
+        <form class="auth-form" (ngSubmit)="onRegister()">
+            <p class="auth-subtitle">Tạo tài khoản mới:</p>
+
+            <div class="form-group">
+                <input type="text" class="form-input" placeholder="Họ và tên" [(ngModel)]="registerData.name"
+                    name="name" required />
+            </div>
+
+            <div class="form-group">
+                <input type="email" class="form-input" placeholder="Email" [(ngModel)]="registerData.email" name="email"
+                    required />
+            </div>
+
+            <div class="form-group">
+                <input type="tel" class="form-input" placeholder="Số điện thoại" [(ngModel)]="registerData.phone"
+                    name="phone" />
+            </div>
+
+            <div class="form-group">
+                <input [type]="showPassword ? 'text' : 'password'" class="form-input" placeholder="Mật khẩu"
+                    [(ngModel)]="registerData.password" name="password" required />
+            </div>
+
+            <div class="form-group">
+                <input [type]="showPassword ? 'text' : 'password'" class="form-input" placeholder="Xác nhận mật khẩu"
+                    [(ngModel)]="registerData.confirmPassword" name="confirmPassword" required />
+            </div>
+
+            <div class="auth-disclaimer">
+                <span>Bằng cách đăng ký, bạn đồng ý với </span>
+                <a href="#" class="auth-link">Điều khoản dịch vụ</a>
+            </div>
+
+            <button type="submit" class="auth-submit-btn">Tạo tài khoản</button>
+
+            <div class="auth-footer-links">
+                <span>Đã có tài khoản? <a href="#" class="auth-link" (click)="switchTab('login')">Đăng nhập</a></span>
+            </div>
+        </form>
+        }
+
+    </div>
+</div>
+}
