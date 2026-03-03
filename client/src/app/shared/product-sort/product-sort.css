@@ -1,0 +1,39 @@
+.product-sort {
+    display: flex;
+    align-items: center;
+}
+
+.product-sort .sort-dropdown {
+    position: relative;
+}
+
+.product-sort .sort-dropdown .sort-select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 8px 36px 8px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: white;
+    color: #333;
+    cursor: pointer;
+    min-width: 180px;
+    font-weight: 500;
+}
+
+.product-sort .sort-dropdown .sort-select:focus {
+    outline: none;
+    border-color: #333;
+}
+
+.product-sort .sort-dropdown::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    border-width: 4px;
+    border-style: solid;
+    border-color: #666 transparent transparent transparent;
+    pointer-events: none;
+}
