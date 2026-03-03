@@ -1,0 +1,40 @@
+<div class="admin-coupons">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 style="color: #908372; font-weight: 600;">Danh sách Khuyến mãi</h2>
+    <button class="btn-popup-danger" (click)="openModal()">+ Thêm mã mới</button>
+  </div>
+
+  <div class="table-container shadow-sm">
+    <table class="table custom-table">
+      <thead>
+        <tr>
+          <th>Mã Code</th>
+          <th>Loại</th>
+          <th>Giá trị</th>
+          <th>Giảm tối đa</th>
+          <th>Sử dụng</th>
+          <th>Trạng thái</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of coupons">
+          <td class="fw-bold">{{ item.code }}</td>
+          <td>{{ item.discount_type }}</td>
+          <td>{{ item.discount_value | number }}{{ item.discount_type === 'percent' ? '%' : 'đ' }}</td>
+          <td>{{ item.max_discount_amount ? (item.max_discount_amount | number) + 'đ' : '-' }}</td>
+          <td>{{ item.used }} / {{ item.total_limit }}</td>
+          <td>
+            <span class="badge" [ngClass]="item.status === 'active' ? 'bg-success' : 'bg-secondary'">
+              {{ item.status }}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary me-2"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-outline-danger" (click)="delete(item._id)"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

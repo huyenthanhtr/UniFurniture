@@ -1,16 +1,14 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-async function connectDB() {
-  const uri = process.env.MONGO_URI;
-  if (!uri) throw new Error("Missing MONGO_URI in .env");
-
-  try {
-    await mongoose.connect(uri);
-    console.log("MongoDB connected");
-  } catch (err) {
-    console.error("MongoDB connection error:", err.message);
-    process.exit(1);
-  }
-}
+const connectDB = async () => {
+    try {
+        // Mongoose sẽ lấy tên DB từ chuỗi MONGO_URI ở trên
+        await mongoose.connect(process.env.MONGO_URI);
+        console.log("✅ Đã kết nối MongoDB thành công vào database: ecommerce");
+    } catch (error) {
+        console.error("❌ Lỗi kết nối MongoDB:", error.message);
+        process.exit(1);
+    }
+};
 
 module.exports = connectDB;
