@@ -8,6 +8,7 @@ const ProductSchema = new mongoose.Schema(
 
     sku: String,
     brand: String,
+    thumbnail_url: String,
 
     category_id: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
     collection_id: { type: mongoose.Schema.Types.ObjectId, ref: "Collection" },
@@ -17,10 +18,13 @@ const ProductSchema = new mongoose.Schema(
     short_description: String,
     description: String,
 
+    min_price: { type: Number, default: 0 },
+
     size: mongoose.Schema.Types.Mixed,
     material: mongoose.Schema.Types.Mixed,
 
     status: String,
+    sold: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

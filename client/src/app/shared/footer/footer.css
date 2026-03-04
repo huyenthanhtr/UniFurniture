@@ -25,11 +25,33 @@
 }
 
 .partner-logos {
-    display: flex;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    width: 100%;
+}
+
+.partner-track {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
+    gap: 40px;
+    animation: scrollLogos 20s linear infinite;
+}
+
+.partner-track:hover {
+    animation-play-state: paused;
+}
+
+@keyframes scrollLogos {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(calc(-50% - 20px));
+    }
+
+    /* Scroll half the track width (1 set + gap) */
 }
 
 .partner-logo-item {

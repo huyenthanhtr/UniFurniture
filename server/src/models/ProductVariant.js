@@ -12,6 +12,7 @@ const ProductVariantSchema = new mongoose.Schema(
     stock_quantity: {type: Number, default: 0},
     variant_status: {type: String, enum: ["available", "unavailable"], default: "available"},
     status: {type: String, enum: ["active", "inactive"], default: "active"},
+    sold: { type: Number, default: 0 },
   },
   { timestamps: true, collection: "product_variants" }
 );

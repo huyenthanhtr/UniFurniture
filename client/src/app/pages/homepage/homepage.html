@@ -1,0 +1,109 @@
+<div class="homepage">
+
+  <!-- Loading Spinner -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Error -->
+  <p class="error-msg" *ngIf="error">{{ error }}</p>
+
+  <!-- ===== SECTION 1: GIÁ SIÊU TỐT ===== -->
+  <section class="product-section" *ngIf="!loading">
+    <div class="section-header">
+      <h2 class="section-title">Giá Siêu Tốt</h2>
+      <a class="view-all" href="#">Xem tất cả &rsaquo;</a>
+    </div>
+    <div class="product-grid grid-4">
+      <div class="product-card" *ngFor="let p of cheapProducts">
+        <div class="product-img-wrap">
+          <img [src]="p.thumbnail || p.thumbnail_url || 'assets/images/placeholder.png'" [alt]="p.name"
+            class="product-img" onerror="this.src='assets/images/placeholder.png'" />
+          <span class="badge badge-sale">SALE</span>
+        </div>
+        <div class="product-info">
+          <h3 class="product-name">{{ p.name }}</h3>
+          <div class="price-row">
+            <span class="price-current">{{ formatPrice(p.min_price || p.price || 0) }}</span>
+          </div>
+          <div class="sold-badge">Đã bán {{ p.sold ?? 0 }}</div>
+        </div>
+      </div>
+      <div class="empty-msg" *ngIf="cheapProducts.length === 0">Chưa có sản phẩm</div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 2: BÁN CHẠY ===== -->
+  <section class="product-section" *ngIf="!loading">
+    <div class="section-header">
+      <h2 class="section-title">Bán Chạy</h2>
+      <a class="view-all" href="#">Xem tất cả &rsaquo;</a>
+    </div>
+    <div class="product-grid grid-4">
+      <div class="product-card" *ngFor="let p of bestSellingProducts">
+        <div class="product-img-wrap">
+          <img [src]="p.thumbnail || p.thumbnail_url || 'assets/images/placeholder.png'" [alt]="p.name"
+            class="product-img" onerror="this.src='assets/images/placeholder.png'" />
+          <span class="badge badge-hot" *ngIf="p.sold && p.sold > 0">HOT</span>
+        </div>
+        <div class="product-info">
+          <h3 class="product-name">{{ p.name }}</h3>
+          <div class="price-row">
+            <span class="price-current">{{ formatPrice(p.min_price || p.price || 0) }}</span>
+          </div>
+          <div class="sold-badge">Đã bán {{ p.sold ?? 0 }}</div>
+        </div>
+      </div>
+      <div class="empty-msg" *ngIf="bestSellingProducts.length === 0">Chưa có sản phẩm</div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 3: GỢI Ý ===== -->
+  <section class="product-section" *ngIf="!loading">
+    <div class="section-header">
+      <h2 class="section-title">Gợi Ý</h2>
+      <a class="view-all" href="#">Xem tất cả &rsaquo;</a>
+    </div>
+    <div class="product-grid grid-4">
+      <div class="product-card" *ngFor="let p of suggestedProducts">
+        <div class="product-img-wrap">
+          <img [src]="p.thumbnail || p.thumbnail_url || 'assets/images/placeholder.png'" [alt]="p.name"
+            class="product-img" onerror="this.src='assets/images/placeholder.png'" />
+        </div>
+        <div class="product-info">
+          <h3 class="product-name">{{ p.name }}</h3>
+          <div class="price-row">
+            <span class="price-current">{{ formatPrice(p.min_price || p.price || 0) }}</span>
+          </div>
+          <div class="sold-badge">Đã bán {{ p.sold ?? 0 }}</div>
+        </div>
+      </div>
+      <div class="empty-msg" *ngIf="suggestedProducts.length === 0">Chưa có sản phẩm</div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 4: PHÒNG NGỦ ===== -->
+  <section class="product-section" *ngIf="!loading && bedroomProducts.length > 0">
+    <div class="section-header">
+      <h2 class="section-title">Phòng Ngủ</h2>
+      <a class="view-all" href="#">Xem tất cả &rsaquo;</a>
+    </div>
+    <div class="product-grid grid-4">
+      <div class="product-card" *ngFor="let p of bedroomProducts">
+        <div class="product-img-wrap">
+          <img [src]="p.thumbnail || p.thumbnail_url || 'assets/images/placeholder.png'" [alt]="p.name"
+            class="product-img" onerror="this.src='assets/images/placeholder.png'" />
+          <span class="badge badge-new">MỚI</span>
+        </div>
+        <div class="product-info">
+          <h3 class="product-name">{{ p.name }}</h3>
+          <div class="price-row">
+            <span class="price-current">{{ formatPrice(p.min_price || p.price || 0) }}</span>
+          </div>
+          <div class="sold-badge">Đã bán {{ p.sold ?? 0 }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
