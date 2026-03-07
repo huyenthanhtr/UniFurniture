@@ -10,53 +10,6 @@
                         <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
                     </svg>
                 </a>
-
-                <div class="megamenu" *ngIf="menuOpen" (click)="$event.stopPropagation()">
-                    <div class="megamenu-inner">
-
-                        <!-- Level 1 list -->
-                        <ul class="megamenu-l1">
-
-                            <!-- Bộ Sưu Tập -->
-                            <li class="megamenu-l1-item" [class.active]="activeGroupIndex === -99"
-                                (mouseenter)="setActiveGroup(-99)">
-                                <span class="megamenu-l1-label">Bộ Sưu Tập</span>
-                                <svg class="arrow-right" width="6" height="10" viewBox="0 0 6 10" fill="none">
-                                    <path d="M1 1L5 5L1 9" stroke="#888" stroke-width="1.2" stroke-linecap="round" />
-                                </svg>
-
-                                <!-- Collections submenu -->
-                                <ul class="megamenu-l2" *ngIf="activeGroupIndex === -99 && collections.length > 0">
-                                    <li *ngFor="let col of collections" class="megamenu-l2-item"
-                                        (click)="navigateToCollection(col)">
-                                        {{ col.name }}
-                                    </li>
-                                </ul>
-                            </li>
-
-                            <!-- Category groups -->
-                            <li class="megamenu-l1-item" *ngFor="let group of menuGroups; let i = index"
-                                [class.active]="activeGroupIndex === i" (mouseenter)="setActiveGroup(i)">
-                                <span class="megamenu-l1-label" (click)="navigateToGroup(group)">{{ group.label
-                                    }}</span>
-                                <svg class="arrow-right" width="6" height="10" viewBox="0 0 6 10" fill="none"
-                                    *ngIf="group.childCategories && group.childCategories.length > 0">
-                                    <path d="M1 1L5 5L1 9" stroke="#888" stroke-width="1.2" stroke-linecap="round" />
-                                </svg>
-
-                                <!-- Category submenu -->
-                                <ul class="megamenu-l2"
-                                    *ngIf="activeGroupIndex === i && group.childCategories && group.childCategories.length > 0">
-                                    <li *ngFor="let cat of group.childCategories" class="megamenu-l2-item"
-                                        (click)="navigateToCategory(cat)">
-                                        {{ cat.name }}
-                                    </li>
-                                </ul>
-                            </li>
-
-                        </ul>
-                    </div>
-                </div>
             </li>
 
             <!-- Thiết kế - Thi công -->
@@ -66,7 +19,7 @@
 
             <!-- Khuyến mãi (accent) -->
             <li class="navbar-item has-dropdown">
-                <a href="/khuyen-mai" class="navbar-link">
+                <a href="/khuyen-mai" class="navbar-link navbar-link--accent">
                     Khuyến Mãi
                     <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
                         <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
@@ -94,7 +47,7 @@
                 <a href="/cua-hang" class="navbar-link">Cửa hàng</a>
             </li>
 
-            <!-- AR -->
+            <!-- Thử ngay AR -->
             <li class="navbar-item navbar-item--ar">
                 <a routerLink="/ar" class="navbar-link navbar-link--ar">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
