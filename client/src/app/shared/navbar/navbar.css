@@ -5,6 +5,7 @@
     background: #FFFFFF;
     border-bottom: 1px solid #ECECEC;
     width: 100%;
+    position: relative;
 }
 
 .navbar-container {

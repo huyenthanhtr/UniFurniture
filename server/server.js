@@ -4,7 +4,6 @@ const cors = require("cors");
 
 const connectDB = require("./src/configs/db");
 
-const accountsRoutes = require("./src/routes/accounts.routes");
 const cartRoutes = require("./src/routes/cart.routes");
 const cartItemsRoutes = require("./src/routes/cart-items.routes");
 const categoriesRoutes = require("./src/routes/categories.routes");
@@ -31,7 +30,6 @@ connectDB();
 
 app.get("/", (req, res) => res.send("UniFurniture API running"));
 
-app.use("/api/accounts", accountsRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/cart-items", cartItemsRoutes);
 app.use("/api/categories", categoriesRoutes);

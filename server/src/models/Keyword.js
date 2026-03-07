@@ -2,10 +2,10 @@ const mongoose = require("mongoose");
 
 const KeywordSchema = new mongoose.Schema(
   {
-    keyword: String,
+    keyword: {type: String, required: true, unique:true},
     synonyms: [String],
   },
-  { timestamps: true }
+  { timestamps: true, collection: "keywords" }
 );
 
 module.exports = mongoose.model("Keyword", KeywordSchema, "keywords");
