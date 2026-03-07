@@ -2,15 +2,12 @@
 <nav class="moho-navbar">
     <div class="navbar-container">
         <ul class="navbar-list">
-
-            <!-- Sản phẩm mega dropdown -->
-            <li class="navbar-item has-megamenu" [class.open]="menuOpen" (mouseenter)="openMenu()"
-                (mouseleave)="closeMenu()">
-                <a class="navbar-link" routerLink="/danh-muc">
+            <!-- Sản phẩm -->
+            <li class="navbar-item has-dropdown" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }">
+                <a [routerLink]="['/products']" class="navbar-link">
                     Sản phẩm
-                    <svg class="dropdown-arrow" [class.rotated]="menuOpen" width="10" height="6" viewBox="0 0 10 6"
-                        fill="none">
-                        <path d="M1 1L5 5L9 1" stroke="#434343" stroke-width="1.2" stroke-linecap="round" />
+                    <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
+                        <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
                     </svg>
                 </a>
 
@@ -67,19 +64,24 @@
                 <a href="/thiet-ke-thi-cong" class="navbar-link">Thiết kế - Thi công</a>
             </li>
 
-            <!-- Khuyến mãi -->
-            <li class="navbar-item">
-                <a href="/khuyen-mai" class="navbar-link navbar-link--accent">
+            <!-- Khuyến mãi (accent) -->
+            <li class="navbar-item has-dropdown">
+                <a href="/khuyen-mai" class="navbar-link">
                     Khuyến Mãi
                     <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
-                        <path d="M1 1L5 5L9 1" stroke="#EF683A" stroke-width="1.2" stroke-linecap="round" />
+                        <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
                     </svg>
                 </a>
             </li>
 
             <!-- Tin tức -->
-            <li class="navbar-item">
-                <a href="/tin-tuc" class="navbar-link">Tin tức</a>
+            <li class="navbar-item has-dropdown">
+                <a href="/tin-tuc" class="navbar-link">
+                    Tin tức
+                    <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
+                        <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                    </svg>
+                </a>
             </li>
 
             <!-- Về UniFurniture -->

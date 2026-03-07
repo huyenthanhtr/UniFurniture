@@ -1,63 +1,10 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
-
-const BASE_URL = 'http://localhost:3000/api';
-
-interface Category {
-  _id: string;
-  name: string;
-  slug: string;
-}
-
-interface Collection {
-  _id: string;
-  name: string;
-  slug: string;
-}
-
-interface MenuGroup {
-  label: string;
-  slugs: string[];       // slugs of child categories belonging to this group
-  childCategories?: Category[];
-  allCategoryIds?: string[];  // IDs of all children, used when clicking parent
-}
-
-// Fixed menu structure (parent groups → child category slugs)
-const MENU_GROUPS: MenuGroup[] = [
-  {
-    label: 'Phòng Ngủ',
-    slugs: ['combo-phong-ngu', 'tu-quan-ao', 'giuong-ngu', 'tu-dau-giuong', 'ban-trang-diem'],
-  },
-  {
-    label: 'Phòng Khách',
-    slugs: ['ghe-sofa', 'ban-sofa-ban-cafe-ban-tra', 'tu-ke-tivi', 'tu-giay-tu-trang-tri'],
-  },
-  {
-    label: 'Phòng Ăn',
-    slugs: ['ban-an', 'ghe-an', 'bo-ban-an'],
-  },
-  {
-    label: 'Phòng Làm Việc',
-    slugs: ['ban-lam-viec', 'ghe-van-phong', 'tu-ke'],
-  },
-  {
-    label: 'Tủ Bếp',
-    slugs: ['tu-bep'],
-  },
-  {
-    label: 'Nệm',
-    slugs: ['nem'],
-  },
-];
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
   selector: 'app-navbar',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })

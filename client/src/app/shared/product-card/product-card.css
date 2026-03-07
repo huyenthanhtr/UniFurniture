@@ -5,6 +5,8 @@
     cursor: pointer;
     transition: transform 0.2s ease;
     height: 100%;
+    text-decoration: none;
+    color: inherit;
 }
 
 .product-card:hover {

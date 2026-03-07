@@ -69,17 +69,13 @@
     transform: scaleX(1);
 }
 
-.navbar-link--accent {
+.navbar-item--active>.navbar-link {
     color: #EF683A;
     font-weight: 600;
 }
 
-.navbar-link--accent:hover {
-    color: #d45520;
-}
-
-.navbar-link--accent::after {
-    background: #d45520;
+.navbar-item--active>.navbar-link::after {
+    transform: scaleX(1);
 }
 
 .dropdown-arrow {
@@ -131,113 +127,3 @@
     }
 }
 
-.has-megamenu {
-    position: static;
-}
-
-.has-megamenu>.navbar-link {
-    cursor: pointer;
-    user-select: none;
-}
-
-.dropdown-arrow.rotated {
-    transform: rotate(180deg);
-    transition: transform 0.2s;
-}
-
-.megamenu {
-    position: absolute;
-    top: 51px;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
-    background: transparent;
-    padding-top: 2px;
-}
-
-.megamenu-inner {
-    max-width: 1200px;
-    margin: 0 auto 0 150px;
-    background: #fff;
-    border: 1px solid #eee;
-    border-top: 2px solid #EF683A;
-    border-radius: 0 0 6px 6px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.13);
-    display: inline-block;
-    min-width: 200px;
-}
-
-/* Level 1 */
-.megamenu-l1 {
-    list-style: none;
-    margin: 0;
-    padding: 6px 0;
-}
-
-.megamenu-l1-item {
-    position: relative;
-    display: flex;
-    align-items: center;
-    padding: 9px 18px 9px 16px;
-    cursor: pointer;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    color: #333;
-    white-space: nowrap;
-    transition: background 0.15s, color 0.15s;
-    gap: 8px;
-}
-
-.megamenu-l1-item:hover,
-.megamenu-l1-item.active {
-    background: #fff5f2;
-    color: #EF683A;
-}
-
-.megamenu-l1-label {
-    flex: 1;
-}
-
-.arrow-right {
-    flex-shrink: 0;
-    opacity: 0.45;
-}
-
-.megamenu-l1-item.active .arrow-right,
-.megamenu-l1-item:hover .arrow-right {
-    opacity: 1;
-}
-
-/* Level 2 */
-.megamenu-l2 {
-    position: absolute;
-    top: 0;
-    left: 100%;
-    list-style: none;
-    margin: 0;
-    padding: 6px 0;
-    background: #fff;
-    border: 1px solid #eee;
-    border-left: 2px solid #EF683A;
-    box-shadow: 4px 4px 20px rgba(0, 0, 0, 0.10);
-    min-width: 200px;
-    border-radius: 0 6px 6px 0;
-    z-index: 1001;
-}
-
-.megamenu-l2-item {
-    padding: 9px 20px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 13.5px;
-    font-weight: 400;
-    color: #444;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    white-space: nowrap;
-}
-
-.megamenu-l2-item:hover {
-    background: #fff5f2;
-    color: #EF683A;
-}

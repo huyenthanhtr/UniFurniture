@@ -5,6 +5,13 @@
     width: 100%;
 }
 
+.empty-state {
+    grid-column: 1 / -1;
+    margin: 12px 0;
+    font-size: 14px;
+    color: #555;
+}
+
 @media (max-width: 1024px) {
     .product-grid {
         grid-template-columns: repeat(2, 1fr);

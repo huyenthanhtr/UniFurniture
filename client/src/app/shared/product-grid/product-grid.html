@@ -1,19 +1,10 @@
 <div class="product-grid">
+  <ng-container *ngIf="products && products.length > 0; else emptyState">
+    <app-product-card *ngFor="let product of products; trackBy: trackById" [product]="product">
+    </app-product-card>
+  </ng-container>
 
-    <!-- Khi có sản phẩm -->
-    <ng-container *ngIf="products && products.length > 0; else emptyState">
-
-        <app-product-card *ngFor="let product of products; trackBy: trackById" [product]="product">
-        </app-product-card>
-
-    </ng-container>
-
-    <!-- Khi không có sản phẩm -->
-    <ng-template #emptyState>
-        <app-product-card></app-product-card>
-        <app-product-card></app-product-card>
-        <app-product-card></app-product-card>
-        <app-product-card></app-product-card>
-    </ng-template>
-
+  <ng-template #emptyState>
+    <p class="empty-state">Khong co san pham de hien thi.</p>
+  </ng-template>
 </div>

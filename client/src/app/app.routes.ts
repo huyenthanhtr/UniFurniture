@@ -7,8 +7,8 @@ import { CategoryPageComponent } from './pages/category-page/category-page';
 export const routes: Routes = [
     { path: 'ar', component: ArViewer },
     { path: 'ar-viewer', component: ArViewer },
-    { path: 'product', component: ProductComponent },
-    { path: 'product/:id', component: ProductDetailComponent },
+    { path: 'products', component: ProductComponent },
+    { path: 'products/:id', component: ProductDetailComponent },
     { path: 'danh-muc', component: CategoryPageComponent },
 ];
 

@@ -1,36 +1,39 @@
 <div class="detail-page">
+  <p *ngIf="isLoading()" class="status-message">&#272;ang t&#7843;i chi ti&#7871;t s&#7843;n ph&#7849;m...</p>
+  <div *ngIf="!isLoading() && errorMessage()" class="status-block">
+    <p class="status-message status-error">{{ errorMessage() }}</p>
+    <button class="retry-btn" (click)="retry()">T&#7843;i l&#7841;i</button>
+  </div>
 
+  <ng-container *ngIf="!isLoading() && product() as productData">
     <div class="detail-container">
-
-        <app-product-gallery [images]="[
-    'https://picsum.photos/800/600?1',
-    'https://picsum.photos/800/600?2',
-    'https://picsum.photos/800/600?3'
-  ]"></app-product-gallery>
-
-        <app-product-info [product]="product"></app-product-info>
-
+      <app-product-gallery [images]="productData.images"></app-product-gallery>
+      <app-product-info [product]="productData"></app-product-info>
     </div>
 
-    <!-- Tabs -->
     <div class="tabs">
-        <div class="tab-header">
-            <button (click)="activeTab='desc'" [class.active]="activeTab==='desc'">Mô tả</button>
-            <button (click)="activeTab='review'" [class.active]="activeTab==='review'">Đánh giá</button>
-            <button (click)="activeTab='policy'" [class.active]="activeTab==='policy'">Chính sách</button>
-        </div>
+      <div class="tab-header">
+        <button (click)="setActiveTab('desc')" [class.active]="activeTab() === 'desc'">M&#244; t&#7843;</button>
+        <button (click)="setActiveTab('review')" [class.active]="activeTab() === 'review'">&#272;&#225;nh gi&#225;</button>
+        <button (click)="setActiveTab('policy')" [class.active]="activeTab() === 'policy'">Ch&#237;nh s&#225;ch</button>
+      </div>
 
-        <div class="tab-content" *ngIf="activeTab==='desc'">
-            <p>{{ product.description }}</p>
-        </div>
+      <div class="tab-content" *ngIf="activeTab() === 'desc'">
+        <div [innerHTML]="descriptionHtml()"></div>
+      </div>
 
-        <div class="tab-content" *ngIf="activeTab==='review'">
-            <p>Chưa có đánh giá.</p>
-        </div>
+      <div class="tab-content" *ngIf="activeTab() === 'review'">
+        <p>Ch&#432;a c&#243; &#273;&#225;nh gi&#225;.</p>
+      </div>
 
-        <div class="tab-content" *ngIf="activeTab==='policy'">
-            <p>Bảo hành 5 năm theo chính sách MOHO.</p>
-        </div>
+      <div class="tab-content" *ngIf="activeTab() === 'policy'">
+        <p *ngIf="productData.warrantyMonths !== null; else noPolicy">
+          B&#7843;o h&#224;nh {{ productData.warrantyMonths }} th&#225;ng.
+        </p>
+        <ng-template #noPolicy>
+          <p>Th&#244;ng tin b&#7843;o h&#224;nh &#273;ang c&#7853;p nh&#7853;t.</p>
+        </ng-template>
+      </div>
     </div>
-
+  </ng-container>
 </div>
