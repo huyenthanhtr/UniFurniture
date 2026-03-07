@@ -1,0 +1,115 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Quản lý sản phẩm</h1>
+    <button class="btn btn-primary" (click)="goNew()">+ Thêm sản phẩm</button>
+  </div>
+
+  <div class="filters">
+    <input
+      type="text"
+      placeholder="Tìm theo tên hoặc mã (SKU)"
+      [(ngModel)]="q"
+      (ngModelChange)="applyFilterSort()"
+    />
+
+    <select [(ngModel)]="status" (ngModelChange)="onChangeStatus()">
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+      <option value="">Tất cả</option>
+    </select>
+
+    <div class="sort">
+      <span>Sắp xếp:</span>
+      <button class="btn btn-ghost" (click)="toggleSortUpdatedAt()">
+        Ngày cập nhật {{ sortDir==='asc'?'↑':'↓' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Sản phẩm</th>
+          <th>SKU</th>
+          <th>Brand</th>
+          <th>Danh mục</th>
+          <th>Bộ sưu tập</th>
+          <th>Status</th>
+          <th class="th-actions">Hành động</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngIf="isLoading">
+          <td colspan="7" class="state">Đang tải...</td>
+        </tr>
+
+        <tr *ngFor="let p of filtered">
+          <td class="cell-title" (click)="viewDetail(p)">
+            <div class="title">
+              <strong>{{ p.name }}</strong>
+              <div class="sub">{{ p.slug }}</div>
+            </div>
+          </td>
+          <td>{{ p.sku || '-' }}</td>
+          <td>{{ p.brand || '-' }}</td>
+          <td>{{ categoryName(p.category_id) }}</td>
+          <td>{{ collectionName(p.collection_id) }}</td>
+          <td>
+            <span class="badge" [class.badge-active]="p.status==='active'" [class.badge-inactive]="p.status==='inactive'">
+              {{ p.status || '-' }}
+            </span>
+          </td>
+          <td class="actions">
+            <button class="icon-btn" title="Sửa" (click)="goEdit(p); $event.stopPropagation()">
+              <i class="fas fa-edit"></i>
+            </button>
+
+            <button
+              class="icon-btn"
+              [ngClass]="p.status==='active' ? 'icon-danger' : 'icon-success'"
+              [title]="p.status==='active' ? 'Inactive' : 'Active'"
+              (click)="askToggleStatus(p); $event.stopPropagation()"
+            >
+              <i class="fas" [ngClass]="p.status==='active' ? 'fa-ban' : 'fa-check'"></i>
+            </button>
+          </td>
+        </tr>
+
+        <tr *ngIf="!isLoading && filtered.length===0">
+          <td colspan="7" class="state">Không có sản phẩm phù hợp.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button class="pg pg-arrow" (click)="goPrev()" [disabled]="page===1">‹</button>
+
+    <ng-container *ngFor="let p of pagesToShow()">
+      <button
+        *ngIf="p !== '...'"
+        class="pg"
+        [class.active]="p===page"
+        (click)="goPage(p)"
+      >
+        {{ p }}
+      </button>
+      <span *ngIf="p === '...'" class="pg dots">…</span>
+    </ng-container>
+
+    <button class="pg pg-arrow" (click)="goNext()" [disabled]="page===totalPages">›</button>
+  </div>
+
+  <div class="overlay" *ngIf="isLoading || showConfirm"></div>
+
+  <div class="confirm" *ngIf="showConfirm">
+    <h3>{{ confirmTitle }}</h3>
+    <p>{{ confirmMessage }}</p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
+      <button class="btn btn-danger" (click)="runConfirm()">Xác nhận</button>
+    </div>
+  </div>
+</div>
