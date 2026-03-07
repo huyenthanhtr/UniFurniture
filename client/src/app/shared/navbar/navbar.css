@@ -78,6 +78,15 @@
     transform: scaleX(1);
 }
 
+.navbar-link--accent {
+    color: #EF683A;
+    font-weight: 600;
+}
+
+.navbar-link--accent::after {
+    transform: scaleX(1);
+}
+
 .dropdown-arrow {
     margin-top: 1px;
     opacity: 0.6;

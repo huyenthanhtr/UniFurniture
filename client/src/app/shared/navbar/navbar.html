@@ -18,8 +18,8 @@
             </li>
 
             <!-- Khuyến mãi (accent) -->
-            <li class="navbar-item has-dropdown">
-                <a href="/khuyen-mai" class="navbar-link navbar-link--accent">
+            <li class="navbar-item has-dropdown" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }">
+                <a [routerLink]="['/khuyen-mai']" class="navbar-link navbar-link--accent">
                     Khuyến Mãi
                     <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
                         <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
@@ -28,8 +28,8 @@
             </li>
 
             <!-- Tin tức -->
-            <li class="navbar-item has-dropdown">
-                <a href="/tin-tuc" class="navbar-link">
+            <li class="navbar-item has-dropdown" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }">
+                <a [routerLink]="['/tin-tuc']" class="navbar-link">
                     Tin tức
                     <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
                         <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />

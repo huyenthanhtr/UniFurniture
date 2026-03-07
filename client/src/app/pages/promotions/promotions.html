@@ -1,0 +1,98 @@
+<div class="promo-page">
+  <nav class="promo-breadcrumb">
+    <a routerLink="/">Trang chu</a>
+    <span>/</span>
+    <span>Khuyen mai</span>
+  </nav>
+
+  <section class="promo-hero">
+    <div class="hero-content">
+      <p class="hero-kicker">Campaign T9.2026</p>
+      <h1>Khuyen mai noi that mua thu</h1>
+      <p class="hero-subtitle">
+        Giam sau toi 40%, combo phong theo phong cach va uu dai van chuyen mien phi.
+      </p>
+
+      <div class="hero-timer">
+        <span>{{ countdown.hours }}</span>
+        <small>Gio</small>
+        <span>{{ countdown.minutes }}</span>
+        <small>Phut</small>
+        <span>{{ countdown.seconds }}</span>
+        <small>Giay</small>
+      </div>
+
+      <div class="hero-actions">
+        <a class="btn-primary" [routerLink]="['/products']">Mua ngay</a>
+        <a class="btn-secondary" [routerLink]="['/danh-muc']">Xem danh muc</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="promo-section">
+    <div class="section-head">
+      <h2>Flash Deal hom nay</h2>
+      <p>Gia tot trong 24h cho cac san pham noi bat.</p>
+    </div>
+
+    <div class="deal-grid">
+      <article class="deal-card" *ngFor="let deal of flashDeals; trackBy: trackByDealId">
+        <div class="deal-thumb">
+          <img [src]="deal.imageUrl" [alt]="deal.title" />
+          <span class="deal-badge">-{{ discountPercent(deal) }}%</span>
+        </div>
+
+        <div class="deal-body">
+          <p class="deal-category">{{ deal.category }}</p>
+          <h3>{{ deal.title }}</h3>
+
+          <div class="deal-price">
+            <strong>{{ formatPrice(deal.salePrice) }}</strong>
+            <span>{{ formatPrice(deal.originalPrice) }}</span>
+          </div>
+
+          <div class="deal-progress">
+            <div class="deal-progress-bar" [style.width.%]="soldPercent(deal)"></div>
+          </div>
+          <p class="deal-sold">Da ban {{ deal.sold }}/{{ deal.total }}</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="promo-section vouchers">
+    <div class="section-head">
+      <h2>Ma uu dai</h2>
+      <p>Nhap ma khi thanh toan de nhan uu dai bo sung.</p>
+    </div>
+
+    <div class="voucher-grid">
+      <article class="voucher-card" *ngFor="let voucher of vouchers; trackBy: trackByVoucher">
+        <p class="voucher-code" [style.color]="voucher.color">{{ voucher.code }}</p>
+        <h3>{{ voucher.label }}</h3>
+        <p>{{ voucher.description }}</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="promo-section collections">
+    <div class="section-head">
+      <h2>Combo duoc yeu thich</h2>
+      <p>Chon nhanh bo suu tap phu hop khong gian nha ban.</p>
+    </div>
+
+    <div class="collection-grid">
+      <a
+        class="collection-card"
+        *ngFor="let collection of collections; trackBy: trackByCollection"
+        [routerLink]="[collection.route]"
+      >
+        <img [src]="collection.imageUrl" [alt]="collection.title" />
+        <div class="collection-overlay">
+          <h3>{{ collection.title }}</h3>
+          <p>{{ collection.subtitle }}</p>
+        </div>
+      </a>
+    </div>
+  </section>
+</div>
