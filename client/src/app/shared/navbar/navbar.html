@@ -1,63 +1,76 @@
-<!-- NAVBAR -->
 <nav class="moho-navbar">
-    <div class="navbar-container">
-        <ul class="navbar-list">
-            <!-- Sản phẩm -->
-            <li class="navbar-item has-dropdown" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }">
-                <a [routerLink]="['/products']" class="navbar-link">
-                    Sản phẩm
-                    <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
-                        <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
-                    </svg>
-                </a>
-            </li>
+  <div class="navbar-container">
+    <ul class="navbar-list">
+      <li
+        class="navbar-item has-dropdown"
+        routerLinkActive="navbar-item--active"
+        [routerLinkActiveOptions]="{ exact: false }"
+      >
+        <a [routerLink]="['/products']" class="navbar-link">
+          S&#7843;n ph&#7849;m
+          <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
+            <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          </svg>
+        </a>
 
-            <!-- Thiết kế - Thi công -->
-            <li class="navbar-item">
-                <a href="/thiet-ke-thi-cong" class="navbar-link">Thiết kế - Thi công</a>
-            </li>
+        <div class="dropdown-panel" role="menu" aria-label="Danh m&#7909;c s&#7843;n ph&#7849;m">
+          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'bo-suu-tap' }">
+            B&#7897; s&#432;u t&#7853;p
+            <span class="item-arrow">&#8250;</span>
+          </a>
+          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'phong-ngu' }">
+            Ph&#242;ng ng&#7911;
+            <span class="item-arrow">&#8250;</span>
+          </a>
+          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'phong-khach' }">
+            Ph&#242;ng kh&#225;ch
+            <span class="item-arrow">&#8250;</span>
+          </a>
+          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'phong-an' }">
+            Ph&#242;ng &#259;n
+            <span class="item-arrow">&#8250;</span>
+          </a>
+          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'phong-lam-viec' }">
+            Ph&#242;ng l&#224;m vi&#7879;c
+            <span class="item-arrow">&#8250;</span>
+          </a>
+          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'tu-bep' }">
+            T&#7911; b&#7871;p
+            <span class="item-arrow">&#8250;</span>
+          </a>
+          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'nem' }">
+            N&#7879;m
+            <span class="item-arrow">&#8250;</span>
+          </a>
+        </div>
+      </li>
 
-            <!-- Khuyến mãi (accent) -->
-            <li class="navbar-item has-dropdown" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }">
-                <a [routerLink]="['/khuyen-mai']" class="navbar-link navbar-link--accent">
-                    Khuyến Mãi
-                    <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
-                        <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
-                    </svg>
-                </a>
-            </li>
+      <li class="navbar-item" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }">
+        <a [routerLink]="['/khuyen-mai']" class="navbar-link">
+          Khuy&#7871;n m&#227;i
+        </a>
+      </li>
 
-            <!-- Tin tức -->
-            <li class="navbar-item has-dropdown" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }">
-                <a [routerLink]="['/tin-tuc']" class="navbar-link">
-                    Tin tức
-                    <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
-                        <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
-                    </svg>
-                </a>
-            </li>
+      <li class="navbar-item" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }">
+        <a [routerLink]="['/tin-tuc']" class="navbar-link">Tin t&#7913;c</a>
+      </li>
 
-            <!-- Về UniFurniture -->
-            <li class="navbar-item">
-                <a href="/ve-unifurniture" class="navbar-link">Về UniFurniture</a>
-            </li>
+      <li class="navbar-item">
+        <a href="/ve-unifurniture" class="navbar-link">V&#7873; UniFurniture</a>
+      </li>
 
-            <!-- Cửa hàng -->
-            <li class="navbar-item">
-                <a href="/cua-hang" class="navbar-link">Cửa hàng</a>
-            </li>
+      <li class="navbar-item">
+        <a href="/cua-hang" class="navbar-link">C&#7917;a h&#224;ng</a>
+      </li>
 
-            <!-- Thử ngay AR -->
-            <li class="navbar-item navbar-item--ar">
-                <a routerLink="/ar" class="navbar-link navbar-link--ar">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                    </svg>
-                    Thử ngay AR
-                </a>
-            </li>
-
-        </ul>
-    </div>
+      <li class="navbar-item navbar-item--ar">
+        <a routerLink="/ar" class="navbar-link navbar-link--ar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
+          Th&#7917; ngay AR
+        </a>
+      </li>
+    </ul>
+  </div>
 </nav>

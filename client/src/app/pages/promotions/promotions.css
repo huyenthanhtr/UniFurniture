@@ -153,6 +153,16 @@
   margin-top: 28px;
 }
 
+.state-message {
+  margin: 16px 0;
+  color: #5c5046;
+  font-size: 15px;
+}
+
+.state-error {
+  color: #b83232;
+}
+
 .section-head {
   display: flex;
   align-items: end;
@@ -187,6 +197,9 @@
   overflow: hidden;
   border: 1px solid #ede7df;
   transition: transform 0.24s ease, box-shadow 0.24s ease;
+  text-decoration: none;
+  color: inherit;
+  display: block;
 }
 
 .deal-card:hover {

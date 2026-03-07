@@ -106,6 +106,7 @@
     border-radius: 10px;
     font-weight: 600;
     letter-spacing: 0.2px;
+    cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -118,6 +119,7 @@
     border-radius: 10px;
     font-weight: 600;
     letter-spacing: 0.2px;
+    cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -125,4 +127,11 @@
 .btn-buy:hover {
     transform: translateY(-1px);
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+}
+
+.add-message {
+    margin-top: 10px;
+    color: #1f7a45;
+    font-size: 14px;
+    font-weight: 500;
 }

@@ -1,65 +1,70 @@
 <div class="category-page">
+  <nav class="breadcrumb">
+    <a routerLink="/">Trang ch&#7911;</a>
+    <span class="sep">/</span>
+    <a routerLink="/danh-muc">Danh m&#7909;c</a>
+    <span class="sep">/</span>
+    <span class="current">{{ category?.name || groupTitle || 'S&#7843;n ph&#7849;m' }}</span>
+  </nav>
 
-    <!-- Breadcrumb -->
-    <nav class="breadcrumb">
-        <a routerLink="/">Trang chủ</a>
-        <span class="sep">/</span>
-        <a routerLink="/danh-muc">Danh mục</a>
-        <span class="sep">/</span>
-        <span class="current">{{ category?.name || groupTitle }}</span>
-    </nav>
+  <div class="category-banner" *ngIf="slideshowImages.length > 0">
+    <img
+      *ngIf="slideshowImages.length === 1"
+      [src]="slideshowImages[0]"
+      [alt]="category?.name || groupTitle"
+      class="banner-img"
+      onerror="this.style.display='none'"
+    />
 
-    <!-- Banner (Single or Slideshow) -->
-    <div class="category-banner" *ngIf="slideshowImages.length > 0">
-        <!-- If only 1 image, just show it normally -->
-        <img *ngIf="slideshowImages.length === 1" [src]="slideshowImages[0]" [alt]="category?.name || groupTitle"
-            class="banner-img" onerror="this.style.display='none'" />
+    <ng-container *ngIf="slideshowImages.length > 1">
+      <img
+        *ngFor="let img of slideshowImages; let i = index"
+        [src]="img"
+        [alt]="groupTitle"
+        class="banner-img slide"
+        [class.active]="i === currentSlideIndex"
+        onerror="this.style.display='none'"
+      />
+    </ng-container>
+  </div>
 
-        <!-- If multiple, show slideshow with fade effect -->
-        <ng-container *ngIf="slideshowImages.length > 1">
-            <img *ngFor="let img of slideshowImages; let i = index" [src]="img" [alt]="groupTitle"
-                class="banner-img slide" [class.active]="i === currentSlideIndex" onerror="this.style.display='none'" />
-        </ng-container>
+  <div class="category-banner category-banner--placeholder" *ngIf="slideshowImages.length === 0">
+    <div class="banner-placeholder"></div>
+  </div>
+
+  <div class="page-header">
+    <h1 class="page-title">{{ category?.name || groupTitle || 'S&#7843;n ph&#7849;m' }}</h1>
+    <span class="total-count" *ngIf="!loading">({{ totalItems }} s&#7843;n ph&#7849;m)</span>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+  </div>
+
+  <div class="product-grid-wrap" *ngIf="!loading">
+    <div class="product-grid" *ngIf="products.length > 0; else emptyState">
+      <app-product-card *ngFor="let p of products" [product]="p"></app-product-card>
     </div>
 
-    <div class="category-banner category-banner--placeholder" *ngIf="slideshowImages.length === 0">
-        <div class="banner-placeholder"></div>
+    <ng-template #emptyState>
+      <div class="empty-state">Kh&#244;ng t&#236;m th&#7845;y s&#7843;n ph&#7849;m n&#224;o.</div>
+    </ng-template>
+
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+        &#8249;
+      </button>
+      <button
+        *ngFor="let p of pageNumbers"
+        class="page-btn"
+        [class.active]="p === currentPage"
+        (click)="goToPage(p)"
+      >
+        {{ p }}
+      </button>
+      <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+        &#8250;
+      </button>
     </div>
-
-    <!-- Page header -->
-    <div class="page-header">
-        <h1 class="page-title">{{ category?.name || groupTitle || 'Sản phẩm' }}</h1>
-        <span class="total-count" *ngIf="!loading">({{ totalItems }} sản phẩm)</span>
-    </div>
-
-    <!-- Loading -->
-    <div class="loading-state" *ngIf="loading">
-        <div class="spinner"></div>
-    </div>
-
-    <!-- Product grid -->
-    <div class="product-grid-wrap" *ngIf="!loading">
-        <div class="product-grid" *ngIf="products.length > 0; else emptyState">
-            <app-product-card *ngFor="let p of products" [product]="p"></app-product-card>
-        </div>
-
-        <ng-template #emptyState>
-            <div class="empty-state">Không tìm thấy sản phẩm nào.</div>
-        </ng-template>
-
-        <!-- Pagination -->
-        <div class="pagination" *ngIf="totalPages > 1">
-            <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-                &#8249;
-            </button>
-            <button *ngFor="let p of pageNumbers" class="page-btn" [class.active]="p === currentPage"
-                (click)="goToPage(p)">
-                {{ p }}
-            </button>
-            <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
-                &#8250;
-            </button>
-        </div>
-    </div>
-
+  </div>
 </div>

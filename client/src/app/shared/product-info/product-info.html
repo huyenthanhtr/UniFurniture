@@ -5,23 +5,23 @@
 
   <div class="price">
     <span class="sale">
-      <ng-container *ngIf="product.price !== null; else contactPrice">{{ product.price | number }}d</ng-container>
+      <ng-container *ngIf="product.price !== null; else contactPrice">{{ product.price | number }}&#273;</ng-container>
     </span>
-    <span class="old" *ngIf="product.originalPrice !== null">{{ product.originalPrice | number }}d</span>
+    <span class="old" *ngIf="product.originalPrice !== null">{{ product.originalPrice | number }}&#273;</span>
   </div>
 
   <div class="section">
-    <div class="label">Màu sắc</div>
-    <div>{{ product.colors.length > 0 ? product.colors.join(', ') : 'Đang cập nhật' }}</div>
+    <div class="label">M&#224;u s&#7855;c</div>
+    <div>{{ product.colors.length > 0 ? product.colors.join(', ') : '&#272;ang c&#7853;p nh&#7853;t' }}</div>
   </div>
 
   <div class="section">
-    <div class="label">Kích thước</div>
-    <div>{{ product.sizeText || 'Đang cập nhật' }}</div>
+    <div class="label">K&#237;ch th&#432;&#7899;c</div>
+    <div>{{ product.sizeText || '&#272;ang c&#7853;p nh&#7853;t' }}</div>
   </div>
 
   <div class="section" *ngIf="product.materialText">
-    <div class="label">Chất liệu</div>
+    <div class="label">Ch&#7845;t li&#7879;u</div>
     <div>{{ product.materialText }}</div>
   </div>
 
@@ -31,13 +31,14 @@
   </div>
 
   <div class="quantity">
-    <button type="button" class="qty-btn" (click)="decrease()" aria-label="Giảm số lượng">-</button>
+    <button type="button" class="qty-btn" (click)="decrease()" aria-label="Gi&#7843;m s&#7889; l&#432;&#7907;ng">-</button>
     <span class="qty-value">{{ quantity }}</span>
-    <button type="button" class="qty-btn" (click)="increase()" aria-label="Tăng số lượng">+</button>
+    <button type="button" class="qty-btn" (click)="increase()" aria-label="T&#259;ng s&#7889; l&#432;&#7907;ng">+</button>
   </div>
 
-  <button class="btn-add">THÊM VÀO GIỎ</button>
-  <button class="btn-buy">MUA NGAY</button>
+  <button type="button" class="btn-add" (click)="addToCart()">THÊM VÀO GIỎ</button>
+  <button type="button" class="btn-buy" (click)="buyNow()">MUA NGAY</button>
+  <p class="add-message" *ngIf="addMessage">{{ addMessage }}</p>
 </div>
 
-<ng-template #contactPrice>Liên hệ</ng-template>
+<ng-template #contactPrice>Li&#234;n h&#7879;</ng-template>

@@ -1,201 +1,391 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { of, Subscription, timer } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
 import { ProductsService } from '../../services/product/product';
 import { ProductCardComponent } from '../../shared/product-card/product-card';
-import { forkJoin, of, timer, Subscription } from 'rxjs';
-import { catchError } from 'rxjs/operators';
 
 const BASE_URL = 'http://localhost:3000/api';
 
 interface Category {
-    _id: string;
-    name: string;
-    slug: string;
-    image_url?: string;
-    description?: string;
+  _id: string;
+  name: string;
+  slug: string;
+  image_url?: string;
+  description?: string;
 }
+
+interface CategoryGroup {
+  title: string;
+  categorySlugs: string[];
+}
+
+const CATEGORY_GROUPS: Record<string, CategoryGroup> = {
+  'bo-suu-tap': {
+    title: 'B\u1ed9 s\u01b0u t\u1eadp',
+    categorySlugs: [],
+  },
+  'phong-ngu': {
+    title: 'Ph\u00f2ng ng\u1ee7',
+    categorySlugs: ['combo-phong-ngu', 'tu-quan-ao', 'giuong-ngu', 'tu-dau-giuong', 'ban-trang-diem'],
+  },
+  'phong-khach': {
+    title: 'Ph\u00f2ng kh\u00e1ch',
+    categorySlugs: ['ghe-sofa', 'ban-sofa-ban-cafe-ban-tra', 'tu-ke-tivi', 'tu-giay-tu-trang-tri', 'tu-ke'],
+  },
+  'phong-an': {
+    title: 'Ph\u00f2ng \u0103n',
+    categorySlugs: ['ban-an', 'ghe-an', 'bo-ban-an'],
+  },
+  'phong-lam-viec': {
+    title: 'Ph\u00f2ng l\u00e0m vi\u1ec7c',
+    categorySlugs: ['ban-lam-viec', 'ghe-van-phong'],
+  },
+  'tu-bep': {
+    title: 'T\u1ee7 b\u1ebfp',
+    categorySlugs: ['tu-ke'],
+  },
+  nem: {
+    title: 'N\u1ec7m',
+    categorySlugs: ['combo-phong-ngu', 'giuong-ngu'],
+  },
+};
+
+const KEYWORDS_BY_SLUG: Record<string, string[]> = {
+  'bo-suu-tap': [],
+  'phong-ngu': ['phong ngu', 'giuong', 'tu quan ao', 'tu dau giuong', 'ban trang diem', 'nem'],
+  'phong-khach': ['phong khach', 'sofa', 'ban sofa', 'ban cafe', 'ban tra', 'ke tivi', 'tu giay'],
+  'phong-an': ['phong an', 'ban an', 'ghe an', 'bo ban an'],
+  'phong-lam-viec': ['lam viec', 'ban lam viec', 'ghe van phong'],
+  'tu-bep': ['tu bep', 'tu ke'],
+  nem: ['nem', 'giuong'],
+};
 
 @Component({
-    selector: 'app-category-page',
-    standalone: true,
-    imports: [CommonModule, RouterLink, ProductCardComponent],
-    templateUrl: './category-page.html',
-    styleUrl: './category-page.css',
+  selector: 'app-category-page',
+  standalone: true,
+  imports: [CommonModule, RouterLink, ProductCardComponent],
+  templateUrl: './category-page.html',
+  styleUrl: './category-page.css',
 })
 export class CategoryPageComponent implements OnInit, OnDestroy {
-    category: Category | null = null;
-    products: any[] = [];
-    loading = true;
-    error = '';
+  category: Category | null = null;
+  products: any[] = [];
+  loading = true;
 
-    currentPage = 1;
-    totalPages = 1;
-    totalItems = 0;
-    readonly limit = 16;
+  currentPage = 1;
+  totalPages = 1;
+  totalItems = 0;
+  readonly limit = 16;
 
-    groupTitle = '';
-    categoryIds = '';   // comma-separated IDs
+  groupTitle = '';
+  categoryIds = '';
+  currentSlug = '';
+  keywordFilters: string[] = [];
+  localFilteredProducts: any[] | null = null;
 
-    slideshowImages: string[] = [];
-    currentSlideIndex = 0;
-    private slideSubscription?: Subscription;
+  slideshowImages: string[] = [];
+  currentSlideIndex = 0;
+  private slideSubscription?: Subscription;
 
-    constructor(
-        private route: ActivatedRoute,
-        private http: HttpClient,
-        private productsService: ProductsService,
-        private cdr: ChangeDetectorRef
-    ) { }
+  constructor(
+    private route: ActivatedRoute,
+    private http: HttpClient,
+    private productsService: ProductsService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
-    ngOnInit() {
-        this.route.queryParams.subscribe(params => {
-            this.groupTitle = params['title'] || '';
-            this.categoryIds = params['categories'] || '';
-            const slug = params['slug'] || '';
+  ngOnInit(): void {
+    this.route.queryParams.subscribe((params) => {
+      this.groupTitle = String(params['title'] || '').trim();
+      this.categoryIds = String(params['categories'] || '').trim();
+      const slug = String(params['slug'] || '').trim().toLowerCase();
+      this.currentSlug = slug;
+      this.keywordFilters = this.getKeywordFilters(slug, this.groupTitle);
+      this.localFilteredProducts = null;
 
-            this.stopSlideshow();
-            this.slideshowImages = [];
-            this.category = null;
+      this.stopSlideshow();
+      this.slideshowImages = [];
+      this.category = null;
 
-            if (slug) {
-                // Fetch banner for single category asynchronously
-                this.loadBySlug(slug);
-            } else if (this.categoryIds) {
-                // Fetch banner for multi-category asynchronously
-                this.loadMultiCategoryBanner(this.categoryIds);
-            }
+      if (this.categoryIds) {
+        this.loadMultiCategoryBanner(this.categoryIds);
+        this.loadProducts(this.categoryIds, 1, this.keywordFilters);
+        return;
+      }
 
-            // ALWAYS load products immediately (parallel with banner)
-            // If we have categoryIds (group), use it. 
-            // If we only have slug... wait, `loadProducts` needs the _id which we don't have yet.
-            // So if we ONLY have slug, we MUST fetch category first to get _id.
+      if (slug) {
+        this.loadBySlug(slug);
+        return;
+      }
 
-            if (this.categoryIds) {
-                this.loadProducts(this.categoryIds, 1);
-            } else if (slug) {
-                // We have no choice but to wait for slug -> _id mapping
-            } else {
-                // fallback to load all
-                this.loadProducts('', 1);
-            }
-        });
-    }
+      this.loadProducts('', 1);
+    });
+  }
 
-    ngOnDestroy() {
-        this.stopSlideshow();
-    }
+  ngOnDestroy(): void {
+    this.stopSlideshow();
+  }
 
-    loadBySlug(slug: string) {
-        // We only show loading for banner if we don't have products loading
-        const isStandalone = !this.categoryIds;
-        if (isStandalone) this.loading = true;
+  private loadBySlug(slug: string): void {
+    this.loading = true;
 
-        this.http
-            .get<any>(`${BASE_URL}/categories?slug=${slug}&limit=1`)
-            .pipe(catchError(() => of({ items: [] })))
-            .subscribe(res => {
-                const items: Category[] = res.items || [];
-                this.category = items[0] || null;
+    this.http
+      .get<any>(`${BASE_URL}/categories?slug=${slug}&limit=1`)
+      .pipe(catchError(() => of({ items: [] })))
+      .subscribe((res) => {
+        const items: Category[] = Array.isArray(res?.items) ? res.items : [];
+        const matchedCategory = items[0] || null;
 
-                // Single banner
-                if (this.category && this.category.image_url) {
-                    this.slideshowImages = [this.category.image_url];
-                }
-
-                if (isStandalone && this.category) {
-                    this.loadProducts(this.category._id, 1);
-                } else if (isStandalone) {
-                    this.loading = false;
-                }
-            });
-    }
-
-    loadMultiCategoryBanner(categoryIds: string) {
-        // Runs in background, doesn't block UI
-        this.http.get<any>(`${BASE_URL}/categories?limit=100`)
-            .pipe(catchError(() => of({ items: [] })))
-            .subscribe(res => {
-                const allCats: Category[] = res.items || [];
-                const idsList = categoryIds.split(',');
-                const matchedCats = allCats.filter(c => idsList.includes(c._id) && c.image_url);
-
-                this.slideshowImages = matchedCats.map(c => c.image_url as string);
-
-                if (this.slideshowImages.length > 1) {
-                    this.startSlideshow();
-                }
-                this.cdr.detectChanges();
-            });
-    }
-
-    startSlideshow() {
-        this.currentSlideIndex = 0;
-        this.slideSubscription = timer(2000, 2000).subscribe(() => {
-            this.currentSlideIndex = (this.currentSlideIndex + 1) % this.slideshowImages.length;
-            this.cdr.detectChanges();
-        });
-    }
-
-    stopSlideshow() {
-        if (this.slideSubscription) {
-            this.slideSubscription.unsubscribe();
-            this.slideSubscription = undefined;
+        if (matchedCategory) {
+          this.category = matchedCategory;
+          if (matchedCategory.image_url) {
+            this.slideshowImages = [matchedCategory.image_url];
+          }
+          this.keywordFilters = this.getKeywordFilters(slug, matchedCategory.name);
+          this.loadProducts(matchedCategory._id, 1, this.keywordFilters);
+          return;
         }
+
+        this.loadByGroupSlug(slug);
+      });
+  }
+
+  private loadByGroupSlug(slug: string): void {
+    const group = CATEGORY_GROUPS[slug];
+
+    if (!group) {
+      this.finishWithEmptyState();
+      return;
     }
 
-    loadProducts(categoryIds: string, page: number) {
-        this.loading = true;
-        this.productsService
-            .getProducts({
-                page,
-                limit: this.limit,
-                sortBy: 'bestSelling',
-                order: 'desc',
-                category: categoryIds,
-            })
-            .pipe(catchError(() => of({ items: [], total: 0, totalPages: 1, page: 1 })))
-            .subscribe(res => {
-                this.products = (res.items || []).map((p: any) => this.mapProduct(p));
-                this.currentPage = res.page || 1;
-                this.totalPages = res.totalPages || 1;
-                this.totalItems = res.total || 0;
-                this.loading = false;
-                this.cdr.detectChanges();
-            });
+    if (!this.groupTitle) {
+      this.groupTitle = group.title;
     }
 
-    mapProduct(p: any): any {
-        return {
-            _id: p._id,
-            name: p.name,
-            imageUrl: p.thumbnail || p.thumbnail_url || 'assets/images/placeholder.png',
-            price: p.min_price || p.price || 0,
-            originalPrice: null,
-            soldCount: p.sold ?? 0,
-            discountBadge: null,
-            reviewsCount: 0,
-            colors: [],
-        };
+    this.http
+      .get<any>(`${BASE_URL}/categories?limit=200`)
+      .pipe(catchError(() => of({ items: [] })))
+      .subscribe((res) => {
+        const allCategories: Category[] = Array.isArray(res?.items) ? res.items : [];
+        const matchedCategories =
+          group.categorySlugs.length > 0
+            ? allCategories.filter((category) => group.categorySlugs.includes(category.slug))
+            : allCategories;
+
+        const ids = matchedCategories.map((category) => category._id).filter(Boolean);
+        this.categoryIds = ids.join(',');
+        this.keywordFilters = this.getKeywordFilters(slug, this.groupTitle);
+
+        this.slideshowImages = matchedCategories
+          .map((category) => category.image_url || '')
+          .filter((imageUrl) => Boolean(imageUrl));
+
+        if (this.slideshowImages.length > 1) {
+          this.startSlideshow();
+        }
+
+        this.loadProductsByKeywords(this.keywordFilters, 1);
+      });
+  }
+
+  private loadMultiCategoryBanner(categoryIds: string): void {
+    this.http
+      .get<any>(`${BASE_URL}/categories?limit=200`)
+      .pipe(catchError(() => of({ items: [] })))
+      .subscribe((res) => {
+        const allCategories: Category[] = Array.isArray(res?.items) ? res.items : [];
+        const idsList = categoryIds
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean);
+        const matchedCategories = allCategories.filter(
+          (category) => idsList.includes(category._id) && Boolean(category.image_url),
+        );
+
+        this.slideshowImages = matchedCategories
+          .map((category) => category.image_url || '')
+          .filter((imageUrl) => Boolean(imageUrl));
+
+        if (this.slideshowImages.length > 1) {
+          this.startSlideshow();
+        }
+
+        this.cdr.detectChanges();
+      });
+  }
+
+  private startSlideshow(): void {
+    this.currentSlideIndex = 0;
+    this.slideSubscription = timer(2000, 2000).subscribe(() => {
+      if (!this.slideshowImages.length) {
+        return;
+      }
+      this.currentSlideIndex = (this.currentSlideIndex + 1) % this.slideshowImages.length;
+      this.cdr.detectChanges();
+    });
+  }
+
+  private stopSlideshow(): void {
+    if (!this.slideSubscription) {
+      return;
     }
 
-    goToPage(page: number) {
-        if (page < 1 || page > this.totalPages) return;
-        const ids = this.category ? this.category._id : this.categoryIds;
-        this.loadProducts(ids, page);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.slideSubscription.unsubscribe();
+    this.slideSubscription = undefined;
+  }
+
+  private loadProducts(categoryIds: string, page: number, fallbackKeywords: string[] = []): void {
+    this.loading = true;
+    this.localFilteredProducts = null;
+
+    this.productsService
+      .getProducts({
+        page,
+        limit: this.limit,
+        sortBy: 'bestSelling',
+        order: 'desc',
+        category: categoryIds,
+      })
+      .pipe(catchError(() => of({ items: [], total: 0, totalPages: 1, page: 1 })))
+      .subscribe((res) => {
+        const items: any[] = Array.isArray(res?.items) ? res.items : [];
+
+        if (categoryIds && page === 1 && items.length === 0 && fallbackKeywords.length > 0) {
+          this.loadProductsByKeywords(fallbackKeywords, 1);
+          return;
+        }
+
+        this.products = items.map((product: any) => this.mapProduct(product));
+        this.currentPage = Number(res?.page) || 1;
+        this.totalPages = Number(res?.totalPages) || 1;
+        this.totalItems = Number(res?.total) || 0;
+        this.loading = false;
+        this.cdr.detectChanges();
+      });
+  }
+
+  private loadProductsByKeywords(keywords: string[], page: number): void {
+    this.loading = true;
+
+    this.productsService
+      .getProducts({
+        page: 1,
+        limit: 500,
+        sortBy: 'bestSelling',
+        order: 'desc',
+      })
+      .pipe(catchError(() => of({ items: [] })))
+      .subscribe((res) => {
+        const allItems: any[] = Array.isArray(res?.items) ? res.items : [];
+        const filteredItems =
+          keywords.length > 0
+            ? allItems.filter((item: any) => this.matchesKeywords(item?.name || '', keywords))
+            : allItems;
+
+        this.localFilteredProducts = filteredItems.map((item: any) => this.mapProduct(item));
+        this.applyLocalPagination(page);
+      });
+  }
+
+  private finishWithEmptyState(): void {
+    this.products = [];
+    this.currentPage = 1;
+    this.totalPages = 1;
+    this.totalItems = 0;
+    this.localFilteredProducts = [];
+    this.loading = false;
+    this.cdr.detectChanges();
+  }
+
+  private applyLocalPagination(page: number): void {
+    const source = this.localFilteredProducts || [];
+    this.totalItems = source.length;
+    this.totalPages = Math.max(Math.ceil(this.totalItems / this.limit), 1);
+    this.currentPage = Math.min(Math.max(page, 1), this.totalPages);
+
+    const start = (this.currentPage - 1) * this.limit;
+    this.products = source.slice(start, start + this.limit);
+    this.loading = false;
+    this.cdr.detectChanges();
+  }
+
+  private getKeywordFilters(slug: string, name: string): string[] {
+    if (slug && KEYWORDS_BY_SLUG[slug]) {
+      return KEYWORDS_BY_SLUG[slug].map((keyword) => this.normalizeText(keyword)).filter(Boolean);
     }
 
-    get pageNumbers(): number[] {
-        const pages: number[] = [];
-        for (let i = 1; i <= this.totalPages; i++) pages.push(i);
-        return pages;
+    if (!name) {
+      return [];
     }
 
-    formatPrice(price: number): string {
-        if (!price) return '';
-        return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+    return [this.normalizeText(name)].filter(Boolean);
+  }
+
+  private matchesKeywords(name: string, keywords: string[]): boolean {
+    if (!keywords.length) {
+      return true;
     }
+
+    const normalizedName = this.normalizeText(name);
+    return keywords.some((keyword) => normalizedName.includes(keyword));
+  }
+
+  private normalizeText(value: string): string {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  private mapProduct(product: any): any {
+    const source = product || {};
+    return {
+      _id: source._id,
+      name: source.name || 'S\u1ea3n ph\u1ea9m',
+      imageUrl: source.thumbnail || source.thumbnail_url || 'assets/images/placeholder.png',
+      price: source.min_price || source.price || 0,
+      originalPrice: null,
+      soldCount: source.sold ?? 0,
+      discountBadge: null,
+      reviewsCount: 0,
+      colors: [],
+    };
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) {
+      return;
+    }
+
+    if (this.localFilteredProducts) {
+      this.applyLocalPagination(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    const ids = this.category ? this.category._id : this.categoryIds;
+    this.loadProducts(ids, page, this.keywordFilters);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  get pageNumbers(): number[] {
+    const pages: number[] = [];
+    for (let i = 1; i <= this.totalPages; i += 1) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  formatPrice(price: number): string {
+    if (!price) {
+      return '';
+    }
+
+    return `${new Intl.NumberFormat('vi-VN').format(price)}\u0111`;
+  }
 }
-
