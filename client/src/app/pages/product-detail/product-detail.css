@@ -83,6 +83,40 @@
 
 .tab-content {
     padding: 20px 0;
+    line-height: 1.6;
+}
+
+.tab-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.status-message {
+    margin: 24px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.status-error {
+    color: #c0392b;
+}
+
+.status-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 24px 0;
+}
+
+.retry-btn {
+    border: 1px solid #ef683a;
+    background: #fff;
+    color: #ef683a;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 /* Responsive */

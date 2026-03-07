@@ -1,43 +1,43 @@
 <div class="info-wrapper">
+  <h1>{{ product.name }}</h1>
 
-    <h1>{{ product.name }}</h1>
+  <div class="rating">&#9733;&#9733;&#9733;&#9733;&#9733; <span>(0)</span></div>
 
-    <!-- Rating -->
-    <div class="rating">
-        ★★★★★ <span>(5)</span>
-    </div>
+  <div class="price">
+    <span class="sale">
+      <ng-container *ngIf="product.price !== null; else contactPrice">{{ product.price | number }}d</ng-container>
+    </span>
+    <span class="old" *ngIf="product.originalPrice !== null">{{ product.originalPrice | number }}d</span>
+  </div>
 
-    <!-- Price -->
-    <div class="price">
-        <span class="sale">{{ product.price | number }}đ</span>
-        <span class="old">{{ product.oldPrice | number }}đ</span>
-    </div>
+  <div class="section">
+    <div class="label">Màu sắc</div>
+    <div>{{ product.colors.length > 0 ? product.colors.join(', ') : 'Đang cập nhật' }}</div>
+  </div>
 
-    <!-- Color -->
-    <div class="section">
-        <div class="label">Màu sắc</div>
-        <div class="colors">
-            <span class="color black"></span>
-            <span class="color gray"></span>
-            <span class="color beige"></span>
-        </div>
-    </div>
+  <div class="section">
+    <div class="label">Kích thước</div>
+    <div>{{ product.sizeText || 'Đang cập nhật' }}</div>
+  </div>
 
-    <!-- Size -->
-    <div class="section">
-        <div class="label">Kích thước</div>
-        <div>Dài 180cm x Rộng 85cm x Cao 78cm</div>
-    </div>
+  <div class="section" *ngIf="product.materialText">
+    <div class="label">Chất liệu</div>
+    <div>{{ product.materialText }}</div>
+  </div>
 
-    <!-- Quantity -->
-    <div class="quantity">
-        <button (click)="decrease()">-</button>
-        <span>{{ quantity }}</span>
-        <button (click)="increase()">+</button>
-    </div>
+  <div class="section" *ngIf="product.sku">
+    <div class="label">SKU</div>
+    <div>{{ product.sku }}</div>
+  </div>
 
-    <!-- Buttons -->
-    <button class="btn-add">THÊM VÀO GIỎ</button>
-    <button class="btn-buy">MUA NGAY</button>
+  <div class="quantity">
+    <button type="button" class="qty-btn" (click)="decrease()" aria-label="Giảm số lượng">-</button>
+    <span class="qty-value">{{ quantity }}</span>
+    <button type="button" class="qty-btn" (click)="increase()" aria-label="Tăng số lượng">+</button>
+  </div>
 
+  <button class="btn-add">THÊM VÀO GIỎ</button>
+  <button class="btn-buy">MUA NGAY</button>
 </div>
+
+<ng-template #contactPrice>Liên hệ</ng-template>

@@ -7,8 +7,8 @@ export const routes: Routes = [
     { path: 'ar', component: ArViewer },
     { path: 'ar-viewer', component: ArViewer },
     // Listing
-    { path: 'product', component: ProductComponent },
+    { path: 'products', component: ProductComponent },
 
     // Detail
-    { path: 'product/:id', component: ProductDetailComponent },
+    { path: 'products/:id', component: ProductDetailComponent },
 ];

@@ -68,17 +68,13 @@
     transform: scaleX(1);
 }
 
-.navbar-link--accent {
+.navbar-item--active>.navbar-link {
     color: #EF683A;
     font-weight: 600;
 }
 
-.navbar-link--accent:hover {
-    color: #d45520;
-}
-
-.navbar-link--accent::after {
-    background: #d45520;
+.navbar-item--active>.navbar-link::after {
+    transform: scaleX(1);
 }
 
 .dropdown-arrow {
@@ -129,3 +125,4 @@
         box-shadow: 0 4px 22px rgba(201, 168, 76, 0.65);
     }
 }
+

@@ -77,3 +77,62 @@
 .main-content {
     width: 100%;
 }
+
+.status-message {
+    margin: 24px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.status-error {
+    color: #c0392b;
+}
+
+.status-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 24px 0;
+}
+
+.retry-btn {
+    border: 1px solid #ef683a;
+    background: #fff;
+    color: #ef683a;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+}
+
+.page-btn {
+    min-width: 42px;
+    height: 38px;
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    color: #333;
+    font-size: 14px;
+    padding: 0 12px;
+    border-radius: 6px;
+}
+
+.page-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.page-btn.page-number.active {
+    border-color: #ef683a;
+    background: #ef683a;
+    color: #fff;
+    font-weight: 700;
+}

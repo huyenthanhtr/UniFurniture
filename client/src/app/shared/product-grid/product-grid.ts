@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductCardComponent } from '../product-card/product-card';
+import { ProductListItem } from '../../services/product-data.service';
 
 @Component({
     selector: 'app-product-grid',
@@ -11,10 +12,10 @@ import { ProductCardComponent } from '../product-card/product-card';
 })
 export class ProductGridComponent {
 
-    @Input() products: any[] = [];
+    @Input() products: ProductListItem[] = [];
 
-    trackById(index: number, item: any) {
-        return item?.id ?? index;
+    trackById(index: number, item: ProductListItem): string | number {
+        return item.id || index;
     }
 
 }

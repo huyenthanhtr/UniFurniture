@@ -3,11 +3,11 @@
     <div class="navbar-container">
         <ul class="navbar-list">
             <!-- Sản phẩm -->
-            <li class="navbar-item has-dropdown">
-                <a href="/products" class="navbar-link">
+            <li class="navbar-item has-dropdown" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }">
+                <a [routerLink]="['/products']" class="navbar-link">
                     Sản phẩm
                     <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
-                        <path d="M1 1L5 5L9 1" stroke="#434343" stroke-width="1.2" stroke-linecap="round" />
+                        <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
                     </svg>
                 </a>
             </li>
@@ -19,10 +19,10 @@
 
             <!-- Khuyến mãi (accent) -->
             <li class="navbar-item has-dropdown">
-                <a href="/khuyen-mai" class="navbar-link navbar-link--accent">
+                <a href="/khuyen-mai" class="navbar-link">
                     Khuyến Mãi
                     <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
-                        <path d="M1 1L5 5L9 1" stroke="#EF683A" stroke-width="1.2" stroke-linecap="round" />
+                        <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
                     </svg>
                 </a>
             </li>
@@ -32,7 +32,7 @@
                 <a href="/tin-tuc" class="navbar-link">
                     Tin tức
                     <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
-                        <path d="M1 1L5 5L9 1" stroke="#434343" stroke-width="1.2" stroke-linecap="round" />
+                        <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
                     </svg>
                 </a>
             </li>

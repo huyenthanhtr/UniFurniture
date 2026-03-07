@@ -1,28 +1,57 @@
 <div class="product-page">
-    <nav class="breadcrumb">
-        <div class="container">
-            <a href="/">Trang chủ</a> <span>/</span> <a href="/danh-muc">Danh mục</a> <span>/</span> <span
-                class="current">Nội Thất Phòng Ngủ</span>
-        </div>
-    </nav>
+  <nav class="breadcrumb">
+    <div class="container">
+      <a routerLink="/">Trang ch&#7911;</a>
+      <span>/</span>
+      <span>Danh m&#7909;c</span>
+      <span>/</span>
+      <span class="current">T&#7845;t c&#7843; s&#7843;n ph&#7849;m</span>
+    </div>
+  </nav>
 
-    <div class="product-banner">
-        <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=1920"
-            alt="Banner Nội thất phòng ngủ" class="banner-img">
+  <div class="product-banner">
+    <img
+      src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=1920"
+      alt="Banner t&#7845;t c&#7843; s&#7843;n ph&#7849;m"
+      class="banner-img"
+    />
+  </div>
+
+  <div class="container content-container">
+    <div class="page-header">
+      <h1 class="page-title">T&#7845;t c&#7843; s&#7843;n ph&#7849;m</h1>
+      <app-product-sort></app-product-sort>
     </div>
 
-    <div class="container content-container">
-        <div class="page-header">
-            <h1 class="page-title">Nội thất phòng ngủ</h1>
-            <app-product-sort></app-product-sort>
-        </div>
-
-        <div class="filter-section">
-            <app-product-filter></app-product-filter>
-        </div>
-
-        <main class="main-content">
-            <app-product-grid></app-product-grid>
-        </main>
+    <div class="filter-section">
+      <app-product-filter></app-product-filter>
     </div>
+
+    <main class="main-content">
+      <p *ngIf="isLoading()" class="status-message">Dang tai san pham...</p>
+      <div *ngIf="!isLoading() && errorMessage()" class="status-block">
+        <p class="status-message status-error">{{ errorMessage() }}</p>
+        <button class="retry-btn" (click)="retry()">Tai lai</button>
+      </div>
+
+      <ng-container *ngIf="!isLoading() && !errorMessage()">
+        <app-product-grid [products]="products()"></app-product-grid>
+
+        <div class="pagination" *ngIf="totalPages() > 1">
+          <button class="page-btn" (click)="previousPage()" [disabled]="currentPage() === 1">Previous</button>
+
+          <button
+            class="page-btn page-number"
+            *ngFor="let page of pageNumbers()"
+            (click)="goToPage(page)"
+            [class.active]="page === currentPage()"
+          >
+            {{ page }}
+          </button>
+
+          <button class="page-btn" (click)="nextPage()" [disabled]="currentPage() === totalPages()">Next</button>
+        </div>
+      </ng-container>
+    </main>
+  </div>
 </div>
