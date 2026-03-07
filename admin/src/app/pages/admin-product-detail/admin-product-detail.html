@@ -1,0 +1,128 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>{{ product?.name || 'Sản phẩm' }}</h1>
+      <div class="sub">{{ product?.slug || '' }}</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" routerLink="/admin/products">← Quay lại</button>
+      <button class="btn btn-ghost" [disabled]="!product" (click)="goEdit()">Sửa</button>
+      <button
+        class="btn"
+        [class.btn-danger]="product?.status==='active'"
+        [class.btn-success]="product?.status==='inactive'"
+        [disabled]="!product"
+        (click)="askToggleStatus()"
+      >
+        {{ product?.status==='active' ? 'Inactive' : 'Active' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="state" *ngIf="isLoading">Đang tải...</div>
+
+  <div class="body" *ngIf="!isLoading && product">
+    <div class="top-grid">
+      <section class="card info">
+        <h3>Thông tin</h3>
+
+        <div class="kv"><span>Brand</span><b>{{ product.brand || '-' }}</b></div>
+        <div class="kv"><span>Loại</span><b>{{ product.product_type || '-' }}</b></div>
+        <div class="kv"><span>SKU</span><b>{{ product.sku || '-' }}</b></div>
+        <div class="kv"><span>Slug</span><b>{{ product.slug || '-' }}</b></div>
+        <div class="kv"><span>URL</span><b>{{ product.url || '-' }}</b></div>
+        <div class="kv">
+          <span>Status</span>
+          <b [class.badge-active]="product.status==='active'" [class.badge-inactive]="product.status==='inactive'">
+            {{ product.status || '-' }}
+          </b>
+        </div>
+      </section>
+
+      <section class="card desc">
+        <h3>Mô tả ngắn</h3>
+        <p class="text">{{ product.short_description || '-' }}</p>
+
+        <h3>Mô tả chi tiết</h3>
+        <div class="html" [innerHTML]="product.description"></div>
+      </section>
+    </div>
+
+    <section class="card gallery">
+      <h3>Hình ảnh sản phẩm</h3>
+
+      <div class="gallery-grid">
+        <div class="main-image">
+          <img
+            [src]="selectedImageUrl || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'"
+            [alt]="product.name"
+          />
+        </div>
+
+        <div class="thumbs">
+          <button class="thumb" *ngFor="let img of images" type="button" (click)="selectImage(img.image_url)">
+            <img [src]="img.image_url" [alt]="img.alt_text || product.name" />
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="variants-header">
+        <h3>Variants</h3>
+        <span class="muted">({{ variants.length }} biến thể)</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Variant</th>
+            <th>SKU</th>
+            <th>Màu</th>
+            <th>Giá</th>
+            <th>Tồn</th>
+            <th>Variant status</th>
+            <th class="th-actions">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="variants.length===0">
+            <td colspan="7" class="state">Chưa có variant.</td>
+          </tr>
+
+          <tr *ngFor="let v of variants">
+            <td class="cell-title" (click)="viewVariant(v)"><b>{{ v.variant_name || v.name }}</b></td>
+            <td>{{ v.sku || '-' }}</td>
+            <td>{{ v.color || '-' }}</td>
+            <td>{{ v.price | number }}</td>
+            <td>{{ v.stock_quantity ?? '-' }}</td>
+            <td>{{ v.variant_status || '-' }}</td>
+            <td class="actions">
+              <button class="btn btn-ghost" (click)="viewVariant(v); $event.stopPropagation()">Sửa</button>
+              <button
+                class="btn"
+                [class.btn-danger]="(v.variant_status||'active')==='active'"
+                [class.btn-success]="(v.variant_status||'active')!=='active'"
+                (click)="askToggleVariant(v); $event.stopPropagation()"
+              >
+                {{ (v.variant_status||'active')==='active' ? 'Inactive' : 'Active' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <div class="overlay" *ngIf="isLoading || showConfirm"></div>
+
+  <div class="confirm" *ngIf="showConfirm">
+    <h3>Xác nhận</h3>
+    <p>{{ confirmMessage }}</p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
+      <button class="btn btn-danger" (click)="runConfirm()">Xác nhận</button>
+    </div>
+  </div>
+</div>
