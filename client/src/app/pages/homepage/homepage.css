@@ -37,6 +37,23 @@
   padding: 20px;
 }
 
+.error-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 0 28px;
+}
+
+.retry-btn {
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  background: #e53e3e;
+  color: #fff;
+  cursor: pointer;
+}
+
 /* ===== Section Layout ===== */
 .product-section {
   margin-bottom: 40px;
@@ -111,6 +128,8 @@
   transition: box-shadow 0.2s, transform 0.2s;
   display: flex;
   flex-direction: column;
+  text-decoration: none;
+  color: inherit;
 }
 
 .product-card:hover {

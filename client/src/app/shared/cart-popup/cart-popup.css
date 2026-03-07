@@ -145,6 +145,72 @@
     font-size: 14px;
     color: #434343;
     font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.cart-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cart-item-price {
+    display: block;
+    font-size: 14px;
+    color: #ef683a;
+    font-weight: 600;
+}
+
+.cart-item-actions {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.qty-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.qty-mini-btn {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #e1e1e1;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    line-height: 1;
+    font-size: 16px;
+    color: #444;
+}
+
+.qty-mini-btn:hover {
+    border-color: #ef683a;
+    color: #ef683a;
+}
+
+.qty-mini-value {
+    min-width: 18px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.remove-btn {
+    border: none;
+    background: transparent;
+    color: #8d8d8d;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0;
+}
+
+.remove-btn:hover {
+    color: #ef683a;
 }
 
 /* Footer */

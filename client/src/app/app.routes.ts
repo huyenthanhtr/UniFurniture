@@ -3,6 +3,9 @@ import { ArViewer } from './pages/ar-viewer/ar-viewer';
 import { ProductComponent } from './pages/product/product';
 import { ProductDetailComponent } from './pages/product-detail/product-detail';
 import { CategoryPageComponent } from './pages/category-page/category-page';
+import { NewsPageComponent } from './pages/news/news';
+import { NewsDetailComponent } from './pages/news-detail/news-detail';
+import { PromotionsPageComponent } from './pages/promotions/promotions';
 
 export const routes: Routes = [
     { path: 'ar', component: ArViewer },
@@ -10,5 +13,8 @@ export const routes: Routes = [
     { path: 'products', component: ProductComponent },
     { path: 'products/:id', component: ProductDetailComponent },
     { path: 'danh-muc', component: CategoryPageComponent },
+    { path: 'khuyen-mai', component: PromotionsPageComponent },
+    { path: 'tin-tuc', component: NewsPageComponent },
+    { path: 'tin-tuc/:slug', component: NewsDetailComponent },
 ];
 

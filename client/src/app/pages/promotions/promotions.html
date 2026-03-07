@@ -1,0 +1,113 @@
+﻿<div class="promo-page">
+  <nav class="promo-breadcrumb">
+    <a routerLink="/">Trang chủ</a>
+    <span>/</span>
+    <span>Khuyến mãi</span>
+  </nav>
+
+  <section class="promo-hero">
+    <div class="hero-content">
+      <p class="hero-kicker">Campaign T3.2026</p>
+      <h1>Khuyến mãi đặc biệt mùa xuân</h1>
+      <p class="hero-subtitle">
+        Giảm sâu tới 40%, combo phòng theo phong cách và ưu đãi vận chuyển miễn phí.
+      </p>
+
+      <div class="hero-timer">
+        <span>{{ countdown.hours }}</span>
+        <small>Giờ</small>
+        <span>{{ countdown.minutes }}</span>
+        <small>Phút</small>
+        <span>{{ countdown.seconds }}</span>
+        <small>Giây</small>
+      </div>
+
+      <div class="hero-actions">
+        <a class="btn-primary" [routerLink]="['/products']">Mua ngay</a>
+        <a class="btn-secondary" [routerLink]="['/danh-muc']">Xem danh mục</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="state-message" *ngIf="loading">
+    Đang tải dữ liệu khuyến mãi...
+  </div>
+  <div class="state-message state-error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
+
+  <section class="promo-section" *ngIf="!loading && !errorMessage">
+    <div class="section-head">
+      <h2>Flash Deal hôm nay</h2>
+      <p>Giá tốt trong 24h cho các sản phẩm nổi bật.</p>
+    </div>
+
+    <div class="deal-grid" *ngIf="flashDeals.length > 0; else emptyDeals">
+      <a
+        class="deal-card"
+        *ngFor="let deal of flashDeals; trackBy: trackByDealId"
+        [routerLink]="['/products', deal.productId]"
+      >
+        <div class="deal-thumb">
+          <img [src]="deal.imageUrl" [alt]="deal.title" />
+          <span class="deal-badge">-{{ discountPercent(deal) }}%</span>
+        </div>
+
+        <div class="deal-body">
+          <p class="deal-category">{{ deal.category }}</p>
+          <h3>{{ deal.title }}</h3>
+
+          <div class="deal-price">
+            <strong>{{ formatPrice(deal.salePrice) }}</strong>
+            <span>{{ formatPrice(deal.originalPrice) }}</span>
+          </div>
+
+          <div class="deal-progress">
+            <div class="deal-progress-bar" [style.width.%]="soldPercent(deal)"></div>
+          </div>
+          <p class="deal-sold">Đã bán {{ deal.sold }}/{{ deal.total }}</p>
+        </div>
+      </a>
+    </div>
+
+    <ng-template #emptyDeals>
+      <p class="state-message">Chưa có sản phẩm khuyến mãi</p>
+    </ng-template>
+  </section>
+
+  <section class="promo-section vouchers" *ngIf="!loading && !errorMessage">
+    <div class="section-head">
+      <h2>Mã ưu đãi</h2>
+    </div>
+
+    <div class="voucher-grid" *ngIf="vouchers.length > 0; else emptyCoupons">
+      <article class="voucher-card" *ngFor="let voucher of vouchers; trackBy: trackByVoucher">
+        <p class="voucher-code" [style.color]="voucher.color">{{ voucher.code }}</p>
+        <h3>{{ voucher.label }}</h3>
+        <p>{{ voucher.description }}</p>
+      </article>
+    </div>
+
+    <ng-template #emptyCoupons>
+      <p class="state-message">Chưa có mã ưu đãi khả dụng.</p>
+    </ng-template>
+  </section>
+
+  <section class="promo-section collections" *ngIf="!loading && !errorMessage && collections.length > 0">
+    <div class="section-head">
+      <h2>Combo được yêu thích</h2>
+    </div>
+
+    <div class="collection-grid">
+      <a
+        class="collection-card"
+        *ngFor="let collection of collections; trackBy: trackByCollection"
+        [routerLink]="[collection.route]"
+      >
+        <img [src]="collection.imageUrl" [alt]="collection.title" />
+        <div class="collection-overlay">
+          <h3>{{ collection.title }}</h3>
+          <p>{{ collection.subtitle }}</p>
+        </div>
+      </a>
+    </div>
+  </section>
+</div>

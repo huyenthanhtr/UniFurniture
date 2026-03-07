@@ -30,17 +30,18 @@ export class ProductsService {
     if (options?.limit)
       params = params.set('limit', options.limit.toString());
 
-    if (options?.sortBy)
-      params = params.set('sortBy', options.sortBy);
-
-    if (options?.order)
-      params = params.set('order', options.order);
+    // Use "sort" for compatibility with both generic and dedicated product APIs
+    if (options?.sortBy) {
+      const sortDirection = options.order === 'asc' ? '' : '-';
+      const sortField = options.sortBy === 'bestSelling' ? 'sold' : 'createdAt';
+      params = params.set('sort', `${sortDirection}${sortField}`);
+    }
 
     if (options?.category)
-      params = params.set('category', options.category);
+      params = params.set('category_id', options.category);
 
     if (options?.collection)
-      params = params.set('collection', options.collection);
+      params = params.set('collection_id', options.collection);
 
     return this.http
       .get<any>(this.productsUrl, { params })
