@@ -8,7 +8,10 @@ async function getProducts(req, res, next) {
             sortBy = "createdAt",
             order = "desc",
             category,
+            category_id,
             collection,
+            collection_id,
+            sort,
         } = req.query;
 
         const pageNum = parseInt(page);
@@ -20,22 +23,40 @@ async function getProducts(req, res, next) {
         if (!["asc", "desc"].includes(order)) {
             return res.status(400).json({ error: "Invalid order parameter" });
         }
-        if (!["createdAt", "bestSelling"].includes(sortBy)) {
+        const hasSortBy = Boolean(sortBy);
+        if (hasSortBy && !["createdAt", "bestSelling"].includes(sortBy)) {
             return res.status(400).json({ error: "Invalid sortBy parameter" });
         }
 
-        const sortDirection = order === "desc" ? -1 : 1;
+        const normalizedSort = String(sort || "");
+        let resolvedSortBy = String(sortBy || "createdAt");
+        let resolvedOrder = String(order || "desc");
+
+        // Support generic-style sorting (sort=-createdAt / sort=-sold)
+        if (normalizedSort) {
+            if (normalizedSort === "sold" || normalizedSort === "-sold") {
+                resolvedSortBy = "bestSelling";
+                resolvedOrder = normalizedSort.startsWith("-") ? "desc" : "asc";
+            } else if (normalizedSort === "createdAt" || normalizedSort === "-createdAt") {
+                resolvedSortBy = "createdAt";
+                resolvedOrder = normalizedSort.startsWith("-") ? "desc" : "asc";
+            }
+        }
+
+        const sortDirection = resolvedOrder === "desc" ? -1 : 1;
         const skip = (pageNum - 1) * limitNum;
 
         const query = {};
-        if (category) {
-            const ids = String(category).split(',').map(s => s.trim()).filter(Boolean);
+        const categoryParam = category || category_id;
+        if (categoryParam) {
+            const ids = String(categoryParam).split(',').map(s => s.trim()).filter(Boolean);
             query.category_id = ids.length === 1 ? ids[0] : { $in: ids };
         }
-        if (collection) query.collection_id = collection;
+        const collectionParam = collection || collection_id;
+        if (collectionParam) query.collection_id = collectionParam;
 
         const sortOptions =
-            sortBy === "bestSelling"
+            resolvedSortBy === "bestSelling"
                 ? { sold: sortDirection, createdAt: -1, _id: -1 }
                 : { createdAt: sortDirection, _id: -1 };
 
