@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { UiStateService } from '../ui-state.service';
 
 @Component({
@@ -11,23 +12,138 @@ import { UiStateService } from '../ui-state.service';
 })
 export class AuthModal {
     ui = inject(UiStateService);
+    http = inject(HttpClient);
 
     loginData = { email: '', password: '' };
-    registerData = { name: '', email: '', phone: '', password: '', confirmPassword: '' };
+    registerData = { name: '', email: '', phone: '', password: '', confirmPassword: '', gender: 'male', date_of_birth: '', address: '' };
     showPassword = false;
+    dialCode = '+84';
+
+    isOtpOpend = false;
+    otpCode = '';
+    errorMessage = '';
+    successMessage = '';
+    isLoading = false;
 
     switchTab(tab: 'login' | 'register') {
         this.ui.authTab.set(tab);
+        this.isOtpOpend = false;
+        this.errorMessage = '';
+        this.successMessage = '';
     }
 
     onLogin() {
-        console.log('Login:', this.loginData);
-        // TODO: call auth service
+        this.errorMessage = '';
+        this.successMessage = '';
+
+        if (!this.loginData.email || !this.loginData.password) {
+            this.errorMessage = 'Vui lòng điền đầy đủ thông tin.';
+            return;
+        }
+
+        this.isLoading = true;
+        const payload = {
+            emailOrPhone: this.loginData.email,
+            password: this.loginData.password
+        };
+
+        this.http.post('http://localhost:3000/api/auth/login', payload).subscribe({
+            next: (res: any) => {
+                this.successMessage = res.message || 'Đăng nhập thành công!';
+                // Save profile to local storage for auth state visualization
+                if (res.profile) {
+                    localStorage.setItem('user_profile', JSON.stringify(res.profile));
+                }
+                setTimeout(() => {
+                    this.ui.closeAuth();
+                    window.location.reload(); // Refresh to update navbar
+                }, 1500);
+            },
+            error: (err) => {
+                this.isLoading = false;
+                this.errorMessage = err.error?.message || 'Email/SĐT hoặc mật khẩu không chính xác.';
+            }
+        });
     }
 
     onRegister() {
-        console.log('Register:', this.registerData);
-        // TODO: call auth service
+        this.errorMessage = '';
+        this.successMessage = '';
+
+        if (this.registerData.password.length < 8) {
+            this.errorMessage = 'Mật khẩu phải có ít nhất 8 ký tự.';
+            return;
+        }
+
+        if (this.registerData.password !== this.registerData.confirmPassword) {
+            this.errorMessage = 'Mật khẩu xác nhận không khớp.';
+            return;
+        }
+
+        let formattedPhone = this.registerData.phone;
+        if (formattedPhone.startsWith('0')) {
+            formattedPhone = formattedPhone.substring(1);
+        }
+        formattedPhone = this.dialCode.replace('+', '') + formattedPhone;
+
+        this.isLoading = true;
+        const payload = {
+            full_name: this.registerData.name,
+            email: this.registerData.email,
+            phone: formattedPhone,
+            password_hash: this.registerData.password,
+            gender: this.registerData.gender,
+            date_of_birth: this.registerData.date_of_birth,
+            address: this.registerData.address
+        };
+
+        this.http.post('http://localhost:3000/api/auth/register', payload).subscribe({
+            next: (res: any) => {
+                this.isLoading = false;
+                this.successMessage = 'Mã OTP đã được gửi đến số điện thoại của bạn.';
+                this.isOtpOpend = true;
+            },
+            error: (err) => {
+                this.isLoading = false;
+                this.errorMessage = err.error?.message || 'Có lỗi xảy ra khi đăng ký.';
+            }
+        });
+    }
+
+    onVerifyOtp() {
+        this.errorMessage = '';
+        this.successMessage = '';
+
+        if (!this.otpCode) {
+            this.errorMessage = 'Vui lòng nhập mã OTP.';
+            return;
+        }
+
+        let formattedPhone = this.registerData.phone;
+        if (formattedPhone.startsWith('0')) {
+            formattedPhone = formattedPhone.substring(1);
+        }
+        formattedPhone = this.dialCode.replace('+', '') + formattedPhone;
+
+        this.isLoading = true;
+        const payload = {
+            phone: formattedPhone,
+            otp: this.otpCode
+        };
+
+        this.http.post('http://localhost:3000/api/auth/verify-otp', payload).subscribe({
+            next: (res: any) => {
+                this.isLoading = false;
+                this.successMessage = 'Tạo tài khoản thành công! Bạn có thể đăng nhập ngay.';
+                setTimeout(() => {
+                    this.switchTab('login');
+                }, 1500);
+            },
+            error: (err) => {
+                this.isLoading = false;
+                this.errorMessage = err.error?.message || 'Mã OTP không hợp lệ hoặc đã hết hạn.';
+            }
+        });
     }
 
     closeOnBackdrop(event: MouseEvent) {

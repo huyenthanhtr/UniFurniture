@@ -24,6 +24,15 @@
                 ký</button>
         </div>
 
+        <!-- Alert messages -->
+        @if (errorMessage) {
+        <div class="auth-alert error">{{ errorMessage }}</div>
+        }
+        @if (successMessage) {
+        <div class="auth-alert success">{{ successMessage }}</div>
+        }
+
+
         <!-- LOGIN FORM -->
         @if (ui.authTab() === 'login') {
         <form class="auth-form" (ngSubmit)="onLogin()">
@@ -44,7 +53,21 @@
                 <span> · Website được bảo vệ bởi reCAPTCHA</span>
             </div>
 
-            <button type="submit" class="auth-submit-btn">Đăng nhập</button>
+            <button type="submit" class="auth-submit-btn" [disabled]="isLoading"
+                style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                @if (isLoading) {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 11-6.219-8.56">
+                        <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s"
+                            repeatCount="indefinite" />
+                    </path>
+                </svg>
+                <span>Đang đăng nhập...</span>
+                } @else {
+                <span>Đăng nhập</span>
+                }
+            </button>
 
             <div class="auth-footer-links">
                 <span>Khách hàng mới? <a href="#" class="auth-link" (click)="switchTab('register')">Tạo tài
@@ -56,6 +79,7 @@
 
         <!-- REGISTER FORM -->
         @if (ui.authTab() === 'register') {
+        @if (!isOtpOpend) {
         <form class="auth-form" (ngSubmit)="onRegister()">
             <p class="auth-subtitle">Tạo tài khoản mới:</p>
 
@@ -69,19 +93,51 @@
                     required />
             </div>
 
-            <div class="form-group">
+            <div class="form-group" style="display: flex; gap: 8px;">
+                <select class="form-input" [(ngModel)]="dialCode" name="dialCode"
+                    style="width: 80px; padding: 0 8px; flex-shrink: 0;" required>
+                    <option value="+84">+84</option>
+                    <option value="+1">+1</option>
+                </select>
                 <input type="tel" class="form-input" placeholder="Số điện thoại" [(ngModel)]="registerData.phone"
-                    name="phone" />
+                    name="phone" required style="flex: 1;" />
             </div>
 
             <div class="form-group">
-                <input [type]="showPassword ? 'text' : 'password'" class="form-input" placeholder="Mật khẩu"
-                    [(ngModel)]="registerData.password" name="password" required />
+                <select class="form-input" [(ngModel)]="registerData.gender" name="gender" required>
+                    <option value="" disabled selected>Giới tính</option>
+                    <option value="male">Nam</option>
+                    <option value="female">Nữ</option>
+                    <option value="other">Khác</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"
+                    style="display: block; font-size: 0.85rem; color: #6b7280; margin-bottom: 4px; padding-left: 4px;"
+                    for="dob-input">Ngày sinh</label>
+                <input id="dob-input" type="date" class="form-input" [(ngModel)]="registerData.date_of_birth"
+                    name="date_of_birth" required />
+            </div>
+
+            <div class="form-group">
+                <input type="text" class="form-input" placeholder="Địa chỉ" [(ngModel)]="registerData.address"
+                    name="address" required />
+            </div>
+
+            <div class="form-group">
+                <input [type]="showPassword ? 'text' : 'password'" class="form-input"
+                    placeholder="Mật khẩu (ít nhất 8 ký tự)" [(ngModel)]="registerData.password" name="password"
+                    minlength="8" required />
             </div>
 
             <div class="form-group">
                 <input [type]="showPassword ? 'text' : 'password'" class="form-input" placeholder="Xác nhận mật khẩu"
                     [(ngModel)]="registerData.confirmPassword" name="confirmPassword" required />
+                @if (registerData.confirmPassword && registerData.password !== registerData.confirmPassword) {
+                <div style="color: #ef4444; font-size: 0.85rem; margin-top: 4px; padding-left: 4px;">Mật khẩu xác nhận
+                    không khớp</div>
+                }
             </div>
 
             <div class="auth-disclaimer">
@@ -89,12 +145,52 @@
                 <a href="#" class="auth-link">Điều khoản dịch vụ</a>
             </div>
 
-            <button type="submit" class="auth-submit-btn">Tạo tài khoản</button>
+            <button type="submit" class="auth-submit-btn" [disabled]="isLoading"
+                style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                @if (isLoading) {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 11-6.219-8.56">
+                        <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s"
+                            repeatCount="indefinite" />
+                    </path>
+                </svg>
+                <span>Đang xử lý...</span>
+                } @else {
+                <span>Tạo tài khoản</span>
+                }
+            </button>
 
             <div class="auth-footer-links">
                 <span>Đã có tài khoản? <a href="#" class="auth-link" (click)="switchTab('login')">Đăng nhập</a></span>
             </div>
         </form>
+        } @else {
+        <form class="auth-form" (ngSubmit)="onVerifyOtp()">
+            <p class="auth-subtitle">Nhập mã OTP (6 số) vừa được gửi đến số {{ registerData.phone }}:</p>
+            <div class="form-group">
+                <input type="text" class="form-input" placeholder="Mã OTP" [(ngModel)]="otpCode" name="otp" required />
+            </div>
+            <button type="submit" class="auth-submit-btn" [disabled]="isLoading"
+                style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                @if (isLoading) {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 11-6.219-8.56">
+                        <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s"
+                            repeatCount="indefinite" />
+                    </path>
+                </svg>
+                <span>Đang xác thực...</span>
+                } @else {
+                <span>Xác nhận OTP</span>
+                }
+            </button>
+            <div class="auth-footer-links">
+                <span>Chưa nhận được mã? <a href="#" class="auth-link" (click)="onRegister()">Gửi lại</a></span>
+            </div>
+        </form>
+        }
         }
 
     </div>
