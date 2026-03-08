@@ -27,6 +27,7 @@ export class AdminProducts implements OnInit {
 
   q = '';
   status = 'active';
+  sortBy: 'updatedAt' | 'sold' = 'updatedAt';
   sortDir: 'asc' | 'desc' = 'desc';
 
   page = 1;
@@ -82,7 +83,8 @@ export class AdminProducts implements OnInit {
       page: this.page,
       limit: this.limit,
       exclude: 'description,short_description,material,size',
-      sort: '-updatedAt',
+      sortBy: this.sortBy,
+      order: this.sortDir,
     };
 
     if (this.status) params.status = this.status;
@@ -114,13 +116,15 @@ export class AdminProducts implements OnInit {
       arr = arr.filter(
         (p) =>
           String(p.name || '').toLowerCase().includes(q) ||
-          String(p.sku || '').toLowerCase().includes(q)
+          String(p.sku || '').toLowerCase().includes(q) ||
+          String(p.slug || '').toLowerCase().includes(q) ||
+          String(p.brand || '').toLowerCase().includes(q)
       );
     }
 
     arr.sort((a, b) => {
-      const av = a.updatedAt || '';
-      const bv = b.updatedAt || '';
+      const av = this.sortBy === 'sold' ? Number(a.sold || 0) : new Date(a.updatedAt || 0).getTime();
+      const bv = this.sortBy === 'sold' ? Number(b.sold || 0) : new Date(b.updatedAt || 0).getTime();
 
       if (av < bv) return this.sortDir === 'asc' ? -1 : 1;
       if (av > bv) return this.sortDir === 'asc' ? 1 : -1;
@@ -130,12 +134,12 @@ export class AdminProducts implements OnInit {
     this.filtered = arr;
   }
 
-  toggleSortUpdatedAt() {
-    this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
-    this.applyFilterSort();
+  onChangeStatus() {
+    this.page = 1;
+    this.loadProductsPage(1);
   }
 
-  onChangeStatus() {
+  onChangeSort() {
     this.page = 1;
     this.loadProductsPage(1);
   }
@@ -155,14 +159,13 @@ export class AdminProducts implements OnInit {
   askToggleStatus(p: any) {
     const cur = String(p.status || '').toLowerCase() === 'inactive' ? 'inactive' : 'active';
     const next: 'active' | 'inactive' = cur === 'active' ? 'inactive' : 'active';
-    const label = next.toUpperCase();
 
     this.pendingProductId = String(p._id);
     this.pendingPrevStatus = cur;
     this.pendingNextStatus = next;
 
     this.confirmTitle = 'Xác nhận';
-    this.confirmMessage = `Bạn có chắc muốn chuyển "${p.name}" sang ${label} không?`;
+    this.confirmMessage = `Bạn có chắc muốn chuyển "${p.name}" sang ${next.toUpperCase()} không?`;
     this.confirmAction = () => this.toggleStatus();
     this.showConfirm = true;
     this.cdr.detectChanges();

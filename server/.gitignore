@@ -1,3 +1,5 @@
 node_modules/
-.env
-.env.*
+cd "D:\Kỳ 2 năm 3\UniFurniture"
+git add server/.env
+git commit -m "Add .env"
+git push origin main

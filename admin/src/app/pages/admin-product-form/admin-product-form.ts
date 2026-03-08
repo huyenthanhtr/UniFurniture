@@ -37,7 +37,6 @@ export class AdminProductForm implements OnInit {
     category_id: ['', [Validators.required]],
     collection_id: [''],
     product_type: [''],
-    slug: [''],
     url: [''],
     short_description: [''],
     description: [''],
@@ -46,7 +45,6 @@ export class AdminProductForm implements OnInit {
   ngOnInit(): void {
     this.id = this.route.snapshot.paramMap.get('id');
     this.isEdit = !!this.id;
-
     this.isLoading = true;
 
     const reqs: any = {
@@ -70,7 +68,6 @@ export class AdminProductForm implements OnInit {
             category_id: String(res.product.category_id ?? ''),
             collection_id: String(res.product.collection_id ?? ''),
             product_type: res.product.product_type ?? '',
-            slug: res.product.slug ?? '',
             url: res.product.url ?? '',
             short_description: res.product.short_description ?? '',
             description: res.product.description ?? '',
@@ -81,6 +78,22 @@ export class AdminProductForm implements OnInit {
       },
       error: () => (this.isLoading = false),
     });
+  }
+
+  get liveSlug(): string {
+    return this.slugify(String(this.form.value.name || ''));
+  }
+
+  slugify(value: string): string {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-{2,}/g, '-');
   }
 
   back() {
@@ -102,7 +115,13 @@ export class AdminProductForm implements OnInit {
     this.showConfirm = false;
     this.isLoading = true;
 
-    const payload = this.form.getRawValue();
+    const raw = this.form.getRawValue();
+
+    const payload = {
+      ...raw,
+      category_id: raw.category_id || null,
+      collection_id: raw.collection_id || null,
+    };
 
     const req = this.isEdit
       ? this.api.updateProduct(this.id!, payload)

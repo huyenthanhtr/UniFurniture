@@ -1,1 +1,27 @@
-/* You can add global styles to this file, and also import other style files */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #f8f5f1;
+  color: #908372;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+h1, h2, h3, h4, h5, h6, p, label, span, div, td, th, a, li, strong, b {
+  color: inherit;
+}
+
+a {
+  text-decoration: none;
+}
+
+table {
+  width: 100%;
+}

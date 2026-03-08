@@ -2,31 +2,33 @@ const mongoose = require("mongoose");
 
 const ProductSchema = new mongoose.Schema(
   {
-    name: String,
-    slug: String,
-    url: String,
+    name: { type: String, required: true, trim: true },
+    slug: { type: String, trim: true, index: true },
+    url: { type: String, trim: true },
 
-    sku: String,
-    brand: String,
-    thumbnail_url: String,
+    sku: { type: String, trim: true },
+    brand: { type: String, trim: true },
 
-    category_id: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
-    collection_id: { type: mongoose.Schema.Types.ObjectId, ref: "Collection" },
+    thumbnail: { type: String, trim: true, default: "" },
+    thumbnail_url: { type: String, trim: true, default: "" },
 
-    product_type: String,
+    category_id: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
+    collection_id: { type: mongoose.Schema.Types.ObjectId, ref: "Collection", default: null },
 
-    short_description: String,
-    description: String,
+    product_type: { type: String, trim: true },
+
+    short_description: { type: String, default: "" },
+    description: { type: String, default: "" },
 
     min_price: { type: Number, default: 0 },
 
     size: mongoose.Schema.Types.Mixed,
     material: mongoose.Schema.Types.Mixed,
 
-    status: String,
+    status: { type: String, enum: ["active", "inactive"], default: "active" },
     sold: { type: Number, default: 0 },
   },
-  { timestamps: true }
+  { timestamps: true, collection: "products" }
 );
 
 module.exports = mongoose.model("Product", ProductSchema, "products");
