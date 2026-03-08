@@ -1,0 +1,117 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Quản lý đơn hàng</h1>
+    </div>
+  </div>
+
+  <div class="toolbar card">
+    <input
+      class="search-input"
+      type="text"
+      placeholder="Tìm theo mã đơn, tên người nhận, số điện thoại, Email"
+      [(ngModel)]="q"
+      (keyup.enter)="applySearch()"
+    />
+
+    <select class="toolbar-select" [(ngModel)]="status" (ngModelChange)="onChangeFilters()">
+      <option value="">Tất cả trạng thái</option>
+      <option value="pending">Pending</option>
+      <option value="confirmed">Confirmed</option>
+      <option value="processing">Processing</option>
+      <option value="shipping">Shipping</option>
+      <option value="delivered">Delivered</option>
+      <option value="completed">Completed</option>
+      <option value="cancelled">Cancelled</option>
+      <option value="refunded">Refunded</option>
+    </select>
+
+    <select class="toolbar-select" [(ngModel)]="sortBy" (ngModelChange)="onChangeFilters()">
+      <option value="ordered_at">Sắp xếp theo ngày đặt</option>
+      <option value="total_amount">Sắp xếp theo tổng tiền</option>
+    </select>
+
+    <select class="toolbar-select small" [(ngModel)]="sortDir" (ngModelChange)="onChangeFilters()">
+      <option value="desc">Giảm dần</option>
+      <option value="asc">Tăng dần</option>
+    </select>
+  </div>
+
+  <div class="table-wrap card">
+    <table>
+      <thead>
+        <tr>
+          <th>Mã đơn</th>
+          <th>Người nhận</th>
+          <th>Số điện thoại</th>
+          <th>Tổng tiền</th>
+          <th>Ngày đặt</th>
+          <th>Thanh toán</th>
+          <th>Status</th>
+          <th class="th-actions">Hành động</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngIf="isLoading">
+          <td colspan="8" class="state">Đang tải...</td>
+        </tr>
+
+        <tr *ngFor="let order of filtered">
+          <td class="cell-title" (click)="viewDetail(order)">
+            <div class="order-code">
+              <strong>{{ order.order_code || order._id }}</strong>
+            </div>
+          </td>
+          <td>{{ order.display?.receiver_name || '-' }}</td>
+          <td>{{ order.display?.phone || '-' }}</td>
+          <td>{{ order.total_amount | number }}</td>
+          <td>{{ (order.ordered_at || order.createdAt) | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <span
+              class="badge"
+              [ngClass]="getPaymentBadge(order).cls"
+            >
+              {{ getPaymentBadge(order).text }}
+            </span>
+          </td>
+          <td>
+            <span
+              class="badge"
+              [ngClass]="getStatusClass(order.status)"
+            >
+              {{ order.status }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            <div class="actions">
+              <button class="btn btn-ghost btn-sm" (click)="viewDetail(order)">Chi tiết</button>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="!isLoading && filtered.length===0">
+          <td colspan="8" class="state">Không có đơn hàng phù hợp.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button class="pg pg-arrow" (click)="goPrev()" [disabled]="page===1">‹</button>
+
+    <ng-container *ngFor="let p of pagesToShow()">
+      <button
+        *ngIf="p !== '...'"
+        class="pg"
+        [class.active]="p===page"
+        (click)="goPage(p)"
+      >
+        {{ p }}
+      </button>
+      <span *ngIf="p === '...'" class="pg dots">…</span>
+    </ng-container>
+
+    <button class="pg pg-arrow" (click)="goNext()" [disabled]="page===totalPages">›</button>
+  </div>
+</div>

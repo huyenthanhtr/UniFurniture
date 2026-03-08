@@ -25,7 +25,7 @@
 
 .toolbar {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) 180px 220px 150px;
+  grid-template-columns: minmax(320px, 1fr) 200px 220px 150px;
   gap: 10px;
   align-items: center;
   margin-bottom: 12px;
@@ -69,10 +69,6 @@
   box-shadow: 0 0 0 3px rgba(144, 131, 114, .12);
 }
 
-.toolbar-select.small {
-  min-width: 150px;
-}
-
 .table-wrap {
   overflow: hidden;
 }
@@ -80,7 +76,6 @@
 table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: auto;
 }
 
 th,
@@ -99,66 +94,111 @@ tbody tr:last-child td {
   border-bottom: none;
 }
 
-.cell-title {
-  cursor: pointer;
-}
-
-.product-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 260px;
-}
-
-.thumb {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
-  border: 1px solid #ddd2c6;
-  object-fit: cover;
-  background: #fffdfb;
-  flex: 0 0 auto;
-}
-
-.title .sub {
+.order-code .sub,
+.sub {
   opacity: .7;
   font-size: 12px;
   margin-top: 4px;
-  word-break: break-word;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 22px;
-  padding: 4px 10px;
+  min-height: 26px;
+  padding: 4px 12px;
   border-radius: 999px;
-  border: 1px solid #eee;
+  border: 1px solid transparent;
   font-size: 12px;
-  font-weight: 600;
-  line-height: 1;
+  font-weight: 700;
   white-space: nowrap;
+  line-height: 1;
 }
 
-.badge-active {
-  color: #0b7a33;
-  border-color: #bfe7cf;
+.payment-deposit {
+  color: #b45309;
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.payment-paid {
+  color: #166534;
   background: #ecfdf3;
+  border-color: #86efac;
 }
 
-.badge-inactive {
+.payment-pending {
+  color: #6b7280;
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.payment-failed {
   color: #b42318;
-  border-color: #f3c7c3;
   background: #fff1f0;
+  border-color: #f3c7c3;
+}
+
+.payment-refunded {
+  color: #7c3aed;
+  background: #f5f3ff;
+  border-color: #c4b5fd;
+}
+
+.status-pending {
+  color: #92400e;
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.status-confirmed {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.status-processing {
+  color: #7c3aed;
+  background: #f5f3ff;
+  border-color: #c4b5fd;
+}
+
+.status-shipping {
+  color: #0f766e;
+  background: #f0fdfa;
+  border-color: #99f6e4;
+}
+
+.status-delivered {
+  color: #166534;
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.status-completed {
+  color: #166534;
+  background: #dcfce7;
+  border-color: #4ade80;
+}
+
+.status-cancelled {
+  color: #ffffff;
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.status-refunded {
+  color: #7c2d12;
+  background: #ffedd5;
+  border-color: #fdba74;
 }
 
 .th-actions {
-  width: 190px;
+  width: 120px;
 }
 
 .actions-cell {
-  width: 190px;
+  width: 120px;
   white-space: nowrap;
 }
 
@@ -166,11 +206,6 @@ tbody tr:last-child td {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: nowrap;
-}
-
-.actions .btn {
-  flex: 0 0 auto;
 }
 
 .btn {
@@ -178,7 +213,6 @@ tbody tr:last-child td {
   border-radius: 12px;
   border: 1px solid transparent;
   cursor: pointer;
-  line-height: 1.2;
 }
 
 .btn-sm {
@@ -196,18 +230,6 @@ tbody tr:last-child td {
   background: #fff;
   color: #908372;
   border-color: #ddd2c6;
-}
-
-.btn-danger {
-  background: #b42318;
-  color: #fff;
-  border-color: #b42318;
-}
-
-.btn-success {
-  background: #0b7a33;
-  color: #fff;
-  border-color: #0b7a33;
 }
 
 .state {
@@ -261,40 +283,7 @@ tbody tr:last-child td {
   font-size: 18px;
 }
 
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, .14);
-  z-index: 20;
-}
-
-.confirm {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: min(520px, 92vw);
-  background: #fff;
-  border: 1px solid #ece6e0;
-  border-radius: 16px;
-  padding: 16px;
-  z-index: 30;
-}
-
-.confirm-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-@media (max-width: 1200px) {
-  .toolbar {
-    grid-template-columns: 1fr 180px 220px 150px;
-  }
-}
-
-@media (max-width: 960px) {
+@media (max-width: 1100px) {
   .toolbar {
     grid-template-columns: 1fr 1fr;
   }
@@ -307,10 +296,5 @@ tbody tr:last-child td {
 
   .table-wrap {
     overflow-x: auto;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: stretch;
   }
 }

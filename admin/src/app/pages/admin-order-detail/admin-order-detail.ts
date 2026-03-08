@@ -1,0 +1,182 @@
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { AdminOrdersService } from '../../services/admin-orders';
+
+@Component({
+  selector: 'app-admin-order-detail',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule],
+  templateUrl: './admin-order-detail.html',
+  styleUrls: ['./admin-order-detail.css'],
+})
+export class AdminOrderDetail implements OnInit {
+  private api = inject(AdminOrdersService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
+  id!: string;
+  isLoading = false;
+
+  order: any = null;
+  customer: any = null;
+  profile: any = null;
+  items: any[] = [];
+  payments: any[] = [];
+  display: any = null;
+
+  editableStatus = 'pending';
+
+  showConfirm = false;
+  confirmMessage = '';
+  confirmAction: null | (() => void) = null;
+
+  readonly statuses = [
+    'pending',
+    'confirmed',
+    'processing',
+    'shipping',
+    'delivered',
+    'completed',
+    'cancelled',
+    'refunded',
+  ];
+
+  private readonly paidStatuses = new Set(['paid']);
+  private readonly pendingStatuses = new Set(['pending']);
+
+  ngOnInit(): void {
+    this.route.paramMap.subscribe((pm) => {
+      const id = pm.get('id');
+      if (id) {
+        this.id = id;
+        this.load();
+      }
+    });
+  }
+
+  load() {
+    this.isLoading = true;
+    this.api.getOrderById(this.id).subscribe({
+      next: (res: any) => {
+        this.order = res?.order ?? null;
+        this.customer = res?.customer ?? null;
+        this.profile = res?.profile ?? null;
+        this.items = res?.items ?? [];
+        this.payments = res?.payments ?? [];
+        this.display = res?.display ?? null;
+        this.editableStatus = this.order?.status || 'pending';
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  back() {
+    this.router.navigate(['/admin/orders']);
+  }
+
+  askSaveStatus() {
+    if (!this.order?._id || !this.editableStatus || this.editableStatus === this.order.status) return;
+    this.confirmMessage = `Đổi trạng thái đơn hàng sang ${this.editableStatus}?`;
+    this.confirmAction = () => this.saveStatus();
+    this.showConfirm = true;
+    this.cdr.detectChanges();
+  }
+
+  saveStatus() {
+    this.showConfirm = false;
+    this.isLoading = true;
+
+    this.api.patchOrderStatus(String(this.order._id), this.editableStatus).subscribe({
+      next: (doc: any) => {
+        this.order = { ...this.order, status: doc?.status || this.editableStatus };
+        this.editableStatus = this.order.status;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  closeConfirm() {
+    this.showConfirm = false;
+    this.confirmAction = null;
+    this.cdr.detectChanges();
+  }
+
+  runConfirm() {
+    if (this.confirmAction) this.confirmAction();
+  }
+
+  toNumber(value: any): number {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  isPaidPayment(payment: any): boolean {
+    const status = String(payment?.status || '').toLowerCase();
+    return this.paidStatuses.has(status);
+  }
+
+  isPendingPayment(payment: any): boolean {
+    const status = String(payment?.status || '').toLowerCase();
+    return this.pendingStatuses.has(status);
+  }
+
+  get paidAmount(): number {
+    return this.payments.reduce((sum, p) => sum + (this.isPaidPayment(p) ? this.toNumber(p?.amount) : 0), 0);
+  }
+
+  get pendingAmount(): number {
+    return this.payments.reduce((sum, p) => sum + (this.isPendingPayment(p) ? this.toNumber(p?.amount) : 0), 0);
+  }
+
+  get remainingAmount(): number {
+    const total = this.toNumber(this.order?.total_amount);
+    const remaining = total - this.paidAmount;
+    return remaining > 0 ? remaining : 0;
+  }
+
+  getPaymentTypeText(type: any): string {
+    const key = String(type || '').toLowerCase();
+    if (key === 'deposit') return 'Đặt cọc';
+    if (key === 'remaining') return 'Thanh toán còn lại';
+    if (key === 'full') return 'Thanh toán một lần';
+    return '-';
+  }
+
+  getPaymentMethodText(method: any): string {
+    const key = String(method || '').toLowerCase();
+    if (key === 'cod') return 'COD';
+    if (key === 'bank_transfer') return 'Chuyển khoản';
+    return '-';
+  }
+
+  getPaymentStatusText(status: any): string {
+    const key = String(status || '').toLowerCase();
+    if (key === 'paid') return 'Đã thanh toán';
+    if (key === 'pending') return 'Đang chờ';
+    if (key === 'failed') return 'Thất bại';
+    if (key === 'refunded') return 'Hoàn tiền';
+    return '-';
+  }
+
+  getPaymentStatusClass(status: any): string {
+    const key = String(status || '').toLowerCase();
+    if (key === 'paid') return 'payment-paid';
+    if (key === 'pending') return 'payment-pending';
+    if (key === 'failed') return 'payment-failed';
+    if (key === 'refunded') return 'payment-refunded';
+    return 'payment-unknown';
+  }
+}
