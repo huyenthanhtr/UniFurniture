@@ -10,4 +10,20 @@ import { UiStateService } from '../ui-state.service';
 })
 export class Header {
   ui = inject(UiStateService);
+  userProfile: any = null;
+
+  ngOnInit() {
+    const saved = localStorage.getItem('user_profile');
+    if (saved) {
+      try {
+        this.userProfile = JSON.parse(saved);
+      } catch (e) { console.error('Error parsing user profile'); }
+    }
+  }
+
+  logout() {
+    localStorage.removeItem('user_profile');
+    this.userProfile = null;
+    window.location.reload();
+  }
 }
