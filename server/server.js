@@ -41,6 +41,7 @@ app.use("/api/keywords", keywordsRoutes);
 app.use("/api/orders", ordersRoutes);
 app.use("/api/order-detail", orderDetailRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/posts", postRoutes);
 app.use("/api/post", postRoutes);
 app.use("/api/product-images", productImagesRoutes);
 app.use("/api/product-keywords", productKeywordsRoutes);

@@ -1,0 +1,90 @@
+<div class="page">
+  <div class="page-header">
+    <h1>{{ isEdit ? 'Sửa sản phẩm' : 'Thêm sản phẩm' }}</h1>
+    <div class="actions">
+      <button class="btn btn-ghost" (click)="back()">← Quay lại</button>
+      <button class="btn btn-primary" (click)="askSave()">Lưu</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div class="field">
+        <label>Tên *</label>
+        <input type="text" [formControl]="form.controls.name" />
+        <small class="err" *ngIf="form.controls.name.touched && form.controls.name.invalid">Bắt buộc</small>
+      </div>
+
+      <div class="field">
+        <label>SKU</label>
+        <input type="text" [formControl]="form.controls.sku" />
+      </div>
+
+      <div class="field">
+        <label>Brand</label>
+        <input type="text" [formControl]="form.controls.brand" />
+      </div>
+
+      <div class="field">
+        <label>Status *</label>
+        <select [formControl]="form.controls.status">
+          <option value="active">active</option>
+          <option value="inactive">inactive</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Category *</label>
+        <select [formControl]="form.controls.category_id">
+          <option value="">-- chọn --</option>
+          <option *ngFor="let c of categories" [value]="c._id">{{ c.name }}</option>
+        </select>
+        <small class="err" *ngIf="form.controls.category_id.touched && form.controls.category_id.invalid">Bắt buộc</small>
+      </div>
+
+      <div class="field">
+        <label>Collection</label>
+        <select [formControl]="form.controls.collection_id">
+          <option value="">-- chọn --</option>
+          <option *ngFor="let c of collections" [value]="c._id">{{ c.name }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Product type</label>
+        <input type="text" [formControl]="form.controls.product_type" />
+      </div>
+
+      <div class="field">
+        <label>Slug</label>
+        <input type="text" [formControl]="form.controls.slug" />
+      </div>
+
+      <div class="field full">
+        <label>URL</label>
+        <input type="text" [formControl]="form.controls.url" />
+      </div>
+
+      <div class="field full">
+        <label>Mô tả ngắn</label>
+        <textarea rows="3" [formControl]="form.controls.short_description"></textarea>
+      </div>
+
+      <div class="field full">
+        <label>Mô tả chi tiết (HTML)</label>
+        <textarea rows="8" [formControl]="form.controls.description"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" *ngIf="isLoading || showConfirm"></div>
+
+  <div class="confirm" *ngIf="showConfirm">
+    <h3>Xác nhận</h3>
+    <p>{{ confirmMessage }}</p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
+      <button class="btn btn-primary" (click)="runConfirm()">OK</button>
+    </div>
+  </div>
+</div>

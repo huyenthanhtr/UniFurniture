@@ -91,7 +91,7 @@ export class PostDataService {
   }
 
   private requestPostList(params: Record<string, string>): Observable<NewsPostListResponse> {
-    return this.http.get<ApiListResponse<PostDocument>>(`${this.apiBaseUrl}/post`, { params }).pipe(
+    return this.http.get<ApiListResponse<PostDocument>>(`${this.apiBaseUrl}/posts`, { params }).pipe(
       timeout(10000),
       map((response) => {
         const fallbackPage = Number(params['page'] || '1');

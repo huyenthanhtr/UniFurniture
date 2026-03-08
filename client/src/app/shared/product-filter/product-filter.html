@@ -1,35 +1,94 @@
 <div class="product-filter">
-    <div class="filter-heading">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
-        </svg>
-        <span class="heading-text">BỘ LỌC</span>
+  <div class="filter-heading">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+    </svg>
+    <span class="heading-text">BỘ LỌC</span>
+  </div>
+
+  <div class="filter-controls">
+    <div class="filter-field" [class.is-open]="openDropdown === 'category'">
+      <span class="filter-label">DANH MỤC</span>
+      <button type="button" class="filter-trigger" (click)="toggleDropdown('category')">
+        <span class="filter-value">{{ getCategoryLabel() }}</span>
+      </button>
+
+      <div class="filter-menu" *ngIf="openDropdown === 'category'">
+        <button
+          type="button"
+          class="filter-option"
+          [class.is-selected]="selectedCategoryId === ''"
+          (click)="selectCategory('')"
+        >
+          {{ categoryDefaultLabel }}
+        </button>
+        <button
+          type="button"
+          class="filter-option"
+          *ngFor="let option of categoryOptions"
+          [class.is-selected]="selectedCategoryId === option.value"
+          (click)="selectCategory(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      </div>
     </div>
 
-    <div class="filter-controls">
-        <button class="filter-btn">
-            DANH MỤC
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6 9l6 6 6-6" />
-            </svg>
+    <div class="filter-field" [class.is-open]="openDropdown === 'price'">
+      <span class="filter-label">GIÁ SẢN PHẨM</span>
+      <button type="button" class="filter-trigger" (click)="toggleDropdown('price')">
+        <span class="filter-value">{{ getPriceLabel() }}</span>
+      </button>
+
+      <div class="filter-menu" *ngIf="openDropdown === 'price'">
+        <button
+          type="button"
+          class="filter-option"
+          *ngFor="let option of priceOptions"
+          [class.is-selected]="selectedPriceRange === option.value"
+          (click)="selectPrice(option.value)"
+        >
+          {{ option.label }}
         </button>
-        <button class="filter-btn">
-            GIÁ SẢN PHẨM
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6 9l6 6 6-6" />
-            </svg>
-        </button>
-        <button class="filter-btn">
-            MÀU SẮC
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6 9l6 6 6-6" />
-            </svg>
-        </button>
-        <button class="filter-btn">
-            KÍCH THƯỚC
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6 9l6 6 6-6" />
-            </svg>
-        </button>
+      </div>
     </div>
+
+    <div class="filter-field" [class.is-open]="openDropdown === 'color'">
+      <span class="filter-label">MÀU SẮC</span>
+      <button type="button" class="filter-trigger" (click)="toggleDropdown('color')">
+        <span class="filter-value">{{ getColorLabel() }}</span>
+      </button>
+
+      <div class="filter-menu" *ngIf="openDropdown === 'color'">
+        <button
+          type="button"
+          class="filter-option"
+          *ngFor="let option of colorOptions"
+          [class.is-selected]="selectedColor === option.value"
+          (click)="selectColor(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-field" [class.is-open]="openDropdown === 'size'">
+      <span class="filter-label">KÍCH THƯỚC</span>
+      <button type="button" class="filter-trigger" (click)="toggleDropdown('size')">
+        <span class="filter-value">{{ getSizeLabel() }}</span>
+      </button>
+
+      <div class="filter-menu" *ngIf="openDropdown === 'size'">
+        <button
+          type="button"
+          class="filter-option"
+          *ngFor="let option of sizeOptions"
+          [class.is-selected]="selectedSize === option.value"
+          (click)="selectSize(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
