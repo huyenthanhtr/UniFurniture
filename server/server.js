@@ -21,6 +21,7 @@ const productKeywordsRoutes = require("./src/routes/product-keywords.routes");
 const productVariantsRoutes = require("./src/routes/product-variants.routes");
 const productsRoutes = require("./src/routes/products.routes");
 const profilesRoutes = require("./src/routes/profiles.routes");
+const authRoutes = require("./src/routes/auth.routes");
 
 const app = express();
 app.use(cors());
@@ -48,6 +49,7 @@ app.use("/api/product-keywords", productKeywordsRoutes);
 app.use("/api/product-variants", productVariantsRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/profiles", profilesRoutes);
+app.use("/api/auth", authRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
