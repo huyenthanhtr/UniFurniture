@@ -3,9 +3,9 @@ const mongoose = require("mongoose");
 const OrderSchema = new mongoose.Schema(
   {
     order_code: String,
-    customer_id: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", required: true },
-    account_id: { type: mongoose.Schema.Types.ObjectId, ref: "Account", required: true },
-    coupon_id: { type: mongoose.Schema.Types.Mixed },
+    customer_id: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", default: null },
+    account_id: { type: mongoose.Schema.Types.ObjectId, ref: "Profile", default: null },
+    coupon_id: { type: mongoose.Schema.Types.Mixed, default: null },
     shipping_name: String,
     shipping_phone: String,
     shipping_email: String,
@@ -13,7 +13,12 @@ const OrderSchema = new mongoose.Schema(
     total_amount: Number,
     deposit_amount: Number,
     is_installed: Boolean,
-    status: {type: String, required: true, enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"], default: "pending"},
+    status: {
+      type: String,
+      required: true,
+      enum: ["pending", "confirmed", "processing", "shipping", "delivered", "completed", "cancelled", "refunded"],
+      default: "pending",
+    },
     ordered_at: Date,
   },
   { timestamps: true, collection: "orders" }

@@ -4,10 +4,24 @@ const PaymentSchema = new mongoose.Schema(
   {
     payment_code: String,
     order_id: { type: mongoose.Schema.Types.ObjectId, ref: "Order", required: true },
-    amount: {type: Number, required: true},
-    method: {type: String, required: true},
-    status: {type: String, required: true, enum: ["pending", "completed", "failed"], default: "pending"},
-    paid_at: Date,
+    type: {
+      type: String,
+      enum: ["deposit", "remaining", "full"],
+      default: "full",
+    },
+    method: {
+      type: String,
+      enum: ["COD", "bank_transfer"],
+      default: "COD",
+    },
+    amount: { type: Number, required: true, default: 0 },
+    status: {
+      type: String,
+      enum: ["pending", "paid", "failed", "refunded"],
+      default: "pending",
+    },
+    transaction_id: { type: String, default: null },
+    paid_at: { type: Date, default: null },
   },
   { timestamps: true, collection: "payment" }
 );

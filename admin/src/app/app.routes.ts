@@ -6,6 +6,8 @@ import { AdminProducts } from './pages/admin-products/admin-products';
 import { AdminProductDetail } from './pages/admin-product-detail/admin-product-detail';
 import { AdminProductForm } from './pages/admin-product-form/admin-product-form';
 import { AdminVariantDetail } from './pages/admin-variant-detail/admin-variant-detail';
+import { AdminOrders } from './pages/admin-orders/admin-orders';
+import { AdminOrderDetail } from './pages/admin-order-detail/admin-order-detail';
 
 export const routes: Routes = [
   {
@@ -14,14 +16,14 @@ export const routes: Routes = [
     children: [
       { path: 'promotions', component: AdminCoupons },
 
-      // products
       { path: 'products', component: AdminProducts },
       { path: 'products/new', component: AdminProductForm },
       { path: 'products/:id', component: AdminProductDetail },
       { path: 'products/:id/edit', component: AdminProductForm },
-
-      // variant detail
       { path: 'variants/:id', component: AdminVariantDetail },
+
+      { path: 'orders', component: AdminOrders },
+      { path: 'orders/:id', component: AdminOrderDetail },
     ]
   },
   { path: '', redirectTo: '/admin/products', pathMatch: 'full' }

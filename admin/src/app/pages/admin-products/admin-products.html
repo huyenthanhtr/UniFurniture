@@ -2,7 +2,6 @@
   <div class="page-header">
     <div>
       <h1>Quản lý sản phẩm</h1>
-      <div class="sub">Danh sách sản phẩm và điều hướng nhanh tới trang chi tiết</div>
     </div>
 
     <button class="btn btn-primary" (click)="goNew()">+ Thêm sản phẩm</button>
@@ -12,25 +11,25 @@
     <input
       class="search-input"
       type="text"
-      placeholder="Tìm theo tên, SKU, slug, brand"
+      placeholder="Tìm theo tên, SKU, Slug, Brand"
       [(ngModel)]="q"
       (ngModelChange)="applyFilterSort()"
     />
 
     <select class="toolbar-select" [(ngModel)]="status" (ngModelChange)="onChangeStatus()">
-      <option value="active">active</option>
-      <option value="inactive">inactive</option>
-      <option value="">tất cả trạng thái</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+      <option value="">Tất cả trạng thái</option>
     </select>
 
     <select class="toolbar-select" [(ngModel)]="sortBy" (ngModelChange)="onChangeSort()">
-      <option value="updatedAt">sắp xếp theo cập nhật</option>
-      <option value="sold">sắp xếp theo đã bán</option>
+      <option value="updatedAt">Sắp xếp theo cập nhật</option>
+      <option value="sold">Sắp xếp theo đã bán</option>
     </select>
 
     <select class="toolbar-select small" [(ngModel)]="sortDir" (ngModelChange)="onChangeSort()">
-      <option value="desc">giảm dần</option>
-      <option value="asc">tăng dần</option>
+      <option value="desc">Giảm dần</option>
+      <option value="asc">Tăng dần</option>
     </select>
   </div>
 
@@ -81,17 +80,19 @@
               {{ p.status || '-' }}
             </span>
           </td>
-          <td class="actions">
-            <button class="btn btn-ghost btn-sm" (click)="goEdit(p); $event.stopPropagation()">Sửa</button>
+          <td class="actions-cell">
+            <div class="actions">
+              <button class="btn btn-ghost btn-sm" (click)="goEdit(p); $event.stopPropagation()">Sửa</button>
 
-            <button
-              class="btn btn-sm"
-              [class.btn-danger]="p.status==='active'"
-              [class.btn-success]="p.status!=='active'"
-              (click)="askToggleStatus(p); $event.stopPropagation()"
-            >
-              {{ p.status==='active' ? 'Inactive' : 'Active' }}
-            </button>
+              <button
+                class="btn btn-sm"
+                [class.btn-danger]="p.status==='active'"
+                [class.btn-success]="p.status!=='active'"
+                (click)="askToggleStatus(p); $event.stopPropagation()"
+              >
+                {{ p.status==='active' ? 'Inactive' : 'Active' }}
+              </button>
+            </div>
           </td>
         </tr>
 

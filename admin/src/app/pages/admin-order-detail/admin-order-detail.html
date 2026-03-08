@@ -1,0 +1,188 @@
+﻿<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Chi tiết đơn hàng</h1>
+      <div class="sub">{{ order?.order_code || order?._id || '' }}</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" (click)="back()">← Quay lại</button>
+      <button class="btn btn-primary" (click)="askSaveStatus()" [disabled]="!order || editableStatus===order.status">
+        Lưu trạng thái
+      </button>
+    </div>
+  </div>
+
+  <div class="state" *ngIf="isLoading">Đang tải...</div>
+
+  <div class="body" *ngIf="!isLoading && order">
+    <section class="card">
+      <h3>Thông tin đơn hàng</h3>
+      <div class="grid">
+        <div class="field readonly">
+          <label>Mã đơn</label>
+          <div>{{ order.order_code || order._id }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Ngày đặt</label>
+          <div>{{ (order.ordered_at || order.createdAt) | date:'dd/MM/yyyy HH:mm' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Tổng tiền</label>
+          <div>{{ order.total_amount | number }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Tiền cọc</label>
+          <div>{{ order.deposit_amount | number }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Lắp đặt</label>
+          <div>{{ order.is_installed ? 'Có' : 'Không' }}</div>
+        </div>
+
+        <div class="field">
+          <label>Trạng thái đơn hàng</label>
+          <select [(ngModel)]="editableStatus">
+            <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Thông tin người nhận</h3>
+      <div class="grid">
+        <div class="field readonly">
+          <label>Tên người nhận</label>
+          <div>{{ display?.receiver_name || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Số điện thoại</label>
+          <div>{{ display?.phone || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Email</label>
+          <div>{{ display?.email || '-' }}</div>
+        </div>
+
+        <div class="field readonly full">
+          <label>Địa chỉ giao hàng</label>
+          <div>{{ display?.address || '-' }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Thông tin khách hàng</h3>
+      <div class="grid">
+        <div class="field readonly">
+          <label>Loại khách</label>
+          <div>{{ display?.customer_type || 'guest' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Có tài khoản</label>
+          <div>{{ display?.has_account ? 'Có' : 'Không' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Customer code</label>
+          <div>{{ customer?.customer_code || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Customer status</label>
+          <div>{{ customer?.status || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Họ tên hồ sơ</label>
+          <div>{{ profile?.full_name || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Email hồ sơ</label>
+          <div>{{ profile?.email || '-' }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card payment-card">
+      <h3>Thanh toán</h3>
+
+      <div class="payment-summary">
+        <div class="summary-box">
+          <div class="summary-label">Tổng giá trị đơn</div>
+          <div class="summary-value">{{ order.total_amount | number }}</div>
+        </div>
+
+        <div class="summary-box">
+          <div class="summary-label">Đã thanh toán</div>
+          <div class="summary-value paid">{{ paidAmount | number }}</div>
+        </div>
+
+        <div class="summary-box">
+          <div class="summary-label">Đang chờ thanh toán</div>
+          <div class="summary-value pending">{{ pendingAmount | number }}</div>
+        </div>
+
+        <div class="summary-box">
+          <div class="summary-label">Còn lại</div>
+          <div class="summary-value remaining">{{ remainingAmount | number }}</div>
+        </div>
+      </div>
+
+      <div class="table-wrap payment-table-wrap" *ngIf="payments.length > 0; else noPayment">
+        <table class="payment-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Loại thanh toán</th>
+              <th>Phương thức</th>
+              <th>Số tiền</th>
+              <th>Trạng thái</th>
+              <th>Mã giao dịch</th>
+              <th>Thời gian</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let payment of payments; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ getPaymentTypeText(payment.type) }}</td>
+              <td>{{ getPaymentMethodText(payment.method) }}</td>
+              <td class="amount">{{ payment.amount | number }}</td>
+              <td>
+                <span class="badge" [ngClass]="getPaymentStatusClass(payment.status)">
+                  {{ getPaymentStatusText(payment.status) }}
+                </span>
+              </td>
+              <td>{{ payment.transaction_id || '-' }}</td>
+              <td>{{ (payment.paid_at || payment.createdAt) | date:'dd/MM/yyyy HH:mm' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #noPayment>
+        <div class="empty">Chưa có giao dịch thanh toán cho đơn này.</div>
+      </ng-template>
+    </section>
+  </div>
+
+  <div class="overlay" *ngIf="showConfirm"></div>
+
+  <div class="confirm" *ngIf="showConfirm">
+    <h3>Xác nhận</h3>
+    <p>{{ confirmMessage }}</p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
+      <button class="btn btn-primary" (click)="runConfirm()">OK</button>
+    </div>
+  </div>
+</div>
