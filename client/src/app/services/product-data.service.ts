@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { catchError, forkJoin, map, Observable, of, timeout } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { catchError, forkJoin, map, Observable, of, shareReplay, timeout } from 'rxjs';
 
 interface ApiListResponse<T> {
   page: number;
@@ -13,6 +13,7 @@ interface ProductDocument {
   _id: string;
   name: string;
   thumbnail?: string;
+  thumbnail_url?: string;
   min_price?: number;
   compare_at_price?: number;
   sold?: number;
@@ -22,6 +23,24 @@ interface ProductDocument {
   size?: unknown;
   material?: unknown;
   warranty_months?: number;
+  category_id?: string;
+  collection_id?: string;
+}
+
+interface CategoryDocument {
+  _id: string;
+  name: string;
+  slug: string;
+  status?: string;
+  image_url?: string;
+}
+
+interface CollectionDocument {
+  _id: string;
+  name: string;
+  slug: string;
+  status?: string;
+  banner_url?: string;
 }
 
 interface ProductImageDocument {
@@ -51,6 +70,10 @@ export interface ProductListItem {
   reviewsCount: number;
   soldCount: number;
   colors: string[];
+  categoryId: string | null;
+  collectionId: string | null;
+  sizeText: string;
+  materialText: string;
 }
 
 export interface ProductListResponse {
@@ -59,6 +82,22 @@ export interface ProductListResponse {
   total: number;
   totalPages: number;
   items: ProductListItem[];
+}
+
+export interface TaxonomyItem {
+  id: string;
+  name: string;
+  slug: string;
+  imageUrl?: string;
+}
+
+export interface ProductQueryOptions {
+  sortBy?: 'createdAt' | 'bestSelling' | 'updatedAt';
+  order?: 'asc' | 'desc';
+  categoryIds?: string[];
+  collectionId?: string;
+  search?: string;
+  fields?: string;
 }
 
 export interface ProductDetailData {
@@ -83,12 +122,43 @@ const FALLBACK_IMAGE_URL =
 export class ProductDataService {
   private readonly http = inject(HttpClient);
   private readonly apiBaseUrl = 'http://localhost:3000/api';
+  private categoriesCache$?: Observable<TaxonomyItem[]>;
+  private collectionsCache$?: Observable<TaxonomyItem[]>;
+  private collectionCategoryLinksCache$?: Observable<Record<string, string[]>>;
 
-  getProducts(page = 1, limit = 24): Observable<ProductListResponse> {
+  getProducts(page = 1, limit = 24, options: ProductQueryOptions = {}): Observable<ProductListResponse> {
+    let params = new HttpParams().set('page', String(page)).set('limit', String(limit));
+
+    const resolvedSortBy = options.sortBy || 'createdAt';
+    const resolvedOrder = options.order || 'desc';
+    const sortPrefix = resolvedOrder === 'asc' ? '' : '-';
+    const sortField = resolvedSortBy === 'bestSelling' ? 'sold' : resolvedSortBy;
+    params = params.set('sort', `${sortPrefix}${sortField}`);
+
+    if (options.collectionId) {
+      params = params.set('collection', options.collectionId);
+    }
+
+    if (options.categoryIds && options.categoryIds.length > 0) {
+      const categoryParam = options.categoryIds.map((value) => value.trim()).filter(Boolean).join(',');
+      if (categoryParam) {
+        params = params.set('category', categoryParam);
+      }
+    }
+
+    if (options.search) {
+      const keyword = options.search.trim();
+      if (keyword) {
+        params = params.set('q', keyword);
+      }
+    }
+
+    const listFields =
+      options.fields || 'name,thumbnail,thumbnail_url,min_price,compare_at_price,sold,category_id,collection_id,size,material';
+    params = params.set('fields', listFields);
+
     return this.http
-      .get<ApiListResponse<ProductDocument>>(`${this.apiBaseUrl}/products`, {
-        params: { page: String(page), limit: String(limit), sort: '-createdAt' },
-      })
+      .get<ApiListResponse<ProductDocument>>(`${this.apiBaseUrl}/products`, { params })
       .pipe(
         timeout(15000),
         map((response) => {
@@ -101,11 +171,15 @@ export class ProductDataService {
               name: product.name || 'San pham',
               price,
               originalPrice,
-              imageUrl: product.thumbnail?.trim() || FALLBACK_IMAGE_URL,
+              imageUrl: product.thumbnail?.trim() || product.thumbnail_url?.trim() || FALLBACK_IMAGE_URL,
               discountBadge: this.getDiscountBadge(price, originalPrice),
               reviewsCount: 0,
               soldCount: this.toNullableNumber(product.sold) ?? 0,
               colors: [],
+              categoryId: product.category_id || null,
+              collectionId: product.collection_id || null,
+              sizeText: this.valueToSizeText(product.size),
+              materialText: this.valueToText(product.material),
             };
           });
 
@@ -118,6 +192,73 @@ export class ProductDataService {
           };
         }),
       );
+  }
+
+  getCategories(limit = 300): Observable<TaxonomyItem[]> {
+    if (!this.categoriesCache$) {
+      this.categoriesCache$ = this.http
+        .get<ApiListResponse<CategoryDocument>>(`${this.apiBaseUrl}/categories`, {
+          params: { page: '1', limit: String(limit), sort: 'name', status: 'active' },
+        })
+        .pipe(
+          timeout(15000),
+          map((response) => (response.items || []).map((item) => this.toTaxonomyItem(item))),
+          shareReplay(1),
+        );
+    }
+    return this.categoriesCache$;
+  }
+
+  getCollections(limit = 120): Observable<TaxonomyItem[]> {
+    if (!this.collectionsCache$) {
+      this.collectionsCache$ = this.http
+        .get<ApiListResponse<CollectionDocument>>(`${this.apiBaseUrl}/collections`, {
+          params: { page: '1', limit: String(limit), sort: 'name', status: 'active' },
+        })
+        .pipe(
+          timeout(15000),
+          map((response) => (response.items || []).map((item) => this.toTaxonomyItem(item))),
+          shareReplay(1),
+        );
+    }
+    return this.collectionsCache$;
+  }
+
+  getCollectionCategoryLinks(limit = 2000): Observable<Record<string, string[]>> {
+    if (!this.collectionCategoryLinksCache$) {
+      this.collectionCategoryLinksCache$ = this.http
+        .get<ApiListResponse<ProductDocument>>(`${this.apiBaseUrl}/products`, {
+          params: { page: '1', limit: String(limit), fields: 'collection_id,category_id' },
+        })
+        .pipe(
+          timeout(15000),
+          map((response) => {
+            const relation = new Map<string, Set<string>>();
+
+            for (const product of response.items || []) {
+              const collectionId = String(product.collection_id || '').trim();
+              const categoryId = String(product.category_id || '').trim();
+              if (!collectionId || !categoryId) {
+                continue;
+              }
+
+              if (!relation.has(collectionId)) {
+                relation.set(collectionId, new Set<string>());
+              }
+              relation.get(collectionId)?.add(categoryId);
+            }
+
+            const normalized: Record<string, string[]> = {};
+            for (const [collectionId, categorySet] of relation.entries()) {
+              normalized[collectionId] = Array.from(categorySet);
+            }
+            return normalized;
+          }),
+          catchError(() => of({})),
+          shareReplay(1),
+        );
+    }
+    return this.collectionCategoryLinksCache$;
   }
 
   getProductList(limit = 24): Observable<ProductListItem[]> {
@@ -222,6 +363,22 @@ export class ProductDataService {
 
   private toNullableNumber(value: unknown): number | null {
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
+  }
+
+  private toTaxonomyItem(source: CategoryDocument | CollectionDocument): TaxonomyItem {
+    const imageUrl =
+      'image_url' in source
+        ? source.image_url?.trim() || ''
+        : 'banner_url' in source
+        ? source.banner_url?.trim() || ''
+        : '';
+
+    return {
+      id: source._id,
+      name: source.name?.trim() || '',
+      slug: source.slug?.trim() || '',
+      imageUrl: imageUrl || undefined,
+    };
   }
 
   private valueToText(value: unknown): string {

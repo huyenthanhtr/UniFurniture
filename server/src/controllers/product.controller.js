@@ -82,7 +82,7 @@ async function getProducts(req, res, next) {
     }
 
     const [items, total] = await Promise.all([
-      Product.find(query).select(projection).sort(sortOptions).skip(skip).limit(limitNum),
+      Product.find(query).select(projection).sort(sortOptions).skip(skip).limit(limitNum).lean(),
       Product.countDocuments(query),
     ]);
 
