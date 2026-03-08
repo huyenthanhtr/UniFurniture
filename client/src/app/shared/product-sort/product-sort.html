@@ -1,10 +1,19 @@
-<div class="product-sort">
-    <div class="sort-dropdown">
-        <select class="sort-select">
-            <option value="default">Sản phẩm nổi bật</option>
-            <option value="price-asc">Giá: Thấp đến Cao</option>
-            <option value="price-desc">Giá: Cao đến Thấp</option>
-            <option value="newest">Mới nhất</option>
-        </select>
+﻿<div class="product-sort">
+  <div class="sort-dropdown" [class.is-open]="isOpen">
+    <button type="button" class="sort-trigger" (click)="toggleDropdown()">
+      <span class="sort-value">{{ getSelectedLabel() }}</span>
+    </button>
+
+    <div class="sort-menu" *ngIf="isOpen">
+      <button
+        type="button"
+        class="sort-option"
+        *ngFor="let option of sortOptions"
+        [class.is-selected]="selectedSort === option.value"
+        (click)="selectSort(option.value)"
+      >
+        {{ option.label }}
+      </button>
     </div>
+  </div>
 </div>

@@ -1,42 +1,56 @@
 <div class="product-page">
   <nav class="breadcrumb">
     <div class="container">
-      <a routerLink="/">Trang ch&#7911;</a>
+      <a routerLink="/">Trang chủ</a>
       <span>/</span>
-      <span>Danh m&#7909;c</span>
+      <span>Danh mục</span>
+      <ng-container *ngIf="breadcrumbParentName()">
+        <span>/</span>
+        <span>{{ breadcrumbParentName() }}</span>
+      </ng-container>
       <span>/</span>
-      <span class="current">T&#7845;t c&#7843; s&#7843;n ph&#7849;m</span>
+      <span class="current">{{ pageTitle() }}</span>
     </div>
   </nav>
 
   <div class="product-banner">
     <img
-      src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=1920"
-      alt="Banner t&#7845;t c&#7843; s&#7843;n ph&#7849;m"
+      [src]="bannerImageUrl()"
+      [alt]="'Banner ' + pageTitle()"
       class="banner-img"
     />
   </div>
 
   <div class="container content-container">
     <div class="page-header">
-      <h1 class="page-title">T&#7845;t c&#7843; s&#7843;n ph&#7849;m</h1>
-      <app-product-sort></app-product-sort>
+      <h1 class="page-title">{{ pageTitle() }}</h1>
+      <app-product-sort [selectedSort]="selectedSort()" (sortChange)="onSortChange($event)"></app-product-sort>
     </div>
 
     <div class="filter-section">
-      <app-product-filter></app-product-filter>
+      <app-product-filter
+        [categoryOptions]="filterCategoryOptions()"
+        [categoryDefaultLabel]="categoryFilterLabel()"
+        [selectedCategoryId]="selectedCategoryId()"
+        [selectedPriceRange]="selectedPriceRange()"
+        [selectedColor]="selectedColor()"
+        [selectedSize]="selectedSize()"
+        (filtersChange)="onFilterChange($event)"
+      ></app-product-filter>
     </div>
 
     <main class="main-content">
-      <p *ngIf="isLoading()" class="status-message">Dang tai san pham...</p>
+      <p *ngIf="isLoading()" class="status-message">Đang tải sản phẩm...</p>
 
       <div *ngIf="!isLoading() && errorMessage()" class="status-block">
         <p class="status-message status-error">{{ errorMessage() }}</p>
-        <button class="retry-btn" (click)="retry()">Tai lai</button>
+        <button class="retry-btn" (click)="retry()">Tải lại</button>
       </div>
 
       <ng-container *ngIf="!isLoading() && !errorMessage()">
-        <app-product-grid [products]="products()"></app-product-grid>
+        <app-product-grid [products]="visibleProducts()"></app-product-grid>
+
+        <p *ngIf="visibleProducts().length === 0" class="status-message">Khong co san pham phu hop bo loc hien tai.</p>
 
         <div class="pagination" *ngIf="totalPages() > 1">
           <button class="page-btn" (click)="previousPage()" [disabled]="currentPage() === 1">Previous</button>

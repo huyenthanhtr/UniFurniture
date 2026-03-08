@@ -11,17 +11,17 @@
   </div>
 
   <div class="section">
-    <div class="label">M&#224;u s&#7855;c</div>
-    <div>{{ product.colors.length > 0 ? product.colors.join(', ') : '&#272;ang c&#7853;p nh&#7853;t' }}</div>
+    <div class="label">Màu sắc</div>
+    <div>{{ product.colors.length > 0 ? product.colors.join(', ') : 'Đang cập nhật' }}</div>
   </div>
 
   <div class="section">
-    <div class="label">K&#237;ch th&#432;&#7899;c</div>
-    <div>{{ product.sizeText || '&#272;ang c&#7853;p nh&#7853;t' }}</div>
+    <div class="label">Kích thước</div>
+    <div>{{ product.sizeText || 'Đang cập nhật' }}</div>
   </div>
 
   <div class="section" *ngIf="product.materialText">
-    <div class="label">Ch&#7845;t li&#7879;u</div>
+    <div class="label">Chất liệu</div>
     <div>{{ product.materialText }}</div>
   </div>
 
@@ -41,4 +41,4 @@
   <p class="add-message" *ngIf="addMessage">{{ addMessage }}</p>
 </div>
 
-<ng-template #contactPrice>Li&#234;n h&#7879;</ng-template>
+<ng-template #contactPrice>Liên hệ</ng-template>

@@ -91,7 +91,11 @@ async function getProducts(req, res, next) {
       const f = String(fields).split(",").map((s) => s.trim()).filter(Boolean);
       if (f.length) projection = f.join(" ");
     } else if (exclude) {
-      const ex = String(exclude).split(",").map((s) => s.trim()).filter(Boolean).map((x) => `-${x}`);
+      const ex = String(exclude)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((x) => `-${x}`);
       if (ex.length) projection = ex.join(" ");
     }
 
@@ -100,7 +104,8 @@ async function getProducts(req, res, next) {
         .select(projection)
         .sort({ [sortKey]: sortDirection, _id: -1 })
         .skip(skip)
-        .limit(limitNum),
+        .limit(limitNum)
+        .lean(),
       Product.countDocuments(query),
     ]);
 
@@ -118,7 +123,7 @@ async function getProducts(req, res, next) {
 
 async function getProductById(req, res, next) {
   try {
-    const doc = await Product.findById(req.params.id);
+    const doc = await Product.findById(req.params.id).lean();
     if (!doc) return res.status(404).json({ error: "Product not found" });
     res.json(doc);
   } catch (err) {
@@ -167,7 +172,7 @@ async function updateProduct(req, res, next) {
 
     const slug = await ensureUniqueSlug(req.body.slug || payload.name, id);
 
-    const doc = await Product.findByIdAndUpdate(
+    await Product.findByIdAndUpdate(
       id,
       {
         $set: {
@@ -180,8 +185,8 @@ async function updateProduct(req, res, next) {
 
     await recalculateProductAggregates(id);
 
-    const fresh = await Product.findById(id);
-    res.json(fresh || doc);
+    const fresh = await Product.findById(id).lean();
+    res.json(fresh);
   } catch (err) {
     next(err);
   }
@@ -209,7 +214,7 @@ async function patchProduct(req, res, next) {
       update.slug = await ensureUniqueSlug(req.body.slug || update.name, id);
     }
 
-    const doc = await Product.findByIdAndUpdate(id, { $set: update }, { new: true, runValidators: true });
+    const doc = await Product.findByIdAndUpdate(id, { $set: update }, { new: true, runValidators: true }).lean();
     if (!doc) return res.status(404).json({ error: "Product not found" });
 
     res.json(doc);

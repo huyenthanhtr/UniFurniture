@@ -3,8 +3,13 @@
     <ul class="navbar-list">
       <li
         class="navbar-item has-dropdown"
+        [class.menu-open]="isProductsMenuOpen()"
         routerLinkActive="navbar-item--active"
         [routerLinkActiveOptions]="{ exact: false }"
+        (mouseenter)="openProductsMenu()"
+        (mouseleave)="scheduleCloseProductsMenu()"
+        (focusin)="openProductsMenu()"
+        (focusout)="scheduleCloseProductsMenu()"
       >
         <a [routerLink]="['/products']" class="navbar-link">
           S&#7843;n ph&#7849;m
@@ -13,35 +18,40 @@
           </svg>
         </a>
 
-        <div class="dropdown-panel" role="menu" aria-label="Danh m&#7909;c s&#7843;n ph&#7849;m">
-          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'bo-suu-tap' }">
-            B&#7897; s&#432;u t&#7853;p
-            <span class="item-arrow">&#8250;</span>
-          </a>
-          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'phong-ngu' }">
-            Ph&#242;ng ng&#7911;
-            <span class="item-arrow">&#8250;</span>
-          </a>
-          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'phong-khach' }">
-            Ph&#242;ng kh&#225;ch
-            <span class="item-arrow">&#8250;</span>
-          </a>
-          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'phong-an' }">
-            Ph&#242;ng &#259;n
-            <span class="item-arrow">&#8250;</span>
-          </a>
-          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'phong-lam-viec' }">
-            Ph&#242;ng l&#224;m vi&#7879;c
-            <span class="item-arrow">&#8250;</span>
-          </a>
-          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'tu-bep' }">
-            T&#7911; b&#7871;p
-            <span class="item-arrow">&#8250;</span>
-          </a>
-          <a class="dropdown-item" [routerLink]="['/danh-muc']" [queryParams]="{ slug: 'nem' }">
-            N&#7879;m
-            <span class="item-arrow">&#8250;</span>
-          </a>
+        <div
+          class="dropdown-panel dropdown-panel--products"
+          [class.has-submenu]="activeSubItems().length > 0"
+          role="menu"
+          aria-label="Danh m&#7909;c s&#7843;n ph&#7849;m"
+          (mouseenter)="openProductsMenu()"
+          (mouseleave)="scheduleCloseProductsMenu()"
+        >
+          <div class="product-mega" [class.has-submenu]="activeSubItems().length > 0">
+            <div class="product-mega__left">
+              <a
+                class="dropdown-item dropdown-item--parent product-root-item"
+                *ngFor="let group of productGroups(); trackBy: trackByGroup"
+                [class.is-active]="activeGroupSlug() === group.root.slug"
+                [routerLink]="['/products']"
+                [queryParams]="rootQueryParams(group)"
+                (mouseenter)="setActiveGroup(group.root.slug)"
+              >
+                <span>{{ group.root.label }}</span>
+                <span class="item-arrow" *ngIf="group.children.length > 0">&#8250;</span>
+              </a>
+            </div>
+
+            <div class="product-mega__right" *ngIf="activeSubItems().length > 0">
+              <a
+                class="dropdown-item dropdown-item--child product-sub-item"
+                *ngFor="let child of activeSubItems(); trackBy: trackBySubItem"
+                [routerLink]="['/products']"
+                [queryParams]="submenuQueryParams(child)"
+              >
+                {{ child.label }}
+              </a>
+            </div>
+          </div>
         </div>
       </li>
 
