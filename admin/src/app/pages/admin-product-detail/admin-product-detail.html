@@ -25,13 +25,13 @@
   <div class="body" *ngIf="!isLoading && product">
     <div class="top-grid">
       <section class="card info">
-        <h3>Thông tin</h3>
-
+        <h3>Thông tin sản phẩm</h3>
         <div class="kv"><span>Brand</span><b>{{ product.brand || '-' }}</b></div>
         <div class="kv"><span>Loại</span><b>{{ product.product_type || '-' }}</b></div>
         <div class="kv"><span>SKU</span><b>{{ product.sku || '-' }}</b></div>
         <div class="kv"><span>Slug</span><b>{{ product.slug || '-' }}</b></div>
-        <div class="kv"><span>URL</span><b>{{ product.url || '-' }}</b></div>
+        <div class="kv"><span>Giá thấp nhất</span><b>{{ product.min_price | number }}</b></div>
+        <div class="kv"><span>Đã bán</span><b>{{ product.sold || 0 }}</b></div>
         <div class="kv">
           <span>Status</span>
           <b [class.badge-active]="product.status==='active'" [class.badge-inactive]="product.status==='inactive'">
@@ -50,7 +50,10 @@
     </div>
 
     <section class="card gallery">
-      <h3>Hình ảnh sản phẩm</h3>
+      <div class="gallery-head">
+        <h3>Hình ảnh sản phẩm</h3>
+        <button class="icon-add" type="button" (click)="toggleAddImageForm()">+</button>
+      </div>
 
       <div class="gallery-grid">
         <div class="main-image">
@@ -61,9 +64,96 @@
         </div>
 
         <div class="thumbs">
-          <button class="thumb" *ngFor="let img of images" type="button" (click)="selectImage(img.image_url)">
+          <button
+            class="thumb"
+            *ngFor="let img of galleryImages"
+            type="button"
+            [class.thumb-active]="img.image_url===selectedImageUrl"
+            (click)="selectImage(img)"
+          >
             <img [src]="img.image_url" [alt]="img.alt_text || product.name" />
           </button>
+        </div>
+      </div>
+
+      <div class="image-panel" *ngIf="showAddImageForm">
+        <h4>Thêm ảnh</h4>
+
+        <div class="image-form">
+          <div class="field full">
+            <label>Image URL</label>
+            <input [(ngModel)]="newImage.image_url" />
+          </div>
+
+          <div class="field">
+            <label>Alt text</label>
+            <input [(ngModel)]="newImage.alt_text" />
+          </div>
+
+          <div class="field">
+            <label>Sort order</label>
+            <input type="number" [(ngModel)]="newImage.sort_order" />
+          </div>
+
+          <div class="field">
+            <label>Variant</label>
+            <select [(ngModel)]="newImage.variant_id">
+              <option value="">Ảnh chung của product</option>
+              <option *ngFor="let v of variants" [value]="v._id">{{ getVariantLabel(v) }}</option>
+            </select>
+          </div>
+
+          <label class="check">
+            <input type="checkbox" [(ngModel)]="newImage.is_primary" />
+            <span>Đặt làm ảnh chính</span>
+          </label>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" (click)="addImage()">Thêm ảnh</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="image-panel" *ngIf="selectedImage">
+        <h4>Chi tiết ảnh</h4>
+
+        <div class="image-row">
+          <div class="image-preview">
+            <img [src]="selectedImage.image_url" [alt]="selectedImage.alt_text || product.name" />
+          </div>
+
+          <div class="image-fields">
+            <div class="field full">
+              <label>URL</label>
+              <input [(ngModel)]="selectedImage.image_url" />
+            </div>
+
+            <div class="field">
+              <label>Alt</label>
+              <input [(ngModel)]="selectedImage.alt_text" />
+            </div>
+
+            <div class="field">
+              <label>Sort</label>
+              <input type="number" [(ngModel)]="selectedImage.sort_order" />
+            </div>
+
+            <div class="field">
+              <label>Variant</label>
+              <select [(ngModel)]="selectedImage.variant_id">
+                <option [ngValue]="null">Ảnh chung của product</option>
+                <option *ngFor="let v of variants" [ngValue]="v._id">{{ getVariantLabel(v) }}</option>
+              </select>
+            </div>
+
+            <div class="image-actions">
+              <button class="btn btn-ghost" (click)="saveSelectedImage()">Lưu</button>
+              <button class="btn btn-primary" (click)="setPrimaryImage(selectedImage)">
+                {{ selectedImage.is_primary ? 'Ảnh chính' : 'Đặt làm ảnh chính' }}
+              </button>
+              <button class="btn btn-danger" (click)="askDeleteImage(selectedImage)">Xóa</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -77,26 +167,32 @@
       <table>
         <thead>
           <tr>
+            <th>Ảnh</th>
             <th>Variant</th>
             <th>SKU</th>
             <th>Màu</th>
             <th>Giá</th>
             <th>Tồn</th>
+            <th>Status</th>
             <th>Variant status</th>
             <th class="th-actions">Hành động</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngIf="variants.length===0">
-            <td colspan="7" class="state">Chưa có variant.</td>
+            <td colspan="9" class="state">Chưa có variant.</td>
           </tr>
 
           <tr *ngFor="let v of variants">
-            <td class="cell-title" (click)="viewVariant(v)"><b>{{ v.variant_name || v.name }}</b></td>
+            <td>
+              <img class="mini-thumb" [src]="getVariantThumbnail(v)" [alt]="getVariantLabel(v)" />
+            </td>
+            <td class="cell-title" (click)="viewVariant(v)"><b>{{ getVariantLabel(v) }}</b></td>
             <td>{{ v.sku || '-' }}</td>
             <td>{{ v.color || '-' }}</td>
             <td>{{ v.price | number }}</td>
             <td>{{ v.stock_quantity ?? '-' }}</td>
+            <td>{{ v.status || '-' }}</td>
             <td>{{ v.variant_status || '-' }}</td>
             <td class="actions">
               <button class="btn btn-ghost" (click)="viewVariant(v); $event.stopPropagation()">Sửa</button>
@@ -115,14 +211,14 @@
     </section>
   </div>
 
-  <div class="overlay" *ngIf="isLoading || showConfirm"></div>
+  <div class="overlay" *ngIf="showConfirm"></div>
 
   <div class="confirm" *ngIf="showConfirm">
     <h3>Xác nhận</h3>
     <p>{{ confirmMessage }}</p>
     <div class="confirm-actions">
       <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
-      <button class="btn btn-danger" (click)="runConfirm()">Xác nhận</button>
+      <button class="btn btn-primary" (click)="runConfirm()">OK</button>
     </div>
   </div>
 </div>

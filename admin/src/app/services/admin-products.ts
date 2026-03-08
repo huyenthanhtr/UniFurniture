@@ -5,7 +5,6 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class AdminProductsService {
   private http = inject(HttpClient);
-
   private base = 'http://localhost:3000/api';
 
   getProducts(params: any = {}): Observable<any> {
@@ -14,6 +13,22 @@ export class AdminProductsService {
 
   getProductById(id: string): Observable<any> {
     return this.http.get<any>(`${this.base}/products/${id}`);
+  }
+
+  createProduct(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.base}/products`, payload);
+  }
+
+  updateProduct(id: string, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.base}/products/${id}`, payload);
+  }
+
+  patchProduct(id: string, payload: any): Observable<any> {
+    return this.http.patch<any>(`${this.base}/products/${id}`, payload);
+  }
+
+  deleteProduct(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.base}/products/${id}`);
   }
 
   getCategories(params: any = {}): Observable<any> {
@@ -32,32 +47,43 @@ export class AdminProductsService {
     return this.http.get<any>(`${this.base}/product-variants/${id}`);
   }
 
+  createVariant(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.base}/product-variants`, payload);
+  }
+
+  updateVariant(id: string, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.base}/product-variants/${id}`, payload);
+  }
+
+  patchVariant(id: string, payload: any): Observable<any> {
+    return this.http.patch<any>(`${this.base}/product-variants/${id}`, payload);
+  }
+
+  deleteVariant(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.base}/product-variants/${id}`);
+  }
+
   getImages(params: any = {}): Observable<any> {
     return this.http.get<any>(`${this.base}/product-images`, { params });
   }
 
-  // CRUD (backend chưa có thì tạm thời chưa dùng)
-  createProduct(payload: any): Observable<any> {
-    return this.http.post(`${this.base}/products`, payload);
+  getImageById(id: string): Observable<any> {
+    return this.http.get<any>(`${this.base}/product-images/${id}`);
   }
 
-  updateProduct(id: string, payload: any): Observable<any> {
-    return this.http.put(`${this.base}/products/${id}`, payload);
+  createImage(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.base}/product-images`, payload);
   }
 
-  patchProduct(id: string, payload: any): Observable<any> {
-    return this.http.patch(`${this.base}/products/${id}`, payload);
+  updateImage(id: string, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.base}/product-images/${id}`, payload);
   }
 
-  createVariant(payload: any): Observable<any> {
-    return this.http.post(`${this.base}/product-variants`, payload);
+  patchImage(id: string, payload: any): Observable<any> {
+    return this.http.patch<any>(`${this.base}/product-images/${id}`, payload);
   }
 
-  updateVariant(id: string, payload: any): Observable<any> {
-    return this.http.put(`${this.base}/product-variants/${id}`, payload);
-  }
-
-  patchVariant(id: string, payload: any): Observable<any> {
-    return this.http.patch(`${this.base}/product-variants/${id}`, payload);
+  deleteImage(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.base}/product-images/${id}`);
   }
 }

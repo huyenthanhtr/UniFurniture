@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { AdminProductsService } from '../../services/admin-products';
 
 @Component({
@@ -23,6 +24,8 @@ export class AdminVariantDetail implements OnInit {
 
   variant: any = null;
   product: any = null;
+  images: any[] = [];
+  thumbnail = '';
 
   showConfirm = false;
   confirmMessage = '';
@@ -30,13 +33,14 @@ export class AdminVariantDetail implements OnInit {
 
   form = this.fb.group({
     variant_name: ['', [Validators.required]],
-    sku: [''],
+    sku: ['', [Validators.required]],
     color: [''],
-    price: [0],
+    price: [0, [Validators.required]],
     compare_at_price: [0],
     stock_quantity: [0],
     status: ['available'],
     variant_status: ['active'],
+    sold: [0],
   });
 
   ngOnInit(): void {
@@ -49,11 +53,24 @@ export class AdminVariantDetail implements OnInit {
     });
   }
 
+  sortImages(arr: any[]) {
+    return [...arr].sort((a, b) => {
+      if (!!a.is_primary !== !!b.is_primary) return a.is_primary ? -1 : 1;
+      const ao = Number(a.sort_order || 0);
+      const bo = Number(b.sort_order || 0);
+      if (ao !== bo) return ao - bo;
+      const at = new Date(a.createdAt || 0).getTime();
+      const bt = new Date(b.createdAt || 0).getTime();
+      return at - bt;
+    });
+  }
+
   load() {
     this.isLoading = true;
     this.variant = null;
     this.product = null;
-    this.cdr.detectChanges();
+    this.images = [];
+    this.thumbnail = '';
 
     this.api.getVariantById(this.id).subscribe({
       next: (v: any) => {
@@ -68,20 +85,32 @@ export class AdminVariantDetail implements OnInit {
           stock_quantity: v.stock_quantity ?? 0,
           status: v.status || 'available',
           variant_status: v.variant_status || 'active',
+          sold: v.sold ?? 0,
         });
 
-        if (v.product_id) {
-          this.api.getProductById(String(v.product_id)).subscribe({
-            next: (p: any) => {
-              this.product = p;
-              this.cdr.detectChanges();
-            },
-            error: () => {},
-          });
-        }
+        forkJoin({
+          product: this.api.getProductById(String(v.product_id)),
+          images: this.api.getImages({ product_id: String(v.product_id), limit: 500 }),
+        }).subscribe({
+          next: (res: any) => {
+            this.product = res.product;
+            this.images = this.sortImages(res.images?.items ?? res.images ?? []);
+            const own = this.images.filter((img: any) => String(img.variant_id || '') === String(this.variant._id));
+            this.thumbnail =
+              own[0]?.image_url ||
+              this.product?.thumbnail ||
+              this.product?.thumbnail_url ||
+              this.images[0]?.image_url ||
+              '';
 
-        this.isLoading = false;
-        this.cdr.detectChanges();
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          },
+          error: () => {
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          },
+        });
       },
       error: () => {
         this.isLoading = false;
@@ -112,9 +141,22 @@ export class AdminVariantDetail implements OnInit {
   save() {
     this.showConfirm = false;
     this.isLoading = true;
-    this.cdr.detectChanges();
 
-    const payload = this.form.getRawValue();
+    const raw = this.form.getRawValue();
+    const payload = {
+      product_id: this.variant.product_id,
+      name: raw.variant_name,
+      variant_name: raw.variant_name,
+      sku: raw.sku,
+      color: raw.color,
+      price: Number(raw.price || 0),
+      compare_at_price: Number(raw.compare_at_price || 0),
+      stock_quantity: Number(raw.stock_quantity || 0),
+      status: raw.status,
+      variant_status: raw.variant_status,
+      sold: Number(raw.sold || 0),
+    };
+
     this.api.updateVariant(this.id, payload).subscribe({
       next: () => this.load(),
       error: () => {
@@ -127,10 +169,8 @@ export class AdminVariantDetail implements OnInit {
   askToggleStatus() {
     const cur = String(this.form.value.variant_status || 'active').toLowerCase();
     const next = cur === 'active' ? 'inactive' : 'active';
-    const label = next.toUpperCase();
-
-    this.confirmMessage = `Chuyển variant sang ${label}?`;
-    this.confirmAction = () => this.toggleStatus(next);
+    this.confirmMessage = `Chuyển variant sang ${next.toUpperCase()}?`;
+    this.confirmAction = () => this.toggleStatus(next as 'active' | 'inactive');
     this.showConfirm = true;
     this.cdr.detectChanges();
   }
@@ -138,7 +178,6 @@ export class AdminVariantDetail implements OnInit {
   toggleStatus(next: 'active' | 'inactive') {
     this.showConfirm = false;
     this.isLoading = true;
-    this.cdr.detectChanges();
 
     this.api.patchVariant(this.id, { variant_status: next }).subscribe({
       next: () => this.load(),

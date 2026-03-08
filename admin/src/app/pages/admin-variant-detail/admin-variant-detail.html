@@ -24,55 +24,69 @@
 
   <div class="state" *ngIf="isLoading">Đang tải...</div>
 
-  <div class="card" *ngIf="!isLoading && variant">
-    <div class="grid">
-      <div class="field">
-        <label>Tên variant *</label>
-        <input type="text" [formControl]="form.controls.variant_name" />
-        <small class="err" *ngIf="form.controls.variant_name.touched && form.controls.variant_name.invalid">Bắt buộc</small>
-      </div>
+  <div class="body" *ngIf="!isLoading && variant">
+    <section class="card preview">
+      <img [src]="thumbnail || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'" [alt]="variant?.variant_name || variant?.name" />
+    </section>
 
-      <div class="field">
-        <label>SKU</label>
-        <input type="text" [formControl]="form.controls.sku" />
-      </div>
+    <section class="card">
+      <div class="grid">
+        <div class="field">
+          <label>Tên variant *</label>
+          <input type="text" [formControl]="form.controls.variant_name" />
+          <small class="err" *ngIf="form.controls.variant_name.touched && form.controls.variant_name.invalid">Bắt buộc</small>
+        </div>
 
-      <div class="field">
-        <label>Màu</label>
-        <input type="text" [formControl]="form.controls.color" />
-      </div>
+        <div class="field">
+          <label>SKU *</label>
+          <input type="text" [formControl]="form.controls.sku" />
+        </div>
 
-      <div class="field">
-        <label>Giá</label>
-        <input type="number" [formControl]="form.controls.price" />
-      </div>
+        <div class="field">
+          <label>Màu</label>
+          <input type="text" [formControl]="form.controls.color" />
+        </div>
 
-      <div class="field">
-        <label>Giá so sánh</label>
-        <input type="number" [formControl]="form.controls.compare_at_price" />
-      </div>
+        <div class="field">
+          <label>Giá</label>
+          <input type="number" [formControl]="form.controls.price" />
+        </div>
 
-      <div class="field">
-        <label>Tồn kho</label>
-        <input type="number" [formControl]="form.controls.stock_quantity" />
-      </div>
+        <div class="field">
+          <label>Giá so sánh</label>
+          <input type="number" [formControl]="form.controls.compare_at_price" />
+        </div>
 
-      <div class="field">
-        <label>Status</label>
-        <input type="text" [formControl]="form.controls.status" />
-      </div>
+        <div class="field">
+          <label>Tồn kho</label>
+          <input type="number" [formControl]="form.controls.stock_quantity" />
+        </div>
 
-      <div class="field">
-        <label>Variant status</label>
-        <select [formControl]="form.controls.variant_status">
-          <option value="active">active</option>
-          <option value="inactive">inactive</option>
-        </select>
+        <div class="field">
+          <label>Trạng thái bán</label>
+          <select [formControl]="form.controls.status">
+            <option value="available">available</option>
+            <option value="unavailable">unavailable</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Trạng thái quản trị</label>
+          <select [formControl]="form.controls.variant_status">
+            <option value="active">active</option>
+            <option value="inactive">inactive</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Đã bán</label>
+          <input type="number" [formControl]="form.controls.sold" />
+        </div>
       </div>
-    </div>
+    </section>
   </div>
 
-  <div class="overlay" *ngIf="isLoading || showConfirm"></div>
+  <div class="overlay" *ngIf="showConfirm"></div>
 
   <div class="confirm" *ngIf="showConfirm">
     <h3>Xác nhận</h3>
