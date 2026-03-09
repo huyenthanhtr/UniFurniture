@@ -6,6 +6,7 @@ import { CategoryPageComponent } from './pages/category-page/category-page';
 import { NewsPageComponent } from './pages/news/news';
 import { NewsDetailComponent } from './pages/news-detail/news-detail';
 import { PromotionsPageComponent } from './pages/promotions/promotions';
+import { PolicyPageComponent } from './pages/policy/policy';
 
 export const routes: Routes = [
     { path: 'ar', component: ArViewer },
@@ -16,5 +17,6 @@ export const routes: Routes = [
     { path: 'khuyen-mai', component: PromotionsPageComponent },
     { path: 'tin-tuc', component: NewsPageComponent },
     { path: 'tin-tuc/:slug', component: NewsDetailComponent },
+    { path: 'chinh-sach/:slug', component: PolicyPageComponent },
 ];
 

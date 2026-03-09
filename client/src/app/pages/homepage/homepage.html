@@ -1,16 +1,44 @@
-<div class="homepage">
+﻿<div class="homepage">
   <div class="loading-overlay" *ngIf="loading">
     <div class="spinner"></div>
   </div>
 
   <div class="error-box" *ngIf="!loading && error">
     <p class="error-msg">{{ error }}</p>
-    <button class="retry-btn" (click)="loadAll()">Thử lại</button>
+    <button class="retry-btn" (click)="loadAll()">Thu lai</button>
   </div>
+
+  <section class="hero-slider" *ngIf="!error">
+    <div class="hero-slider-track" [style.transform]="'translateX(-' + activeSlideIndex * 100 + '%)'">
+      <article class="hero-slide" *ngFor="let slide of slides; trackBy: trackBySlideIndex">
+        <img [src]="slide.imageUrl" [alt]="slide.title" class="hero-slide-img" />
+        <div class="hero-slide-overlay">
+          <p class="hero-kicker">U-HOME FURNI</p>
+          <h2>{{ slide.title }}</h2>
+          <p>{{ slide.description }}</p>
+          <a [routerLink]="slide.ctaLink" class="hero-cta">{{ slide.ctaLabel }}</a>
+        </div>
+      </article>
+    </div>
+
+    <button class="hero-nav hero-nav-prev" type="button" (click)="prevSlide()" aria-label="Slide truoc">&#10094;</button>
+    <button class="hero-nav hero-nav-next" type="button" (click)="nextSlide()" aria-label="Slide sau">&#10095;</button>
+
+    <div class="hero-dots">
+      <button
+        type="button"
+        class="hero-dot"
+        *ngFor="let slide of slides; let i = index; trackBy: trackBySlideIndex"
+        [class.active]="activeSlideIndex === i"
+        (click)="goToSlide(i)"
+        [attr.aria-label]="'Slide ' + (i + 1)"
+      ></button>
+    </div>
+  </section>
 
   <section class="product-section" *ngIf="!loading && !error">
     <div class="section-header">
-      <h2 class="section-title">Giá siêu tốt</h2>
+      <h2 class="section-title">Gía siêu tốt</h2>
       <a class="view-all" [routerLink]="['/products']">Xem tất cả &rsaquo;</a>
     </div>
 
@@ -36,7 +64,7 @@
         </div>
       </a>
 
-      <div class="empty-msg" *ngIf="cheapProducts.length === 0">Chưa có sản phẩm</div>
+      <div class="empty-msg" *ngIf="cheapProducts.length === 0">Chua co san pham</div>
     </div>
   </section>
 
@@ -68,7 +96,7 @@
         </div>
       </a>
 
-      <div class="empty-msg" *ngIf="bestSellingProducts.length === 0">Chưa có sản phẩm</div>
+      <div class="empty-msg" *ngIf="bestSellingProducts.length === 0">Chua co san pham</div>
     </div>
   </section>
 
@@ -99,13 +127,13 @@
         </div>
       </a>
 
-      <div class="empty-msg" *ngIf="suggestedProducts.length === 0">Chưa có sản phẩm</div>
+      <div class="empty-msg" *ngIf="suggestedProducts.length === 0">Chua co san pham</div>
     </div>
   </section>
 
   <section class="product-section" *ngIf="!loading && !error && bedroomProducts.length > 0">
     <div class="section-header">
-      <h2 class="section-title">Phòng ngủ</h2>
+      <h2 class="section-title">Phong ngu</h2>
       <a class="view-all" [routerLink]="['/products']">Xem tất cả &rsaquo;</a>
     </div>
 
@@ -118,7 +146,7 @@
             class="product-img"
             onerror="this.src='assets/images/placeholder.png'"
           />
-          <span class="badge badge-new">MỚI</span>
+          <span class="badge badge-new">MOI</span>
         </div>
 
         <div class="product-info">

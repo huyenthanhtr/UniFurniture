@@ -1,6 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
-
-/* ===== HEADER ===== */
+﻿/* ===== HEADER ===== */
 .moho-header {
   background: #FFFFFF;
   width: 100%;
@@ -105,7 +103,7 @@
   transition: color 0.2s;
 }
 
-/* Button variant — same look as link */
+/* Button variant â€” same look as link */
 .header-action-btn {
   background: none;
   border: none;

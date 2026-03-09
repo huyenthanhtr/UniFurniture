@@ -1,6 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
-
-/* ===========================
+﻿/* ===========================
    PARTNER LOGOS SECTION
 =========================== */
 .partner-section {
@@ -308,7 +306,7 @@
 }
 
 .fanpage-name {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-weight: 500;
     font-size: 17px;
     line-height: 24px;
@@ -317,7 +315,7 @@
 }
 
 .fanpage-followers {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-weight: 400;
     font-size: 11.6px;
     color: #1D2129;
@@ -333,7 +331,7 @@
     background: #F5F6F7;
     border: 1px solid rgba(0, 0, 0, 0.12);
     border-radius: 2px;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-weight: 700;
     font-size: 11.6px;
     color: #4B4F56;
@@ -450,3 +448,4 @@
 .footer-bottom-link:hover {
     color: #EF683A;
 }
+

@@ -1,6 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
-
-/* ===== OVERLAY ===== */
+﻿/* ===== OVERLAY ===== */
 .cart-overlay {
     position: fixed;
     inset: 0;
@@ -256,3 +254,4 @@
 .cart-checkout-btn:hover {
     background: #d45520;
 }
+

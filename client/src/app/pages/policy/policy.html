@@ -1,0 +1,45 @@
+﻿<section class="policy-page" id="policy-top">
+  <nav class="policy-breadcrumb">
+    <a routerLink="/">Trang chủ</a>
+    <span class="sep">/</span>
+    <span>{{ currentPolicy.title }}</span>
+  </nav>
+
+  <header class="policy-hero">
+    <div class="policy-hero-content">
+      <p class="policy-tag">U-HOME FURNI</p>
+      <h1>{{ currentPolicy.title }}</h1>
+      <p class="policy-subtitle">Thông tin minh bạch để bạn mua sắm nội thất an tâm hơn mỗi ngày.</p>
+
+      <div class="policy-highlight-list">
+        <span *ngFor="let highlight of currentPolicy.highlights">{{ highlight }}</span>
+      </div>
+    </div>
+
+    <div class="policy-hero-media" aria-hidden="true">
+      <div class="media-block media-main"></div>
+      <div class="media-block media-sub"></div>
+    </div>
+  </header>
+
+  <div class="policy-layout">
+    <aside class="policy-sidebar">
+      <h2>THÔNG TIN</h2>
+      <p class="policy-sidebar-note">Chọn mục chính sách để xem chi tiết.</p>
+      <ul>
+        <li *ngFor="let link of policyLinks">
+          <a [routerLink]="['/chinh-sach', link.slug]" fragment="policy-top" [class.active]="link.slug === currentPolicy.slug">
+            {{ link.title }}
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <article class="policy-content">
+      <h2>{{ currentPolicy.title }}</h2>
+      <ul>
+        <li *ngFor="let paragraph of currentPolicy.paragraphs">{{ paragraph }}</li>
+      </ul>
+    </article>
+  </div>
+</section>
