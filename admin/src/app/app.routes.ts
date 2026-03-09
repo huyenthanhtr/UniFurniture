@@ -8,6 +8,9 @@ import { AdminProductForm } from './pages/admin-product-form/admin-product-form'
 import { AdminVariantDetail } from './pages/admin-variant-detail/admin-variant-detail';
 import { AdminOrders } from './pages/admin-orders/admin-orders';
 import { AdminOrderDetail } from './pages/admin-order-detail/admin-order-detail';
+import { AdminCustomers } from './pages/admin-customers/admin-customers';
+import { AdminCustomerDetail } from './pages/admin-customer-detail/admin-customer-detail';
+import { AdminCustomerAddressDetail } from './pages/admin-customer-address-detail/admin-customer-address-detail';
 
 type PendingChangesComponent = {
   canDeactivate: () => boolean | Promise<boolean>;
@@ -35,6 +38,10 @@ export const routes: Routes = [
 
       { path: 'orders', component: AdminOrders },
       { path: 'orders/:id', component: AdminOrderDetail },
+
+      { path: 'customers', component: AdminCustomers },
+      { path: 'customers/:id', component: AdminCustomerDetail },
+      { path: 'customers/:id/addresses/:addressId', component: AdminCustomerAddressDetail },
     ],
   },
   { path: '', redirectTo: '/admin/products', pathMatch: 'full' },

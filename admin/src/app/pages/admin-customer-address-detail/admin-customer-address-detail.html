@@ -1,0 +1,73 @@
+﻿<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Chi ti&#7871;t &#273;&#7883;a ch&#7881; kh&#225;ch h&#224;ng</h1>
+      <div class="sub">{{ merged?.full_name || '-' }} &#8226; {{ merged?.customer_code || merged?._id || '' }}</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" (click)="back()">&larr; Quay l&#7841;i</button>
+    </div>
+  </div>
+
+  <div class="state" *ngIf="isLoading">&#272;ang t&#7843;i...</div>
+
+  <div class="body" *ngIf="!isLoading && address">
+    <section class="card">
+      <h3>Th&#244;ng tin ng&#432;&#7901;i nh&#7853;n</h3>
+
+      <div class="grid">
+        <div class="field readonly">
+          <label>T&#234;n ng&#432;&#7901;i nh&#7853;n</label>
+          <div>{{ address.customer_address_name || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>S&#7889; &#273;i&#7879;n tho&#7841;i nh&#7853;n h&#224;ng</label>
+          <div>{{ address.address_phone || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Tr&#7841;ng th&#225;i &#273;&#7883;a ch&#7881;</label>
+          <div>{{ addressStatusLabel(address.status) }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>C&#7853;p nh&#7853;t g&#7847;n nh&#7845;t</label>
+          <div>{{ address.updatedAt | date:'dd/MM/yyyy HH:mm' }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>&#272;&#7883;a ch&#7881; chi ti&#7871;t</h3>
+
+      <div class="grid">
+        <div class="field readonly full">
+          <label>&#272;&#7883;a ch&#7881; &#273;&#7847;y &#273;&#7911;</label>
+          <div>{{ address.full_address || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>S&#7889; nh&#224; / &#273;&#432;&#7901;ng</label>
+          <div>{{ address.address_line || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Ph&#432;&#7901;ng / x&#227;</label>
+          <div>{{ address.ward || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Qu&#7853;n / huy&#7879;n</label>
+          <div>{{ address.district || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>T&#7881;nh / th&#224;nh ph&#7889;</label>
+          <div>{{ address.province || '-' }}</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
