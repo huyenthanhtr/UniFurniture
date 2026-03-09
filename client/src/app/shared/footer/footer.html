@@ -109,10 +109,7 @@
       <div class="footer-col footer-col--brand">
         <h4 class="footer-heading">Nội Thất MOHO</h4>
         <p class="footer-desc">
-          Nội Thất MOHO là thương hiệu đến
-          từ Savimex với gần 40 năm kinh
-          nghiệm trong việc sản xuất và xuất
-          khẩu nội thất đạt chuẩn quốc tế.
+          U-HOME FURNI là thương hiệu nội thất được xây dựng dựa trên kinh nghiệm sản xuất và thiết kế nội thất, hướng đến tiêu chuẩn chất lượng và sự tiện nghi cho không gian sống hiện đại.
         </p>
         <a href="#" class="footer-badge-link">
           <img src="assets/images/bo-cong-thuong.png" alt="Bộ Công Thương" class="footer-bct-img" />
@@ -126,12 +123,9 @@
       <div class="footer-col">
         <h4 class="footer-heading">Thông Tin</h4>
         <ul class="footer-list">
-          <li><a href="#" class="footer-link">Chính Sách Bán Hàng</a></li>
-          <li><a href="#" class="footer-link">Chính Sách Giao Hàng &amp; Lắp Đặt</a></li>
-          <li><a href="#" class="footer-link">Chính Sách Bảo Hành &amp; Bảo Trì</a></li>
-          <li><a href="#" class="footer-link">Chính Sách Đổi Trả</a></li>
-          <li><a href="#" class="footer-link">Khách Hàng Thân Thiết – MOHOmie</a></li>
-          <li><a href="#" class="footer-link">Chính Sách Đối Tác Bán Hàng</a></li>
+          <li *ngFor="let link of policyLinks">
+            <a [routerLink]="['/chinh-sach', link.slug]" fragment="policy-top" class="footer-link">{{ link.label }}</a>
+          </li>
         </ul>
       </div>
 
@@ -144,26 +138,15 @@
             <div>
               <strong class="contact-label">[Trụ sở chính]</strong>
               <span class="footer-link">
-                162 HT17, P. Hiệp Thành, Q. 12, TP. HCM
-                (Nằm trong khuôn viên công ty SAVIMEX phía sau bến xe buýt Hiệp Thành)
+                Số 669 Đỗ Mười, khu phố 13, phường Linh Xuân, TP.HCM
               </span>
-              <span class="footer-link">Hotline: 0971141140</span>
             </div>
           </li>
           <li class="footer-contact-item">
             <span class="contact-bullet">&#9679;</span>
             <div>
-              <span class="footer-link">097 114 1140 (Hotline/Zalo)</span>
-              <span class="footer-link">0902 415 359 (Đội Giao Hàng)</span>
-            </div>
-          </li>
-          <li class="footer-contact-item">
-            <span class="contact-bullet">&#9679;</span>
-            <div>
-              <span class="footer-link">cskh&#64;moho.com.vn</span>
-              <span class="footer-link footer-link--sm">
-                Công Ty Cổ Phần Hợp Tác Kinh Tế Và Xuất Nhập Khẩu Savimex - STK: 0071001303667 - Vietcombank CN HCM
-              </span>
+              <span class="footer-link">0123 456 789 (Hotline/Zalo)</span>
+              <span class="footer-link">0112 345 678 (Đội Giao Hàng)</span>
             </div>
           </li>
         </ul>
@@ -176,8 +159,8 @@
           <div class="fanpage-profile">
             <div class="fanpage-avatar img-placeholder"></div>
             <div class="fanpage-info">
-              <a href="#" class="fanpage-name">Nội Thất MOHO</a>
-              <span class="fanpage-followers">101K người theo dõi</span>
+              <a href="#" class="fanpage-name">Nội Thất U-HOME FURNI</a>
+              <span class="fanpage-followers">100K người theo dõi</span>
             </div>
           </div>
           <div class="fanpage-action">

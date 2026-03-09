@@ -1,7 +1,41 @@
-import { ChangeDetectorRef, Component, NgZone, OnInit, inject } from '@angular/core';
+﻿import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProductDataService, ProductListItem } from '../../services/product-data.service';
+
+interface HomeSlide {
+  title: string;
+  description: string;
+  imageUrl: string;
+  ctaLabel: string;
+  ctaLink: string;
+}
+
+const AUTO_SLIDE_MS = 5000;
+
+const HOME_SLIDES: HomeSlide[] = [
+  {
+    title: 'Ngủ Ngon Hơn Với Bộ Phòng Ngủ Đồng Bộ',
+    description: 'Kết hợp giường, tủ và bàn trang điểm theo cùng phong cách để tối ưu thẩm mỹ căn phòng.',
+    imageUrl: 'assets/images/banner2.png',
+    ctaLabel: 'Xem bộ sưu tập',
+    ctaLink: '/products',
+  },
+  {
+    title: 'Không Gian Sống Tối Giản, Tinh Tế',
+    description: 'Nâng cấp phòng khách với bộ sưu tập nội thất hiện đại, tông màu ấm và đường nét gọn gàng.',
+    imageUrl: 'assets/images/banner5.jpg',
+    ctaLabel: 'Khám phá ngay',
+    ctaLink: '/products',
+  },
+  {
+    title: 'Góc Làm Việc Nhỏ, Hiệu Suất Lớn',
+    description: 'Lựa chọn bàn ghế tối giản, dễ bố trí gọn gàng cho căn hộ và phòng làm việc tại nhà.',
+    imageUrl: 'assets/images/banner6.jpg',
+    ctaLabel: 'Mua ngay',
+    ctaLink: '/products',
+  },
+];
 
 @Component({
   selector: 'app-homepage',
@@ -10,25 +44,55 @@ import { ProductDataService, ProductListItem } from '../../services/product-data
   templateUrl: './homepage.html',
   styleUrl: './homepage.css',
 })
-export class Homepage implements OnInit {
+export class Homepage implements OnInit, OnDestroy {
   private readonly productDataService = inject(ProductDataService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly ngZone = inject(NgZone);
+  private autoSlideTimer?: ReturnType<typeof setInterval>;
 
   cheapProducts: ProductListItem[] = [];
   bestSellingProducts: ProductListItem[] = [];
   suggestedProducts: ProductListItem[] = [];
   bedroomProducts: ProductListItem[] = [];
 
+  readonly slides: HomeSlide[] = HOME_SLIDES;
+  activeSlideIndex = 0;
+
   loading = true;
   error = '';
 
   ngOnInit(): void {
+    this.startAutoSlide();
     this.loadAll();
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoSlide();
   }
 
   trackByProductId(index: number, product: ProductListItem): string {
     return product.id || String(index);
+  }
+
+  trackBySlideIndex(index: number): number {
+    return index;
+  }
+
+  goToSlide(index: number): void {
+    if (!this.slides.length) {
+      return;
+    }
+
+    this.activeSlideIndex = (index + this.slides.length) % this.slides.length;
+    this.restartAutoSlide();
+  }
+
+  nextSlide(): void {
+    this.goToSlide(this.activeSlideIndex + 1);
+  }
+
+  prevSlide(): void {
+    this.goToSlide(this.activeSlideIndex - 1);
   }
 
   loadAll(): void {
@@ -54,9 +118,9 @@ export class Homepage implements OnInit {
 
           this.suggestedProducts = [...available].slice(0, 8);
 
-        this.bedroomProducts = [...available]
-          .filter((item) => /(giường|tủ|phòng ngủ|giuong|tu|phong ngu)/i.test(item.name))
-          .slice(0, 8);
+          this.bedroomProducts = [...available]
+            .filter((item) => /(giuong|tu|phong ngu|wardrobe|bedroom)/i.test(item.name))
+            .slice(0, 8);
 
           this.loading = false;
           this.cdr.detectChanges();
@@ -65,7 +129,7 @@ export class Homepage implements OnInit {
       error: (err: unknown) => {
         this.ngZone.run(() => {
           const message = err instanceof Error ? err.message : '';
-        this.error = message || 'Không thể tải sản phẩm từ API.';
+          this.error = message || 'Khong the tai san pham tu API.';
           this.loading = false;
           this.cdr.detectChanges();
         });
@@ -77,6 +141,33 @@ export class Homepage implements OnInit {
     if (price === null || !Number.isFinite(price)) {
       return '';
     }
-    return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+
+    return new Intl.NumberFormat('vi-VN').format(price) + 'd';
+  }
+
+  private startAutoSlide(): void {
+    if (this.autoSlideTimer || this.slides.length < 2) {
+      return;
+    }
+
+    this.autoSlideTimer = setInterval(() => {
+      this.ngZone.run(() => {
+        this.activeSlideIndex = (this.activeSlideIndex + 1) % this.slides.length;
+      });
+    }, AUTO_SLIDE_MS);
+  }
+
+  private stopAutoSlide(): void {
+    if (!this.autoSlideTimer) {
+      return;
+    }
+
+    clearInterval(this.autoSlideTimer);
+    this.autoSlideTimer = undefined;
+  }
+
+  private restartAutoSlide(): void {
+    this.stopAutoSlide();
+    this.startAutoSlide();
   }
 }
