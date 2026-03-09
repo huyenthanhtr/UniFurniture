@@ -7,6 +7,8 @@ import { NewsPageComponent } from './pages/news/news';
 import { NewsDetailComponent } from './pages/news-detail/news-detail';
 import { PromotionsPageComponent } from './pages/promotions/promotions';
 import { PolicyPageComponent } from './pages/policy/policy';
+import { AboutPageComponent } from './pages/about/about';
+import { CommunityPageComponent } from './pages/community/community';
 
 export const routes: Routes = [
     { path: 'ar', component: ArViewer },
@@ -18,5 +20,7 @@ export const routes: Routes = [
     { path: 'tin-tuc', component: NewsPageComponent },
     { path: 'tin-tuc/:slug', component: NewsDetailComponent },
     { path: 'chinh-sach/:slug', component: PolicyPageComponent },
+    { path: 've-unifurniture', component: AboutPageComponent },
+    { path: 'cua-hang', component: CommunityPageComponent },
 ];
 
