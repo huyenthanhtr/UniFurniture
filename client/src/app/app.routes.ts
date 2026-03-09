@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+﻿import { Routes } from '@angular/router';
 import { ArViewer } from './pages/ar-viewer/ar-viewer';
 import { ProductComponent } from './pages/product/product';
 import { ProductDetailComponent } from './pages/product-detail/product-detail';
@@ -21,6 +21,8 @@ export const routes: Routes = [
     { path: 'tin-tuc/:slug', component: NewsDetailComponent },
     { path: 'chinh-sach/:slug', component: PolicyPageComponent },
     { path: 've-unifurniture', component: AboutPageComponent },
-    { path: 'cua-hang', component: CommunityPageComponent },
+    { path: 'cong-dong', component: CommunityPageComponent },
+    { path: 'cua-hang', redirectTo: 'cong-dong', pathMatch: 'full' },
 ];
+
 
