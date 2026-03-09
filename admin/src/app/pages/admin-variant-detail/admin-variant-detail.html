@@ -1,7 +1,7 @@
-<div class="page">
+﻿<div class="page">
   <div class="page-header">
     <div>
-      <h1>Variant</h1>
+      <h1>Biến thể</h1>
       <div class="sub">
         {{ product?.name || 'Sản phẩm' }} • SKU: {{ variant?.sku || '-' }}
       </div>
@@ -32,7 +32,7 @@
     <section class="card">
       <div class="grid">
         <div class="field">
-          <label>Tên variant *</label>
+          <label>Tên biến thể *</label>
           <input type="text" [formControl]="form.controls.variant_name" />
           <small class="err" *ngIf="form.controls.variant_name.touched && form.controls.variant_name.invalid">Bắt buộc</small>
         </div>
@@ -94,6 +94,17 @@
     <div class="confirm-actions">
       <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
       <button class="btn btn-primary" (click)="runConfirm()">OK</button>
+    </div>
+  </div>
+
+  <div class="overlay" *ngIf="showLeaveConfirm"></div>
+
+  <div class="confirm" *ngIf="showLeaveConfirm">
+    <h3>Chưa lưu thay đổi</h3>
+    <p>Dữ liệu chưa được lưu. Nếu rời trang, các thay đổi sẽ bị mất.</p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" (click)="stayOnPage()">Ở lại</button>
+      <button class="btn btn-primary" (click)="leavePage()">Rời trang</button>
     </div>
   </div>
 </div>

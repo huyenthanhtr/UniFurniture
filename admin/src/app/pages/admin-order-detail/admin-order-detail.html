@@ -46,8 +46,8 @@
 
         <div class="field">
           <label>Trạng thái đơn hàng</label>
-          <select [(ngModel)]="editableStatus">
-            <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+          <select [(ngModel)]="editableStatus" class="status-select">
+            <option *ngFor="let s of statuses" [value]="s">{{ orderStatusLabel(s) }}</option>
           </select>
         </div>
       </div>
@@ -83,7 +83,7 @@
       <div class="grid">
         <div class="field readonly">
           <label>Loại khách</label>
-          <div>{{ display?.customer_type || 'guest' }}</div>
+          <div>{{ customerTypeLabel(display?.customer_type || 'guest') }}</div>
         </div>
 
         <div class="field readonly">
@@ -92,13 +92,13 @@
         </div>
 
         <div class="field readonly">
-          <label>Customer code</label>
+          <label>Mã khách hàng</label>
           <div>{{ customer?.customer_code || '-' }}</div>
         </div>
 
         <div class="field readonly">
-          <label>Customer status</label>
-          <div>{{ customer?.status || '-' }}</div>
+          <label>Trạng thái khách hàng</label>
+          <div>{{ customerStatusLabel(customer?.status) }}</div>
         </div>
 
         <div class="field readonly">
@@ -145,7 +145,7 @@
               <th>#</th>
               <th>Loại thanh toán</th>
               <th>Phương thức</th>
-              <th>Số tiền</th>
+              <th class="amount-col">Số tiền</th>
               <th>Trạng thái</th>
               <th>Mã giao dịch</th>
               <th>Thời gian</th>

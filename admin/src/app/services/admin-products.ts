@@ -86,4 +86,8 @@ export class AdminProductsService {
   deleteImage(id: string): Observable<any> {
     return this.http.delete<any>(`${this.base}/product-images/${id}`);
   }
+
+  uploadImage(dataUrl: string, productName: string): Observable<any> {
+    return this.http.post<any>(`${this.base}/product-images/upload`, { dataUrl, productName });
+  }
 }

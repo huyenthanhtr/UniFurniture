@@ -1,4 +1,4 @@
-<div class="page">
+﻿<div class="page">
   <div class="page-header">
     <div>
       <h1>{{ product?.name || 'Sản phẩm' }}</h1>
@@ -15,7 +15,7 @@
         [disabled]="!product"
         (click)="askToggleStatus()"
       >
-        {{ product?.status==='active' ? 'Inactive' : 'Active' }}
+        {{ product?.status==='active' ? 'Ngừng bán' : 'Đang bán' }}
       </button>
     </div>
   </div>
@@ -26,16 +26,16 @@
     <div class="top-grid">
       <section class="card info">
         <h3>Thông tin sản phẩm</h3>
-        <div class="kv"><span>Brand</span><b>{{ product.brand || '-' }}</b></div>
+        <div class="kv"><span>Thương hiệu</span><b>{{ product.brand || '-' }}</b></div>
         <div class="kv"><span>Loại</span><b>{{ product.product_type || '-' }}</b></div>
         <div class="kv"><span>SKU</span><b>{{ product.sku || '-' }}</b></div>
         <div class="kv"><span>Slug</span><b>{{ product.slug || '-' }}</b></div>
         <div class="kv"><span>Giá thấp nhất</span><b>{{ product.min_price | number }}</b></div>
         <div class="kv"><span>Đã bán</span><b>{{ product.sold || 0 }}</b></div>
         <div class="kv">
-          <span>Status</span>
+          <span>Trạng thái</span>
           <b [class.badge-active]="product.status==='active'" [class.badge-inactive]="product.status==='inactive'">
-            {{ product.status || '-' }}
+            {{ activeStatusLabel(product.status) }}
           </b>
         </div>
       </section>
@@ -58,7 +58,7 @@
       <div class="gallery-grid">
         <div class="main-image">
           <img
-            [src]="selectedImageUrl || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'"
+            [src]="normalizeImageUrl(selectedImageUrl) || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'"
             [alt]="product.name"
           />
         </div>
@@ -71,7 +71,7 @@
             [class.thumb-active]="img.image_url===selectedImageUrl"
             (click)="selectImage(img)"
           >
-            <img [src]="img.image_url" [alt]="img.alt_text || product.name" />
+            <img [src]="normalizeImageUrl(img.image_url)" [alt]="img.alt_text || product.name" />
           </button>
         </div>
       </div>
@@ -81,26 +81,21 @@
 
         <div class="image-form">
           <div class="field full">
-            <label>Image URL</label>
-            <input [(ngModel)]="newImage.image_url" />
+            <label>Tải ảnh từ máy</label>
+            <input type="file" accept="image/*" (change)="onNewImageSelected($event)" />
           </div>
 
           <div class="field">
-            <label>Alt text</label>
-            <input [(ngModel)]="newImage.alt_text" />
-          </div>
-
-          <div class="field">
-            <label>Sort order</label>
-            <input type="number" [(ngModel)]="newImage.sort_order" />
-          </div>
-
-          <div class="field">
-            <label>Variant</label>
+            <label>Biến thể</label>
             <select [(ngModel)]="newImage.variant_id">
-              <option value="">Ảnh chung của product</option>
+              <option value="">Ảnh chung của sản phẩm</option>
               <option *ngFor="let v of variants" [value]="v._id">{{ getVariantLabel(v) }}</option>
             </select>
+          </div>
+
+          <div class="field">
+            <label>Thứ tự hiển thị</label>
+            <input type="number" [(ngModel)]="newImage.sort_order" />
           </div>
 
           <label class="check">
@@ -109,7 +104,7 @@
           </label>
 
           <div class="form-actions">
-            <button class="btn btn-primary" (click)="addImage()">Thêm ảnh</button>
+            <button class="btn btn-primary" (click)="addImage()" [disabled]="!newImage.file">Thêm ảnh</button>
           </div>
         </div>
       </div>
@@ -119,31 +114,26 @@
 
         <div class="image-row">
           <div class="image-preview">
-            <img [src]="selectedImage.image_url" [alt]="selectedImage.alt_text || product.name" />
+            <img [src]="normalizeImageUrl(selectedImage.image_url)" [alt]="selectedImage.alt_text || product.name" />
           </div>
 
           <div class="image-fields">
-            <div class="field full">
-              <label>URL</label>
-              <input [(ngModel)]="selectedImage.image_url" />
+            <div class="field">
+              <label>Biến thể</label>
+              <select [(ngModel)]="selectedImage.variant_id">
+                <option [ngValue]="null">Ảnh chung của sản phẩm</option>
+                <option *ngFor="let v of variants" [ngValue]="v._id">{{ getVariantLabel(v) }}</option>
+              </select>
             </div>
 
             <div class="field">
-              <label>Alt</label>
-              <input [(ngModel)]="selectedImage.alt_text" />
-            </div>
-
-            <div class="field">
-              <label>Sort</label>
+              <label>Thứ tự hiển thị</label>
               <input type="number" [(ngModel)]="selectedImage.sort_order" />
             </div>
 
-            <div class="field">
-              <label>Variant</label>
-              <select [(ngModel)]="selectedImage.variant_id">
-                <option [ngValue]="null">Ảnh chung của product</option>
-                <option *ngFor="let v of variants" [ngValue]="v._id">{{ getVariantLabel(v) }}</option>
-              </select>
+            <div class="field full">
+              <label>URL ảnh</label>
+              <input [(ngModel)]="selectedImage.image_url" />
             </div>
 
             <div class="image-actions">
@@ -160,7 +150,7 @@
 
     <section class="card">
       <div class="variants-header">
-        <h3>Variants</h3>
+        <h3>Biến thể</h3>
         <span class="muted">({{ variants.length }} biến thể)</span>
       </div>
 
@@ -168,32 +158,30 @@
         <thead>
           <tr>
             <th>Ảnh</th>
-            <th>Variant</th>
+            <th>Biến thể</th>
             <th>SKU</th>
             <th>Màu</th>
             <th>Giá</th>
             <th>Tồn</th>
-            <th>Status</th>
-            <th>Variant status</th>
+            <th>Trạng thái</th>
             <th class="th-actions">Hành động</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngIf="variants.length===0">
-            <td colspan="9" class="state">Chưa có variant.</td>
+            <td colspan="8" class="state">Chưa có biến thể.</td>
           </tr>
 
           <tr *ngFor="let v of variants">
             <td>
-              <img class="mini-thumb" [src]="getVariantThumbnail(v)" [alt]="getVariantLabel(v)" />
+              <img class="mini-thumb" [src]="normalizeImageUrl(getVariantThumbnail(v))" [alt]="getVariantLabel(v)" />
             </td>
             <td class="cell-title" (click)="viewVariant(v)"><b>{{ getVariantLabel(v) }}</b></td>
             <td>{{ v.sku || '-' }}</td>
             <td>{{ v.color || '-' }}</td>
             <td>{{ v.price | number }}</td>
             <td>{{ v.stock_quantity ?? '-' }}</td>
-            <td>{{ v.status || '-' }}</td>
-            <td>{{ v.variant_status || '-' }}</td>
+            <td>{{ activeStatusLabel(v.variant_status || v.status) }}</td>
             <td class="actions">
               <button class="btn btn-ghost" (click)="viewVariant(v); $event.stopPropagation()">Sửa</button>
               <button
@@ -202,7 +190,7 @@
                 [class.btn-success]="(v.variant_status||'active')!=='active'"
                 (click)="askToggleVariant(v); $event.stopPropagation()"
               >
-                {{ (v.variant_status||'active')==='active' ? 'Inactive' : 'Active' }}
+                {{ (v.variant_status||'active')==='active' ? 'Ngừng bán' : 'Đang bán' }}
               </button>
             </td>
           </tr>

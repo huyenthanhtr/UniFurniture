@@ -1,4 +1,4 @@
-.page { padding: 16px; }
+﻿.page { padding: 16px; }
 .page-header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; }
 .page-header .sub { opacity:.72; font-size:13px; margin-top:4px; }
 .actions { display:flex; gap:8px; flex-wrap:wrap; }
@@ -26,12 +26,137 @@
   box-shadow:0 0 0 3px rgba(144,131,114,.12);
 }
 
-.html-preview {
-  min-height:160px;
-  border:1px solid #ddd2c6;
+.editor-shell {
+  border:1px solid #d8cebf;
+  border-radius:16px;
+  background:#fff;
+  overflow:hidden;
+  box-shadow:0 6px 18px rgba(85,68,45,.08);
+}
+
+.editor-toolbar {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  padding:10px 12px;
+  border-bottom:1px solid #ece6e0;
+  background:linear-gradient(180deg, #f9f6f2 0%, #f4efe8 100%);
+}
+
+.toolbar-btn {
+  min-width:36px;
+  height:34px;
+  padding:0 10px;
+  border:1px solid #d7ccbf;
+  border-radius:10px;
+  background:#fff;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:600;
+  color:#5f5348;
+  transition:all .18s ease;
+}
+
+.toolbar-btn:hover {
+  border-color:#908372;
+  background:#f9f5ef;
+}
+
+.toolbar-sep {
+  width:1px;
+  height:22px;
+  background:#d8cebf;
+}
+
+.icon-btn {
+  font-size:16px;
+  line-height:1;
+}
+
+.image-menu {
+  position:relative;
+}
+
+.image-dropdown {
+  position:absolute;
+  right:0;
+  top:calc(100% + 8px);
+  min-width:170px;
+  background:#fff;
+  border:1px solid #d7ccbf;
   border-radius:12px;
-  padding:14px;
-  background:#fffdfb;
+  box-shadow:0 10px 24px rgba(0,0,0,.12);
+  padding:6px;
+  display:grid;
+  gap:4px;
+  z-index:5;
+}
+
+.image-dropdown button {
+  border:none;
+  border-radius:8px;
+  background:#fff;
+  text-align:left;
+  padding:8px 10px;
+  cursor:pointer;
+  color:#4d4339;
+}
+
+.image-dropdown button:hover {
+  background:#f8f2eb;
+}
+
+.image-size-tools {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-left:4px;
+}
+
+.image-size-tools input {
+  width:74px;
+  height:34px;
+  border:1px solid #d7ccbf;
+  border-radius:10px;
+  padding:0 8px;
+  font-size:13px;
+}
+
+.percent-display {
+  min-width:64px;
+  height:34px;
+  border:1px solid #d7ccbf;
+  border-radius:10px;
+  background:#fff;
+  padding:0 10px;
+  font-size:13px;
+  font-weight:700;
+  color:#5f5348;
+  cursor:text;
+}
+
+.editor-content {
+  min-height:300px;
+  padding:16px;
+  outline:none;
+  line-height:1.6;
+  font-size:15px;
+}
+
+.editor-content img {
+  max-width:100%;
+  height:auto;
+}
+
+.editor-content img.editor-selected-image {
+  outline:2px solid #908372;
+  outline-offset:2px;
+}
+
+.editor-content:empty::before {
+  content:"Nhập mô tả chi tiết sản phẩm tại đây...";
+  color:#9e9488;
 }
 
 .err { color:#b42318; }

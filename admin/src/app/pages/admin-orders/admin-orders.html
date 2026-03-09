@@ -1,4 +1,4 @@
-<div class="page">
+﻿<div class="page">
   <div class="page-header">
     <div>
       <h1>Quản lý đơn hàng</h1>
@@ -9,21 +9,21 @@
     <input
       class="search-input"
       type="text"
-      placeholder="Tìm theo mã đơn, tên người nhận, số điện thoại, Email"
+      placeholder="Tìm theo mã đơn, tên người nhận, số điện thoại, email"
       [(ngModel)]="q"
       (keyup.enter)="applySearch()"
     />
 
     <select class="toolbar-select" [(ngModel)]="status" (ngModelChange)="onChangeFilters()">
       <option value="">Tất cả trạng thái</option>
-      <option value="pending">Pending</option>
-      <option value="confirmed">Confirmed</option>
-      <option value="processing">Processing</option>
-      <option value="shipping">Shipping</option>
-      <option value="delivered">Delivered</option>
-      <option value="completed">Completed</option>
-      <option value="cancelled">Cancelled</option>
-      <option value="refunded">Refunded</option>
+      <option value="pending">Chờ xác nhận</option>
+      <option value="confirmed">Đã xác nhận</option>
+      <option value="processing">Đang xử lý</option>
+      <option value="shipping">Đang giao</option>
+      <option value="delivered">Đã giao</option>
+      <option value="completed">Hoàn tất</option>
+      <option value="cancelled">Đã hủy</option>
+      <option value="refunded">Đã hoàn tiền</option>
     </select>
 
     <select class="toolbar-select" [(ngModel)]="sortBy" (ngModelChange)="onChangeFilters()">
@@ -47,7 +47,7 @@
           <th>Tổng tiền</th>
           <th>Ngày đặt</th>
           <th>Thanh toán</th>
-          <th>Status</th>
+          <th>Trạng thái</th>
           <th class="th-actions">Hành động</th>
         </tr>
       </thead>
@@ -80,7 +80,7 @@
               class="badge"
               [ngClass]="getStatusClass(order.status)"
             >
-              {{ order.status }}
+              {{ orderStatusLabel(order.status) }}
             </span>
           </td>
           <td class="actions-cell">

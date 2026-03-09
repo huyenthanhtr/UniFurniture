@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -165,7 +165,7 @@ export class AdminProducts implements OnInit {
     this.pendingNextStatus = next;
 
     this.confirmTitle = 'Xác nhận';
-    this.confirmMessage = `Bạn có chắc muốn chuyển "${p.name}" sang ${next.toUpperCase()} không?`;
+    this.confirmMessage = `Bạn có chắc muốn chuyển "${p.name}" sang "${this.statusLabel(next)}" không?`;
     this.confirmAction = () => this.toggleStatus();
     this.showConfirm = true;
     this.cdr.detectChanges();
@@ -239,6 +239,13 @@ export class AdminProducts implements OnInit {
 
   collectionName(id: any) {
     return this.collectionMap.get(String(id)) || '-';
+  }
+
+  statusLabel(status: any): string {
+    const s = String(status || '').toLowerCase();
+    if (s === 'active') return 'Đang bán';
+    if (s === 'inactive') return 'Ngừng bán';
+    return status || '-';
   }
 
   goPrev() {
