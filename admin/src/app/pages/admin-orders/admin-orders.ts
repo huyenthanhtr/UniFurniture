@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -117,32 +117,34 @@ export class AdminOrders implements OnInit {
   }
 
   getPaymentBadge(order: any): { text: string; cls: string } {
-    const total = Number(order?.total_amount || 0);
-    const deposit = Number(order?.deposit_amount || 0);
-    const payments = Number(order?.payment_summary?.count || 0);
-    const paymentStatus = String(order?.payment_summary?.status || '').toLowerCase();
+    const total = Number(order?.payment_summary?.total_amount || order?.total_amount || 0);
+    const paidTotal = Number(order?.payment_summary?.paid_total || 0);
+    const hasDepositPaid = !!order?.payment_summary?.has_deposit_paid;
+    const hasFullPaid = !!order?.payment_summary?.has_full_paid;
+    const latestStatus = String(order?.payment_summary?.status || '').toLowerCase();
+    const paymentCount = Number(order?.payment_summary?.count || 0);
 
-    if ((paymentStatus === 'paid' && deposit > 0 && deposit < total) || (deposit > 0 && deposit < total)) {
-      return { text: 'Đã cọc', cls: 'payment-deposit' };
-    }
-
-    if ((paymentStatus === 'paid' && total > 0 && deposit >= total) || paymentStatus === 'paid') {
+    if (hasFullPaid || (total > 0 && paidTotal >= total)) {
       return { text: 'Tất toán', cls: 'payment-paid' };
     }
 
-    if (paymentStatus === 'failed') {
+    if (hasDepositPaid) {
+      return { text: 'Đã cọc', cls: 'payment-deposit' };
+    }
+
+    if (latestStatus === 'failed') {
       return { text: 'Thanh toán lỗi', cls: 'payment-failed' };
     }
 
-    if (paymentStatus === 'refunded') {
+    if (latestStatus === 'refunded') {
       return { text: 'Đã hoàn tiền', cls: 'payment-refunded' };
     }
 
-    if (payments > 0) {
+    if (paymentCount > 0) {
       return { text: 'Chờ thanh toán', cls: 'payment-pending' };
     }
 
-    return { text: 'Chưa thanh toán', cls: 'payment-pending' };
+    return { text: 'Chưa thanh toán', cls: 'payment-unpaid' };
   }
 
   getStatusClass(status: string): string {
@@ -156,5 +158,18 @@ export class AdminOrders implements OnInit {
     if (s === 'processing') return 'status-processing';
     if (s === 'confirmed') return 'status-confirmed';
     return 'status-pending';
+  }
+
+  orderStatusLabel(status: string): string {
+    const s = String(status || '').toLowerCase();
+    if (s === 'pending') return 'Chờ xác nhận';
+    if (s === 'confirmed') return 'Đã xác nhận';
+    if (s === 'processing') return 'Đang xử lý';
+    if (s === 'shipping') return 'Đang giao';
+    if (s === 'delivered') return 'Đã giao';
+    if (s === 'completed') return 'Hoàn tất';
+    if (s === 'cancelled') return 'Đã hủy';
+    if (s === 'refunded') return 'Đã hoàn tiền';
+    return status || '-';
   }
 }

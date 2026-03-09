@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, OnInit, inject, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule, Router } from '@angular/router';
@@ -30,6 +30,8 @@ export class AdminVariantDetail implements OnInit {
   showConfirm = false;
   confirmMessage = '';
   confirmAction: null | (() => void) = null;
+  showLeaveConfirm = false;
+  private pendingLeaveResolver: ((ok: boolean) => void) | null = null;
 
   form = this.fb.group({
     variant_name: ['', [Validators.required]],
@@ -50,6 +52,22 @@ export class AdminVariantDetail implements OnInit {
         this.id = id;
         this.load();
       }
+    });
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (!this.form.dirty) return;
+    event.preventDefault();
+    event.returnValue = '';
+  }
+
+  canDeactivate(): boolean | Promise<boolean> {
+    if (!this.form.dirty) return true;
+    if (this.showLeaveConfirm) return false;
+    this.showLeaveConfirm = true;
+    return new Promise<boolean>((resolve) => {
+      this.pendingLeaveResolver = resolve;
     });
   }
 
@@ -87,6 +105,7 @@ export class AdminVariantDetail implements OnInit {
           variant_status: v.variant_status || 'active',
           sold: v.sold ?? 0,
         });
+        this.form.markAsPristine();
 
         forkJoin({
           product: this.api.getProductById(String(v.product_id)),
@@ -120,11 +139,8 @@ export class AdminVariantDetail implements OnInit {
   }
 
   backToProduct() {
-    if (this.variant?.product_id) {
-      this.router.navigate(['/admin/products', this.variant.product_id]);
-    } else {
-      this.router.navigate(['/admin/products']);
-    }
+    if (this.variant?.product_id) this.router.navigate(['/admin/products', this.variant.product_id]);
+    else this.router.navigate(['/admin/products']);
   }
 
   askSave() {
@@ -132,7 +148,7 @@ export class AdminVariantDetail implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
-    this.confirmMessage = 'Lưu chỉnh sửa variant?';
+    this.confirmMessage = 'Lưu chỉnh sửa biến thể?';
     this.confirmAction = () => this.save();
     this.showConfirm = true;
     this.cdr.detectChanges();
@@ -158,7 +174,10 @@ export class AdminVariantDetail implements OnInit {
     };
 
     this.api.updateVariant(this.id, payload).subscribe({
-      next: () => this.load(),
+      next: () => {
+        this.form.markAsPristine();
+        this.load();
+      },
       error: () => {
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -169,7 +188,7 @@ export class AdminVariantDetail implements OnInit {
   askToggleStatus() {
     const cur = String(this.form.value.variant_status || 'active').toLowerCase();
     const next = cur === 'active' ? 'inactive' : 'active';
-    this.confirmMessage = `Chuyển variant sang ${next.toUpperCase()}?`;
+    this.confirmMessage = `Chuyển biến thể sang ${next === 'active' ? 'Đang bán' : 'Ngừng bán'}?`;
     this.confirmAction = () => this.toggleStatus(next as 'active' | 'inactive');
     this.showConfirm = true;
     this.cdr.detectChanges();
@@ -196,5 +215,21 @@ export class AdminVariantDetail implements OnInit {
 
   runConfirm() {
     if (this.confirmAction) this.confirmAction();
+  }
+
+  stayOnPage() {
+    this.showLeaveConfirm = false;
+    if (this.pendingLeaveResolver) {
+      this.pendingLeaveResolver(false);
+      this.pendingLeaveResolver = null;
+    }
+  }
+
+  leavePage() {
+    this.showLeaveConfirm = false;
+    if (this.pendingLeaveResolver) {
+      this.pendingLeaveResolver(true);
+      this.pendingLeaveResolver = null;
+    }
   }
 }

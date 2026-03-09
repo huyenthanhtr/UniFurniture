@@ -132,21 +132,28 @@ async function getOrders(req, res, next) {
       const profile = profileMap.get(String(orderDoc.customer_id || ""));
       const display = buildDisplay(orderDoc, customer, profile);
       const orderPayments = paymentMap.get(String(orderDoc._id)) || [];
+      const paidPayments = orderPayments.filter((x) => String(x.status || "").toLowerCase() === "paid");
+      const paidTotal = paidPayments.reduce((sum, x) => sum + Number(x.amount || 0), 0);
+      const latestPayment = orderPayments[0] || null;
+      const hasDepositPaid = paidPayments.some((x) => String(x.type || "").toLowerCase() === "deposit");
+      const hasFullPaid = paidPayments.some((x) => String(x.type || "").toLowerCase() === "full");
+      const hasRemainingPaid = paidPayments.some((x) => String(x.type || "").toLowerCase() === "remaining");
+      const latestPaidType = paidPayments[0]?.type || null;
 
       return {
         ...orderDoc,
         display,
-        payment_summary: orderPayments.length
-          ? {
-              method: orderPayments[0].method || "-",
-              status: orderPayments[0].status || "-",
-              count: orderPayments.length,
-            }
-          : {
-              method: "-",
-              status: "-",
-              count: 0,
-            },
+        payment_summary: {
+          method: latestPayment?.method || "-",
+          status: latestPayment?.status || "-",
+          count: orderPayments.length,
+          paid_total: paidTotal,
+          has_deposit_paid: hasDepositPaid,
+          has_full_paid: hasFullPaid,
+          has_remaining_paid: hasRemainingPaid,
+          latest_paid_type: latestPaidType,
+          total_amount: Number(orderDoc.total_amount || 0),
+        },
       };
     });
 

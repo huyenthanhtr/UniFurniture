@@ -1,4 +1,4 @@
-<div class="page">
+﻿<div class="page">
   <div class="page-header">
     <div>
       <h1>{{ isEdit ? 'Sửa sản phẩm' : 'Thêm sản phẩm' }}</h1>
@@ -75,13 +75,60 @@
       </div>
 
       <div class="field full">
-        <label>Mô tả chi tiết HTML</label>
-        <textarea rows="12" [formControl]="form.controls.description"></textarea>
-      </div>
+        <label>Mô tả chi tiết</label>
+        <div class="editor-shell">
+          <div class="editor-toolbar" (mousedown)="preventToolbarFocus($event)">
+            <button type="button" class="toolbar-btn" title="In đậm" (click)="formatDescription('bold')"><b>B</b></button>
+            <button type="button" class="toolbar-btn" title="In nghiêng" (click)="formatDescription('italic')"><i>I</i></button>
+            <button type="button" class="toolbar-btn" title="Gạch chân" (click)="formatDescription('underline')"><u>U</u></button>
+            <span class="toolbar-sep"></span>
+            <button type="button" class="toolbar-btn icon-btn" title="Căn trái" (click)="alignDescription('justifyLeft')">≡</button>
+            <button type="button" class="toolbar-btn icon-btn" title="Căn giữa" (click)="alignDescription('justifyCenter')">≣</button>
+            <button type="button" class="toolbar-btn icon-btn" title="Căn phải" (click)="alignDescription('justifyRight')">☰</button>
+            <span class="toolbar-sep"></span>
+            <div class="image-menu">
+              <button type="button" class="toolbar-btn icon-btn" title="Chèn ảnh" (click)="toggleImageMenu($event)">🖼</button>
+              <div class="image-dropdown" *ngIf="showImageMenu">
+                <button type="button" (click)="insertImageFromUrl()">Nhập URL ảnh</button>
+                <button type="button" (click)="openImagePicker(imageInput)">Tải ảnh từ máy</button>
+              </div>
+              <input #imageInput type="file" accept="image/*" hidden (change)="onImageFileSelected($event)" />
+            </div>
 
-      <div class="field full">
-        <label>Xem trước mô tả HTML</label>
-        <div class="html-preview" [innerHTML]="form.value.description || ''"></div>
+            <div class="image-size-tools" *ngIf="selectedEditorImage">
+              <button type="button" class="toolbar-btn" title="Thu nhỏ ảnh" (click)="decreaseSelectedImage()">−</button>
+              <button
+                type="button"
+                class="percent-display"
+                *ngIf="!isEditingImagePercent"
+                title="Double click để nhập %"
+                (dblclick)="startEditImagePercent()"
+              >
+                {{ selectedImagePercent }}%
+              </button>
+              <input
+                *ngIf="isEditingImagePercent"
+                type="number"
+                min="10"
+                max="100"
+                [(ngModel)]="draftImagePercent"
+                (blur)="applyDraftImagePercent()"
+                (keydown)="onPercentInputKeydown($event)"
+              />
+              <button type="button" class="toolbar-btn" title="Phóng to ảnh" (click)="increaseSelectedImage()">+</button>
+            </div>
+          </div>
+          <div
+            #descriptionEditor
+            class="editor-content"
+            contenteditable="true"
+            (input)="onDescriptionInput()"
+            (click)="onEditorClick($event)"
+            (mouseup)="captureSelection()"
+            (keyup)="captureSelection()"
+            (blur)="captureSelection()"
+          ></div>
+        </div>
       </div>
     </div>
   </div>
@@ -94,6 +141,17 @@
     <div class="confirm-actions">
       <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
       <button class="btn btn-primary" (click)="runConfirm()">OK</button>
+    </div>
+  </div>
+
+  <div class="overlay" *ngIf="showLeaveConfirm"></div>
+
+  <div class="confirm" *ngIf="showLeaveConfirm">
+    <h3>Chưa lưu thay đổi</h3>
+    <p>Dữ liệu chưa được lưu. Nếu rời trang, các thay đổi sẽ bị mất.</p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" (click)="stayOnPage()">Ở lại</button>
+      <button class="btn btn-primary" (click)="leavePage()">Rời trang</button>
     </div>
   </div>
 </div>

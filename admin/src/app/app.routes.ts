@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+﻿import { Routes, CanDeactivateFn } from '@angular/router';
 import { AdminLayout } from './admin-layout/admin-layout';
 import { AdminCoupons } from './pages/admin-coupons/admin-coupons';
 
@@ -9,6 +9,17 @@ import { AdminVariantDetail } from './pages/admin-variant-detail/admin-variant-d
 import { AdminOrders } from './pages/admin-orders/admin-orders';
 import { AdminOrderDetail } from './pages/admin-order-detail/admin-order-detail';
 
+type PendingChangesComponent = {
+  canDeactivate: () => boolean | Promise<boolean>;
+};
+
+const pendingChangesGuard: CanDeactivateFn<PendingChangesComponent> = (component) => {
+  if (component && typeof component.canDeactivate === 'function') {
+    return component.canDeactivate();
+  }
+  return true;
+};
+
 export const routes: Routes = [
   {
     path: 'admin',
@@ -17,14 +28,14 @@ export const routes: Routes = [
       { path: 'promotions', component: AdminCoupons },
 
       { path: 'products', component: AdminProducts },
-      { path: 'products/new', component: AdminProductForm },
+      { path: 'products/new', component: AdminProductForm, canDeactivate: [pendingChangesGuard] },
       { path: 'products/:id', component: AdminProductDetail },
-      { path: 'products/:id/edit', component: AdminProductForm },
-      { path: 'variants/:id', component: AdminVariantDetail },
+      { path: 'products/:id/edit', component: AdminProductForm, canDeactivate: [pendingChangesGuard] },
+      { path: 'variants/:id', component: AdminVariantDetail, canDeactivate: [pendingChangesGuard] },
 
       { path: 'orders', component: AdminOrders },
       { path: 'orders/:id', component: AdminOrderDetail },
-    ]
+    ],
   },
-  { path: '', redirectTo: '/admin/products', pathMatch: 'full' }
+  { path: '', redirectTo: '/admin/products', pathMatch: 'full' },
 ];

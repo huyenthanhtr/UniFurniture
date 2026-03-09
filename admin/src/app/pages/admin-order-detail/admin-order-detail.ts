@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -84,7 +84,7 @@ export class AdminOrderDetail implements OnInit {
 
   askSaveStatus() {
     if (!this.order?._id || !this.editableStatus || this.editableStatus === this.order.status) return;
-    this.confirmMessage = `Đổi trạng thái đơn hàng sang ${this.editableStatus}?`;
+    this.confirmMessage = `Đổi trạng thái đơn hàng sang ${this.orderStatusLabel(this.editableStatus)}?`;
     this.confirmAction = () => this.saveStatus();
     this.showConfirm = true;
     this.cdr.detectChanges();
@@ -178,5 +178,33 @@ export class AdminOrderDetail implements OnInit {
     if (key === 'failed') return 'payment-failed';
     if (key === 'refunded') return 'payment-refunded';
     return 'payment-unknown';
+  }
+
+  orderStatusLabel(status: any): string {
+    const key = String(status || '').toLowerCase();
+    if (key === 'pending') return 'Chờ xác nhận';
+    if (key === 'confirmed') return 'Đã xác nhận';
+    if (key === 'processing') return 'Đang xử lý';
+    if (key === 'shipping') return 'Đang giao';
+    if (key === 'delivered') return 'Đã giao';
+    if (key === 'completed') return 'Hoàn tất';
+    if (key === 'cancelled') return 'Đã hủy';
+    if (key === 'refunded') return 'Đã hoàn tiền';
+    return status || '-';
+  }
+
+  customerTypeLabel(type: any): string {
+    const key = String(type || '').toLowerCase();
+    if (key === 'guest') return 'Khách vãng lai';
+    if (key === 'member') return 'Thành viên';
+    return type || '-';
+  }
+
+  customerStatusLabel(status: any): string {
+    const key = String(status || '').toLowerCase();
+    if (key === 'active') return 'Đang hoạt động';
+    if (key === 'inactive') return 'Ngừng hoạt động';
+    if (key === 'blocked') return 'Đã khóa';
+    return status || '-';
   }
 }
