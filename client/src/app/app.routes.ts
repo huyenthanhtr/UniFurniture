@@ -21,6 +21,7 @@ export const routes: Routes = [
     { path: 'tin-tuc/:slug', component: NewsDetailComponent },
     { path: 'chinh-sach/:slug', component: PolicyPageComponent },
     { path: 've-unifurniture', component: AboutPageComponent },
-    { path: 'cua-hang', component: CommunityPageComponent },
+    { path: 'cong-dong', component: CommunityPageComponent },
+    { path: 'cua-hang', redirectTo: 'cong-dong', pathMatch: 'full' },
 ];
 
