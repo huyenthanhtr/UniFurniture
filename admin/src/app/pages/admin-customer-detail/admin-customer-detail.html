@@ -1,0 +1,133 @@
+﻿<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Chi ti&#7871;t kh&#225;ch h&#224;ng</h1>
+      <div class="sub">{{ merged?.customer_code || merged?._id || '' }}</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" (click)="back()">&larr; Quay l&#7841;i</button>
+    </div>
+  </div>
+
+  <div class="state" *ngIf="isLoading">&#272;ang t&#7843;i...</div>
+
+  <div class="body" *ngIf="!isLoading && merged">
+    <section class="card">
+      <h3>Th&#244;ng tin chung</h3>
+
+      <div class="grid">
+        <div class="field readonly">
+          <label>H&#7885; v&#224; t&#234;n</label>
+          <div>{{ merged.full_name || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>S&#7889; &#273;i&#7879;n tho&#7841;i</label>
+          <div>{{ merged.phone || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Email</label>
+          <div>{{ merged.email || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Lo&#7841;i kh&#225;ch h&#224;ng</label>
+          <div>{{ customerTypeLabel(merged.customer_type) }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Tr&#7841;ng th&#225;i kh&#225;ch</label>
+          <div>{{ customerStatusLabel(merged.status) }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Tr&#7841;ng th&#225;i t&#224;i kho&#7843;n</label>
+          <div>{{ accountStatusLabel(merged.account_status) }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>M&#227; kh&#225;ch h&#224;ng</label>
+          <div>{{ merged.customer_code || '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>C&#243; t&#224;i kho&#7843;n</label>
+          <div>{{ merged.has_account ? 'C&#243;' : 'Kh&#244;ng' }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" *ngIf="merged.has_account">
+      <h3>Th&#244;ng tin h&#7891; s&#417; t&#224;i kho&#7843;n</h3>
+
+      <div class="grid">
+        <div class="field readonly">
+          <label>Gi&#7899;i t&#237;nh</label>
+          <div>{{ genderLabel(merged.gender) }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Ng&#224;y sinh</label>
+          <div>{{ merged.date_of_birth ? (merged.date_of_birth | date:'dd/MM/yyyy') : '-' }}</div>
+        </div>
+
+        <div class="field readonly">
+          <label>Vai tr&#242;</label>
+          <div>{{ merged.role || '-' }}</div>
+        </div>
+
+        <div class="field readonly full">
+          <label>&#272;&#7883;a ch&#7881; trong h&#7891; s&#417;</label>
+          <div>{{ merged.address || '-' }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="addresses-header">
+        <h3>&#272;&#7883;a ch&#7881; c&#7911;a kh&#225;ch h&#224;ng</h3>
+        <span class="muted">({{ addresses.length }} &#273;&#7883;a ch&#7881;)</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>T&#234;n ng&#432;&#7901;i nh&#7853;n</th>
+              <th>S&#7889; &#273;i&#7879;n tho&#7841;i</th>
+              <th>&#272;&#7883;a ch&#7881;</th>
+              <th>Tr&#7841;ng th&#225;i</th>
+              <th>C&#7853;p nh&#7853;t</th>
+              <th class="th-actions">H&#224;nh &#273;&#7897;ng</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngIf="addresses.length===0">
+              <td colspan="6" class="state">Kh&#225;ch h&#224;ng ch&#432;a c&#243; &#273;&#7883;a ch&#7881;.</td>
+            </tr>
+
+            <tr *ngFor="let address of addresses">
+              <td class="cell-title" (click)="viewAddress(address)">
+                <strong>{{ address.customer_address_name || '-' }}</strong>
+              </td>
+              <td>{{ address.address_phone || '-' }}</td>
+              <td>{{ address.full_address || '-' }}</td>
+              <td>
+                <span class="badge" [class.badge-active]="address.status==='active'" [class.badge-inactive]="address.status==='inactive'">
+                  {{ addressStatusLabel(address.status) }}
+                </span>
+              </td>
+              <td>{{ address.updatedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="actions-cell">
+                <button class="btn btn-ghost btn-sm" (click)="viewAddress(address)">Chi ti&#7871;t</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
