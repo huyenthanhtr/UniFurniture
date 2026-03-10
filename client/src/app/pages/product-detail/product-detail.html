@@ -21,7 +21,21 @@
       </div>
 
       <div class="tab-content" *ngIf="activeTab() === 'desc'">
-        <div [innerHTML]="descriptionHtml()"></div>
+        <div class="description-wrap">
+          <div
+            class="description-rich"
+            [class.is-collapsed]="shouldCollapseDescription() && !isDescriptionExpanded()"
+            [innerHTML]="descriptionHtml()"
+          ></div>
+          <button
+            type="button"
+            class="description-toggle-btn"
+            *ngIf="shouldCollapseDescription()"
+            (click)="toggleDescription()"
+          >
+            {{ isDescriptionExpanded() ? 'Thu gọn mô tả' : 'Xem thêm mô tả' }}
+          </button>
+        </div>
       </div>
 
       <div class="tab-content" *ngIf="activeTab() === 'review'">
