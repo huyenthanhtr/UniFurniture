@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   getProducts,
   getProductById,
+  getProductRecommendations,
   createProduct,
   updateProduct,
   patchProduct,
@@ -10,6 +11,7 @@ const {
 } = require("../controllers/product.controller");
 
 router.get("/", getProducts);
+router.get("/:slug/recommendations", getProductRecommendations);
 router.get("/:id", getProductById);
 router.post("/", createProduct);
 router.put("/:id", updateProduct);

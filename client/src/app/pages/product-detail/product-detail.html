@@ -7,14 +7,16 @@
 
   <ng-container *ngIf="!isLoading() && product() as productData">
     <div class="detail-container">
-      <app-product-gallery [images]="productData.images"></app-product-gallery>
-      <app-product-info [product]="productData"></app-product-info>
+      <app-product-gallery [images]="displayImages()"></app-product-gallery>
+      <app-product-info [product]="productData" (colorChange)="onColorChanged($event)"
+        (variantChange)="onVariantChanged($event)"></app-product-info>
     </div>
 
     <div class="tabs">
       <div class="tab-header">
         <button (click)="setActiveTab('desc')" [class.active]="activeTab() === 'desc'">M&#244; t&#7843;</button>
-        <button (click)="setActiveTab('review')" [class.active]="activeTab() === 'review'">&#272;&#225;nh gi&#225;</button>
+        <button (click)="setActiveTab('review')" [class.active]="activeTab() === 'review'">&#272;&#225;nh
+          gi&#225;</button>
         <button (click)="setActiveTab('policy')" [class.active]="activeTab() === 'policy'">Ch&#237;nh s&#225;ch</button>
       </div>
 
@@ -35,5 +37,9 @@
         </ng-template>
       </div>
     </div>
+
+    <!-- Recommendations Engine Component -->
+    <app-product-recommendations [productSlug]="productData.slug!"></app-product-recommendations>
+
   </ng-container>
 </div>

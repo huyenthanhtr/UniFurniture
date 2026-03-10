@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal, HostListener } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, forkJoin, of } from 'rxjs';
@@ -55,6 +55,21 @@ export class Navbar implements OnInit {
   readonly productGroups = signal<NavGroupItem[]>([]);
   readonly activeGroupSlug = signal('');
   readonly isProductsMenuOpen = signal(false);
+  readonly isHidden = signal(false);
+  private lastScrollY = 0;
+
+  @HostListener('window:scroll', [])
+  onWindowScroll() {
+    const currentScroll = window.scrollY || document.documentElement.scrollTop;
+    if (currentScroll > this.lastScrollY && currentScroll > 110) {
+      // Scrolling down and passed header height
+      this.isHidden.set(true);
+    } else {
+      // Scrolling up
+      this.isHidden.set(false);
+    }
+    this.lastScrollY = currentScroll;
+  }
   readonly activeGroup = computed(() => {
     const activeSlug = this.activeGroupSlug();
     return this.productGroups().find((group) => group.root.slug === activeSlug) || null;

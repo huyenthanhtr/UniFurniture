@@ -33,29 +33,39 @@
     margin-bottom: 6px;
 }
 
-.colors {
+.color-swatches-row {
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 4px;
 }
 
-.color {
-    width: 22px;
-    height: 22px;
+.color-swatch-lg {
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    border: 1px solid #ccc;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
     cursor: pointer;
+    padding: 0;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    outline: none;
+    background-clip: padding-box;
 }
 
-.black {
-    background: black;
+.color-swatch-lg:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 2.5px #fff, 0 0 0 4px rgba(0, 0, 0, 0.25);
 }
 
-.gray {
-    background: gray;
+.color-swatch-lg.active {
+    box-shadow: 0 0 0 2.5px #fff, 0 0 0 4px #333;
+    transform: scale(1.05);
 }
 
-.beige {
-    background: beige;
+.selected-color-label {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #555;
 }
 
 .quantity {
@@ -134,4 +144,34 @@
     color: #1f7a45;
     font-size: 14px;
     font-weight: 500;
+}
+
+.variants-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.variant-btn {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    color: #333;
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.variant-btn:hover {
+    border-color: #999;
+}
+
+.variant-btn.active {
+    background-color: #000;
+    color: #fff;
+    border-color: #000;
+    font-weight: 600;
 }

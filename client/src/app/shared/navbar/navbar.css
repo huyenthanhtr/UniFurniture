@@ -2,8 +2,14 @@
     background: #ffffff;
     border-bottom: 1px solid #ececec;
     width: 100%;
-    position: relative;
+    position: sticky;
+    top: 110px;
     z-index: 20;
+    transition: transform 0.3s ease;
+}
+
+.moho-navbar.nav-hidden {
+    transform: translateY(-100%);
 }
 
 .navbar-container {
@@ -73,12 +79,12 @@
     transform: scaleX(1);
 }
 
-.navbar-item--active > .navbar-link {
+.navbar-item--active>.navbar-link {
     color: #ef683a;
     font-weight: 600;
 }
 
-.navbar-item--active > .navbar-link::after {
+.navbar-item--active>.navbar-link::after {
     transform: scaleX(1);
 }
 
@@ -88,11 +94,11 @@
     transition: transform 0.2s ease;
 }
 
-.has-dropdown:hover > .navbar-link .dropdown-arrow {
+.has-dropdown:hover>.navbar-link .dropdown-arrow {
     transform: rotate(180deg);
 }
 
-.has-dropdown.menu-open > .navbar-link .dropdown-arrow {
+.has-dropdown.menu-open>.navbar-link .dropdown-arrow {
     transform: rotate(180deg);
 }
 
@@ -121,14 +127,14 @@
     height: 8px;
 }
 
-.has-dropdown:hover > .dropdown-panel {
+.has-dropdown:hover>.dropdown-panel {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
     pointer-events: auto;
 }
 
-.has-dropdown.menu-open > .dropdown-panel {
+.has-dropdown.menu-open>.dropdown-panel {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
@@ -219,11 +225,23 @@
     font-size: 14px;
     color: #323232;
     border-bottom: 1px solid #ededed;
+    position: relative;
 }
 
 .product-root-item.is-active {
     background: #f4f4f4;
-    color: #1f1f1f;
+    color: #ef683a;
+    font-weight: 600;
+}
+
+.product-root-item.is-active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 14px;
+    right: 14px;
+    height: 2px;
+    background: #ef683a;
 }
 
 .product-mega__right {
@@ -276,10 +294,26 @@
     min-height: 38px;
     padding: 10px 14px;
     border-bottom: 1px solid #ededed;
-    font-size: 14px;
+    font-size: 13px;
     color: #2f2f2f;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+    position: relative;
+}
+
+.product-sub-item.is-active {
+    color: #ef683a;
+    font-weight: 600;
+}
+
+.product-sub-item.is-active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 14px;
+    right: 14px;
+    height: 2px;
+    background: #ef683a;
 }
 
 .product-sub-empty {
@@ -340,4 +374,3 @@
         padding: 0 16px;
     }
 }
-

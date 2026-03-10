@@ -6,6 +6,7 @@ const {
   ensureUniqueSlug,
   recalculateProductAggregates,
 } = require("../utils/product-aggregate");
+const { getColorHex } = require("../utils/color-map.utils");
 
 function toObjectIdOrNull(value) {
   if (!value) return null;
@@ -109,13 +110,64 @@ async function getProducts(req, res, next) {
       Product.countDocuments(query),
     ]);
 
+    // Batch-fetch variant colors for the returned product IDs
+    const productIds = items.map((p) => p._id);
+    const variantColorDocs = productIds.length
+      ? await ProductVariant.find(
+        { product_id: { $in: productIds }, color: { $exists: true, $ne: "" } }
+      ).lean()
+      : [];
+
+    const variantIds = variantColorDocs.map(v => v._id);
+    const imageDocs = variantIds.length
+      ? await ProductImage.find(
+        { product_id: { $in: productIds }, variant_id: { $in: variantIds } }
+      ).lean()
+      : [];
+
+    // Build image map variant_id -> first image_url
+    const variantImages = new Map();
+    for (const img of imageDocs) {
+      if (img.variant_id && img.image_url) {
+        if (!variantImages.has(String(img.variant_id)) || img.is_primary) {
+          variantImages.set(String(img.variant_id), img.image_url);
+        }
+      }
+    }
+
+    // Build a map: productId -> unique [{name, hex, price, originalPrice, imageUrl}]
+    const colorsByProduct = new Map();
+    for (const v of variantColorDocs) {
+      const pid = String(v.product_id);
+      if (!colorsByProduct.has(pid)) {
+        colorsByProduct.set(pid, new Map());
+      }
+      const colorName = (v.color || "").trim();
+      if (colorName && !colorsByProduct.get(pid).has(colorName)) {
+        const productFallbackImg = items.find(p => String(p._id) === pid)?.thumbnail?.trim() || items.find(p => String(p._id) === pid)?.thumbnail_url?.trim() || "";
+        colorsByProduct.get(pid).set(colorName, {
+          name: colorName,
+          hex: getColorHex(colorName),
+          price: v.price || null,
+          originalPrice: v.compare_at_price || null,
+          imageUrl: variantImages.get(String(v._id)) || productFallbackImg,
+        });
+      }
+    }
+
+    const itemsWithColors = items.map((p) => ({
+      ...p,
+      colors: Array.from(colorsByProduct.get(String(p._id))?.values() || []),
+    }));
+
     res.json({
       page: pageNum,
       limit: limitNum,
       total,
       totalPages: Math.ceil(total / limitNum) || 1,
-      items,
+      items: itemsWithColors,
     });
+
   } catch (err) {
     next(err);
   }
@@ -123,7 +175,15 @@ async function getProducts(req, res, next) {
 
 async function getProductById(req, res, next) {
   try {
-    const doc = await Product.findById(req.params.id).lean();
+    const { id } = req.params;
+    let doc;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      doc = await Product.findById(id).lean();
+    } else {
+      doc = await Product.findOne({ slug: id }).lean();
+    }
+
     if (!doc) return res.status(404).json({ error: "Product not found" });
     res.json(doc);
   } catch (err) {
@@ -244,9 +304,60 @@ async function removeProduct(req, res, next) {
   }
 }
 
+async function getProductRecommendations(req, res, next) {
+  try {
+    const { slug } = req.params;
+
+    const Recommendation = require('./../models/Recommendation');
+    const recs = await Recommendation
+      .find({ product_slug: slug })
+      .sort({ score: -1 })
+      .limit(6)
+      .lean();
+
+    if (!recs || recs.length === 0) {
+      return res.json({ items: [] });
+    }
+
+    const recommendedSlugs = recs.map(r => r.recommended_slug);
+
+    const products = await Product
+      .find({ slug: { $in: recommendedSlugs }, status: 'active' })
+      .select('name slug min_price compare_at_price thumbnail thumbnail_url sold category_id collection_id size material')
+      .lean();
+    const items = products.map((product) => {
+      // Find the score to keep them ordered by relevance
+      const recEntry = recs.find(r => r.recommended_slug === product.slug);
+
+      return {
+        _id: product._id,
+        name: product.name,
+        slug: product.slug,
+        min_price: product.min_price,
+        compare_at_price: product.compare_at_price,
+        thumbnail: product.thumbnail,
+        thumbnail_url: product.thumbnail_url,
+        sold: product.sold,
+        category_id: product.category_id,
+        collection_id: product.collection_id,
+        size: product.size,
+        material: product.material,
+        score: recEntry ? recEntry.score : 0
+      };
+    });
+
+    items.sort((a, b) => b.score - a.score);
+
+    res.json({ items });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getProducts,
   getProductById,
+  getProductRecommendations,
   createProduct,
   updateProduct,
   patchProduct,
