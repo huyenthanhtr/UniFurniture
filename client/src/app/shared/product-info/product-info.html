@@ -59,7 +59,17 @@
   <div class="quantity">
     <button type="button" class="qty-btn" (click)="decrease()"
       aria-label="Gi&#7843;m s&#7889; l&#432;&#7907;ng">-</button>
-    <span class="qty-value">{{ quantity }}</span>
+    <input
+      type="number"
+      class="qty-input"
+      min="1"
+      step="1"
+      inputmode="numeric"
+      [value]="quantityInput"
+      (input)="onQuantityInput($event)"
+      (blur)="onQuantityBlur()"
+      aria-label="S&#7889; l&#432;&#7907;ng s&#7843;n ph&#7849;m"
+    />
     <button type="button" class="qty-btn" (click)="increase()"
       aria-label="T&#259;ng s&#7889; l&#432;&#7907;ng">+</button>
   </div>

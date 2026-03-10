@@ -1,5 +1,5 @@
 ﻿import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { Observable, catchError, forkJoin, map, of, timeout } from 'rxjs';
@@ -34,7 +34,7 @@ interface CouponApi {
 interface VoucherDeal {
   code: string;
   label: string;
-  description: string;
+  details: string[];
   color: string;
 }
 
@@ -61,7 +61,7 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
   private readonly ngZone = inject(NgZone);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  countdown = { hours: '00', minutes: '00', seconds: '00' };
+  readonly countdown = signal({ hours: '00', minutes: '00', seconds: '00' });
 
   flashDeals: FlashDeal[] = [];
   vouchers: VoucherDeal[] = [];
@@ -69,19 +69,29 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
 
   loading = true;
   errorMessage = '';
+  copiedCode: string | null = null;
 
   private timerId: ReturnType<typeof setInterval> | null = null;
+  private copiedCodeTimerId: ReturnType<typeof setTimeout> | null = null;
   private targetTime = Date.now() + 28 * 60 * 60 * 1000;
 
   ngOnInit(): void {
     this.updateCountdown();
-    this.timerId = setInterval(() => this.updateCountdown(), 1000);
+    this.timerId = setInterval(() => {
+      this.ngZone.run(() => {
+        this.updateCountdown();
+        this.cdr.detectChanges();
+      });
+    }, 1000);
     this.loadData();
   }
 
   ngOnDestroy(): void {
     if (this.timerId !== null) {
       clearInterval(this.timerId);
+    }
+    if (this.copiedCodeTimerId !== null) {
+      clearTimeout(this.copiedCodeTimerId);
     }
   }
 
@@ -113,6 +123,36 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
       return 0;
     }
     return Math.min(Math.round((deal.sold / deal.total) * 100), 100);
+  }
+
+  copyVoucherCode(code: string): void {
+    if (!code) {
+      return;
+    }
+
+    const normalizedCode = code.trim();
+    if (!normalizedCode) {
+      return;
+    }
+
+    const applyCopiedState = () => {
+      this.copiedCode = normalizedCode;
+      if (this.copiedCodeTimerId !== null) {
+        clearTimeout(this.copiedCodeTimerId);
+      }
+      this.copiedCodeTimerId = setTimeout(() => {
+        this.copiedCode = null;
+      }, 1600);
+    };
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(normalizedCode).then(applyCopiedState).catch(() => {
+        this.copyWithFallback(normalizedCode, applyCopiedState);
+      });
+      return;
+    }
+
+    this.copyWithFallback(normalizedCode, applyCopiedState);
   }
 
   private loadData(): void {
@@ -208,20 +248,19 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
 
         const endDateText = coupon.end_at ? this.formatDate(coupon.end_at) : '';
 
-        const description = [
+        const details = [
           `\u0110\u01A1n t\u1ED1i thi\u1EC3u ${this.formatPrice(minOrder)}`,
           totalLimit > 0
             ? `\u0110\u00E3 d\u00F9ng ${used}/${totalLimit}`
             : 'Kh\u00F4ng gi\u1EDBi h\u1EA1n l\u01B0\u1EE3t d\u00F9ng',
           endDateText ? `HSD: ${endDateText}` : '',
         ]
-          .filter(Boolean)
-          .join(' • ');
+          .filter((item): item is string => Boolean(item));
 
         return {
           code,
           label,
-          description,
+          details,
           color: this.getCouponColor(coupon, now),
         };
       });
@@ -304,7 +343,7 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
     const remaining = this.targetTime - Date.now();
     if (remaining <= 0) {
       this.targetTime = Date.now() + 28 * 60 * 60 * 1000;
-      this.countdown = { hours: '28', minutes: '00', seconds: '00' };
+      this.countdown.set({ hours: '28', minutes: '00', seconds: '00' });
       return;
     }
 
@@ -312,10 +351,31 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
     const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
 
-    this.countdown = {
+    this.countdown.set({
       hours: String(hours).padStart(2, '0'),
       minutes: String(minutes).padStart(2, '0'),
       seconds: String(seconds).padStart(2, '0'),
-    };
+    });
+  }
+
+  private copyWithFallback(text: string, onSuccess: () => void): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    textArea.style.pointerEvents = 'none';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      onSuccess();
+    } finally {
+      document.body.removeChild(textArea);
+    }
   }
 }

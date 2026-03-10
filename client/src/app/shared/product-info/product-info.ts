@@ -16,6 +16,7 @@ export class ProductInfoComponent implements OnChanges {
   @Output() variantChange = new EventEmitter<ProductVariantDocument>();
 
   quantity = 1;
+  quantityInput = '1';
   addMessage = '';
   selectedColor: ColorSwatch | null = null;
   selectedVariant: ProductVariantDocument | null = null;
@@ -50,15 +51,36 @@ export class ProductInfoComponent implements OnChanges {
 
   increase(): void {
     this.quantity++;
+    this.quantityInput = String(this.quantity);
   }
 
   decrease(): void {
     if (this.quantity > 1) {
       this.quantity--;
+      this.quantityInput = String(this.quantity);
     }
   }
 
+  onQuantityInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.quantityInput = target.value;
+
+    const parsed = Number.parseInt(target.value, 10);
+    if (Number.isNaN(parsed)) {
+      return;
+    }
+
+    this.quantity = this.normalizeQuantity(parsed);
+  }
+
+  onQuantityBlur(): void {
+    const parsed = Number.parseInt(this.quantityInput, 10);
+    this.quantity = this.normalizeQuantity(parsed);
+    this.quantityInput = String(this.quantity);
+  }
+
   addToCart(): void {
+    this.onQuantityBlur();
     const selectedPrice = this.selectedVariant?.price ?? this.selectedColor?.price ?? this.product.price;
     const selectedImage = this.selectedColor?.imageUrl ?? this.product.images[0]?.url ?? '';
 
@@ -77,5 +99,13 @@ export class ProductInfoComponent implements OnChanges {
 
   buyNow(): void {
     this.addToCart();
+  }
+
+  private normalizeQuantity(value: number): number {
+    if (!Number.isFinite(value)) {
+      return 1;
+    }
+
+    return Math.max(1, Math.floor(value));
   }
 }

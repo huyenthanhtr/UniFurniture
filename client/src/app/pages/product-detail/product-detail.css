@@ -83,13 +83,88 @@
 
 .tab-content {
     padding: 20px 0;
-    line-height: 1.6;
+    line-height: 1.7;
 }
 
-.tab-content img {
+.description-wrap {
+    background: #fcf9f5;
+    border: 1px solid #eee4d8;
+    border-radius: 16px;
+    padding: 18px;
+}
+
+.description-rich {
+    position: relative;
+    color: #3c3229;
+    font-size: 15px;
+    line-height: 1.75;
+}
+
+.description-rich.is-collapsed {
+    max-height: 760px;
+    overflow: hidden;
+    padding-bottom: 58px;
+}
+
+.description-rich.is-collapsed::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 130px;
+    background: linear-gradient(to bottom, rgba(252, 249, 245, 0), #fcf9f5 78%);
+}
+
+.description-rich :where(h1, h2, h3, h4) {
+    line-height: 1.3;
+    margin: 20px 0 10px;
+}
+
+.description-rich :where(p, ul, ol, table, blockquote) {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.description-rich :where(img) {
+    display: block;
+    margin: 14px auto;
+    width: auto !important;
+    max-width: min(100%, 760px) !important;
+    height: auto !important;
+    max-height: 420px;
+    object-fit: contain;
+    border-radius: 12px;
+    border: 1px solid #eadfd2;
+    background: #fff;
+    padding: 6px;
+}
+
+.description-rich :where(iframe, video) {
+    width: min(100%, 760px);
     max-width: 100%;
-    height: auto;
-    border-radius: 8px;
+    border-radius: 12px;
+    display: block;
+    margin: 14px auto;
+}
+
+.description-toggle-btn {
+    margin-top: 14px;
+    border: 1px solid #cfb79e;
+    background: #fff;
+    color: #7a4e2b;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.description-toggle-btn:hover {
+    border-color: #b8865f;
+    color: #5f3a1d;
+    box-shadow: 0 8px 18px rgba(122, 78, 43, 0.14);
 }
 
 .status-message {
@@ -120,3 +195,32 @@
 }
 
 /* Responsive */
+@media (max-width: 992px) {
+    .detail-container {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+}
+
+@media (max-width: 740px) {
+    .detail-page {
+        padding: 24px 12px;
+    }
+
+    .tabs {
+        margin-top: 30px;
+    }
+
+    .description-wrap {
+        padding: 14px;
+        border-radius: 12px;
+    }
+
+    .description-rich.is-collapsed {
+        max-height: 560px;
+    }
+
+    .description-rich :where(img) {
+        max-height: 300px;
+    }
+}

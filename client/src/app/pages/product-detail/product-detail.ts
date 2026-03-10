@@ -31,6 +31,7 @@ export class ProductDetailComponent {
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
   readonly currentProductId = signal<string | null>(null);
+  readonly isDescriptionExpanded = signal(false);
 
   readonly displayImages = computed(() => {
     const current = this.product();
@@ -75,6 +76,17 @@ export class ProductDetailComponent {
     const rawDescription = current?.description || current?.shortDescription || 'Thong tin dang cap nhat.';
     return this.stripLinks(rawDescription);
   });
+  readonly shouldCollapseDescription = computed(() => {
+    const html = this.descriptionHtml();
+    const imageCount = (html.match(/<img\b/gi) || []).length;
+    const textLength = html.replace(/<[^>]+>/g, '').trim().length;
+    return imageCount >= 2 || textLength > 1400;
+  });
+
+  private readonly resetDescriptionState = effect(() => {
+    this.descriptionHtml();
+    this.isDescriptionExpanded.set(false);
+  });
 
   ngOnInit(): void {
     this.route.paramMap
@@ -110,6 +122,10 @@ export class ProductDetailComponent {
     if (productId) {
       this.loadProduct(productId);
     }
+  }
+
+  toggleDescription(): void {
+    this.isDescriptionExpanded.update((expanded) => !expanded);
   }
 
   private loadProduct(productId: string): void {
