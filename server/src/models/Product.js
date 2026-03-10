@@ -31,4 +31,33 @@ const ProductSchema = new mongoose.Schema(
   { timestamps: true, collection: "products" }
 );
 
+ProductSchema.virtual("variants", {
+  ref: "ProductVariant",
+  localField: "_id",
+  foreignField: "product_id",
+});
+
+ProductSchema.virtual("available_colors").get(function () {
+  if (!this.variants) return [];
+
+  const colorMap = new Map();
+
+  this.variants.forEach((v) => {
+    if (v.color && !colorMap.has(v.color)) {
+      colorMap.set(v.color, {
+        name: v.color,
+        variant_id: v._id,
+        price: v.price,
+        image: v.image,
+      });
+    }
+  });
+
+  return Array.from(colorMap.values());
+});
+
+ProductSchema.virtual("color_count").get(function () {
+  return this.available_colors?.length || 0;
+});
+
 module.exports = mongoose.model("Product", ProductSchema, "products");

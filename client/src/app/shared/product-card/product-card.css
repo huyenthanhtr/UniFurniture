@@ -115,18 +115,25 @@
     display: flex;
     gap: 6px;
     margin-top: 4px;
+    flex-wrap: wrap;
 }
 
 .color-swatch {
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    border: 1px solid #ddd;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
     display: inline-block;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+}
+
+.color-swatch:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgba(0, 0, 0, 0.3);
 }
 
 .color-swatch.border-active {
-    border: 1px solid #333;
-    padding: 1px;
-    background-clip: content-box;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #333;
 }

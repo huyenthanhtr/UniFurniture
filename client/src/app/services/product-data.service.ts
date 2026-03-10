@@ -9,9 +9,11 @@ interface ApiListResponse<T> {
   items: T[];
 }
 
-interface ProductDocument {
+export interface ProductDocument {
   _id: string;
   name: string;
+  slug?: string;
+  status: string;
   thumbnail?: string;
   thumbnail_url?: string;
   min_price?: number;
@@ -46,18 +48,89 @@ interface CollectionDocument {
 interface ProductImageDocument {
   _id: string;
   product_id?: string;
+  variant_id?: string;
   image_url?: string;
   is_primary?: boolean;
   sort_order?: number;
 }
 
-interface ProductVariantDocument {
+export interface ProductVariantDocument {
   _id: string;
   product_id?: string;
+  name?: string;
+  variant_name?: string;
   sku?: string;
   color?: string;
   price?: number;
   compare_at_price?: number;
+}
+
+export interface ColorSwatch {
+  name: string;
+  hex: string;
+  price?: number | null;
+  originalPrice?: number | null;
+  imageUrl?: string;
+  sku?: string;
+  variants?: ProductVariantDocument[];
+}
+
+export interface ImageWithVariant {
+  url: string;
+  variant_id?: string;
+}
+
+export interface ProductDetailData {
+  id: string;
+  name: string;
+  slug?: string;
+  sku: string;
+  price: number | null;
+  originalPrice: number | null;
+  shortDescription: string;
+  description: string;
+  sizeText: string;
+  materialText: string;
+  warrantyMonths: number | null;
+  colors: ColorSwatch[];
+  images: ImageWithVariant[];
+}
+
+/** Client-side mirror of server color-map.utils.js */
+const COLOR_MAP: Record<string, string> = {
+  'beige': '#f0e6d3',
+  'combo màu tự nhiên đệm be': '#d9c5a5',
+  'nâu be': '#a0785a',
+  'sofa nệm be': '#d9c5a5',
+  'cam': '#e8722a',
+  'camel': '#c19a6b',
+  'combo nâu': '#6f4e37',
+  'màu nâu': '#6f4e37',
+  'màu nâu/xám': '#8b7d7b',
+  'màu nâu/nệm xám': '#8b7d7b',
+  'nâu': '#6f4e37',
+  'nau': '#6f4e37',
+  'nâu phối trắng': '#a07855',
+  'giường màu trắng 1m6': '#f0f0f0',
+  'giường màu trắng 1m8': '#f0f0f0',
+  'giường trắng 1m6': '#f0f0f0',
+  'giường trắng 1m8': '#f0f0f0',
+  'màu trắng': '#f0f0f0',
+  'trắng': '#f0f0f0',
+  'trắng - xám': '#d0d0d0',
+  'gỗ phối trắng': '#e8ddd0',
+  'giường tự nhiên 1m6': '#c8a97e',
+  'màu tự nhiên': '#c8a97e',
+  'olive': '#808000',
+  'sofa nệm xám': '#9e9e9e',
+  'xám': '#9e9e9e',
+  'xanh dương': '#1565c0',
+  'đen': '#1a1a1a',
+};
+
+function getColorHex(name: string): string {
+  const key = (name || '').trim().toLowerCase().normalize('NFC');
+  return COLOR_MAP[key] || '#cccccc';
 }
 
 export interface ProductListItem {
@@ -69,7 +142,7 @@ export interface ProductListItem {
   discountBadge: string | null;
   reviewsCount: number;
   soldCount: number;
-  colors: string[];
+  colors: ColorSwatch[];
   categoryId: string | null;
   collectionId: string | null;
   sizeText: string;
@@ -100,20 +173,7 @@ export interface ProductQueryOptions {
   fields?: string;
 }
 
-export interface ProductDetailData {
-  id: string;
-  name: string;
-  sku: string;
-  price: number | null;
-  originalPrice: number | null;
-  shortDescription: string;
-  description: string;
-  sizeText: string;
-  materialText: string;
-  warrantyMonths: number | null;
-  colors: string[];
-  images: string[];
-}
+
 
 const FALLBACK_IMAGE_URL =
   'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=900';
@@ -166,6 +226,7 @@ export class ProductDataService {
             const price = this.toNullableNumber(product.min_price);
             const originalPrice = this.toNullableNumber(product.compare_at_price);
 
+            const rawColors = Array.isArray((product as any).colors) ? (product as any).colors : [];
             return {
               id: product._id,
               name: product.name || 'San pham',
@@ -175,7 +236,7 @@ export class ProductDataService {
               discountBadge: this.getDiscountBadge(price, originalPrice),
               reviewsCount: 0,
               soldCount: this.toNullableNumber(product.sold) ?? 0,
-              colors: [],
+              colors: rawColors.filter((c: any) => c && c.name && c.hex) as ColorSwatch[],
               categoryId: product.category_id || null,
               collectionId: product.collection_id || null,
               sizeText: this.valueToSizeText(product.size),
@@ -265,6 +326,38 @@ export class ProductDataService {
     return this.getProducts(1, limit).pipe(map((response) => response.items));
   }
 
+  getProductRecommendations(slug: string): Observable<ProductListItem[]> {
+    return this.http
+      .get<{ items: ProductDocument[] }>(`${this.apiBaseUrl}/products/${slug}/recommendations`)
+      .pipe(
+        timeout(15000),
+        map((response) => {
+          return (response.items || []).map((product) => {
+            const price = this.toNullableNumber(product.min_price);
+            const originalPrice = this.toNullableNumber(product.compare_at_price);
+
+            return {
+              id: product._id,
+              name: product.name || 'Sản phẩm',
+              slug: product.slug,
+              price,
+              originalPrice,
+              imageUrl: product.thumbnail?.trim() || product.thumbnail_url?.trim() || FALLBACK_IMAGE_URL,
+              discountBadge: this.getDiscountBadge(price, originalPrice),
+              reviewsCount: 0,
+              soldCount: this.toNullableNumber(product.sold) ?? 0,
+              colors: [],
+              categoryId: product.category_id || null,
+              collectionId: product.collection_id || null,
+              sizeText: this.valueToSizeText(product.size),
+              materialText: this.valueToText(product.material),
+            };
+          });
+        }),
+        catchError(() => of([]))
+      );
+  }
+
   getProductDetail(productId: string): Observable<ProductDetailData> {
     return forkJoin({
       product: this.http
@@ -289,14 +382,24 @@ export class ProductDataService {
     }).pipe(
       map(({ product, images, variants }) => {
         const preferredVariant = this.pickPreferredVariant(variants.items);
-        const imageUrls = this.sortImages(images.items)
-          .map((image) => image.image_url?.trim() || '')
-          .filter((imageUrl) => imageUrl.length > 0);
-        const uniqueImageUrls = Array.from(new Set(imageUrls));
+        const mappedImages = this.sortImages(images.items)
+          .map((image) => ({ url: image.image_url?.trim() || '', variant_id: image.variant_id }))
+          .filter((img) => img.url.length > 0);
+
+        // Ensure unique URLs while keeping the first associated variant_id
+        const uniqueImages: ImageWithVariant[] = [];
+        const seenUrls = new Set<string>();
+        for (const img of mappedImages) {
+          if (!seenUrls.has(img.url)) {
+            uniqueImages.push(img);
+            seenUrls.add(img.url);
+          }
+        }
 
         return {
           id: product._id,
           name: product.name || 'San pham',
+          slug: product.slug,
           sku: preferredVariant?.sku?.trim() || product.sku?.trim() || '',
           price: this.toNullableNumber(preferredVariant?.price) ?? this.toNullableNumber(product.min_price),
           originalPrice:
@@ -307,8 +410,8 @@ export class ProductDataService {
           sizeText: this.valueToSizeText(product.size),
           materialText: this.valueToText(product.material),
           warrantyMonths: this.toNullableNumber(product.warranty_months),
-          colors: this.extractColors(variants.items),
-          images: uniqueImageUrls.length > 0 ? uniqueImageUrls : [product.thumbnail?.trim() || FALLBACK_IMAGE_URL],
+          colors: this.extractColors(variants.items, images.items, product),
+          images: uniqueImages.length > 0 ? uniqueImages : [{ url: product.thumbnail?.trim() || FALLBACK_IMAGE_URL }],
         };
       }),
     );
@@ -345,11 +448,35 @@ export class ProductDataService {
     });
   }
 
-  private extractColors(variants: ProductVariantDocument[]): string[] {
-    const colors = variants
-      .map((variant) => variant.color?.trim() || '')
-      .filter((color) => color.length > 0);
-    return Array.from(new Set(colors));
+  private extractColors(variants: ProductVariantDocument[], images: ProductImageDocument[], product: ProductDocument): ColorSwatch[] {
+    const seen = new Map<string, ColorSwatch>();
+    const productFallbackImg = product.thumbnail?.trim() || product.thumbnail_url?.trim() || FALLBACK_IMAGE_URL;
+
+    for (const variant of variants) {
+      const name = variant.color?.trim() || '';
+      if (name) {
+        if (!seen.has(name)) {
+          // find best image for this variant
+          const variantImages = images.filter(img => img.variant_id === variant._id);
+          const primaryImage = variantImages.find(img => img.is_primary) || variantImages[0];
+          const imageUrl = primaryImage?.image_url?.trim() || productFallbackImg;
+
+          seen.set(name, {
+            name,
+            hex: getColorHex(name),
+            price: this.toNullableNumber(variant.price),
+            originalPrice: this.toNullableNumber(variant.compare_at_price),
+            sku: variant.sku?.trim() || product.sku?.trim() || '',
+            imageUrl,
+            variants: [],
+          });
+        }
+
+        // Add variant to the color
+        seen.get(name)!.variants!.push(variant);
+      }
+    }
+    return Array.from(seen.values());
   }
 
   private getDiscountBadge(price: number | null, originalPrice: number | null): string | null {
@@ -370,8 +497,8 @@ export class ProductDataService {
       'image_url' in source
         ? source.image_url?.trim() || ''
         : 'banner_url' in source
-        ? source.banner_url?.trim() || ''
-        : '';
+          ? source.banner_url?.trim() || ''
+          : '';
 
     return {
       id: source._id,

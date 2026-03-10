@@ -1,6 +1,6 @@
 <a class="product-card" [routerLink]="['/products', product.id]">
   <div class="image-wrapper">
-    <img [src]="product.imageUrl" [alt]="product.name" class="product-image" />
+    <img [src]="displayImageUrl()" [alt]="product.name" class="product-image" />
     <div class="badge" *ngIf="product.discountBadge">
       {{ product.discountBadge }}
     </div>
@@ -13,11 +13,11 @@
 
     <div class="product-price">
       <span class="current-price">
-        <ng-container *ngIf="product.price !== null; else contactPrice">{{ product.price | number }}d</ng-container>
+        <ng-container *ngIf="displayPrice() !== null; else contactPrice">{{ displayPrice() | number }}d</ng-container>
       </span>
 
-      <span class="original-price" *ngIf="product.originalPrice !== null">
-        {{ product.originalPrice | number }}d
+      <span class="original-price" *ngIf="displayOriginalPrice() !== null">
+        {{ displayOriginalPrice() | number }}d
       </span>
     </div>
 
@@ -25,9 +25,7 @@
       <div class="rating-box">
         <span class="stars">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="#ff5722" *ngFor="let i of [1, 2, 3, 4, 5]">
-            <path
-              d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-            />
+            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
           </svg>
         </span>
 
@@ -38,15 +36,12 @@
     </div>
 
     <div class="product-colors" *ngIf="product.colors && product.colors.length > 0">
-      <span
-        *ngFor="let color of product.colors; let first = first"
-        class="color-swatch"
-        [class.border-active]="first"
-        [style.background-color]="color"
-      ></span>
+      <span *ngFor="let color of product.colors; let first = first" class="color-swatch"
+        [class.border-active]="first && !hoveredColor() || hoveredColor()?.name === color.name"
+        [style.background-color]="color.hex" [title]="color.name" (mouseenter)="onColorEnter(color)"
+        (mouseleave)="onColorLeave()"></span>
     </div>
   </div>
 </a>
 
 <ng-template #contactPrice>Liên hệ</ng-template>
-

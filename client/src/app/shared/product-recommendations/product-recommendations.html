@@ -1,0 +1,10 @@
+<div class="product-recommendations-section" *ngIf="recommendations().length > 0">
+    <div class="section-header">
+        <h2 class="section-title">Bạn cũng có thể thích</h2>
+    </div>
+
+    <div class="recommendations-grid">
+        <app-product-card *ngFor="let product of recommendations()" [product]="product">
+        </app-product-card>
+    </div>
+</div>

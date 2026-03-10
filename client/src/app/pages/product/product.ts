@@ -58,6 +58,7 @@ export class ProductComponent implements OnInit {
   readonly selectedGroupSlug = signal('');
   readonly selectedGroupLabel = signal('');
   readonly selectedCollectionId = signal('');
+  readonly searchQuery = signal('');
   readonly selectedCategoryIds = signal<string[]>([]);
   readonly selectedCategoryId = signal('');
   readonly selectedPriceRange = signal('price-asc');
@@ -86,6 +87,9 @@ export class ProductComponent implements OnInit {
   });
 
   readonly pageTitle = computed(() => {
+    if (this.searchQuery()) {
+      return `Kết quả tìm kiếm cho: '${this.searchQuery()}'`;
+    }
     if (this.selectedCategoryName()) {
       return this.selectedCategoryName();
     }
@@ -95,7 +99,7 @@ export class ProductComponent implements OnInit {
     if (this.selectedGroupLabel()) {
       return this.selectedGroupLabel();
     }
-    return 'Tat ca san pham';
+    return 'Tất cả sản phẩm';
   });
 
   readonly breadcrumbParentName = computed(() => {
@@ -226,6 +230,7 @@ export class ProductComponent implements OnInit {
       const nextCategoryId = nextCategoryIds.length === 1 ? nextCategoryIds[0] : '';
       const nextSort = this.normalizeSortValue(String(params['sort'] || '').trim());
       const nextPage = this.normalizePageValue(params['page']);
+      const nextSearchQuery = String(params['q'] || '').trim();
 
       const loadSignature = JSON.stringify({
         groupSlug: nextGroupSlug,
@@ -234,6 +239,7 @@ export class ProductComponent implements OnInit {
         categoryIds: nextCategoryIds,
         sort: nextSort,
         page: nextPage,
+        searchQuery: nextSearchQuery,
       });
 
       if (loadSignature === this.lastLoadSignature) {
@@ -248,6 +254,7 @@ export class ProductComponent implements OnInit {
       this.selectedCategoryId.set(nextCategoryId);
       this.selectedSort.set(nextSort);
       this.currentPage.set(nextPage);
+      this.searchQuery.set(nextSearchQuery);
       this.loadCollectionCategoryLinksIfNeeded();
       this.syncSelectedCategoryWithCollection();
       this.updateBannerRotation();
@@ -343,6 +350,7 @@ export class ProductComponent implements OnInit {
         order: sortConfig.order,
         collectionId: this.selectedCollectionId() || undefined,
         categoryIds: this.selectedCategoryIds(),
+        search: this.searchQuery() || undefined,
       })
       .pipe(
         catchError(() => {

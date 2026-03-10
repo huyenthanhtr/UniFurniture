@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { UiStateService } from '../ui-state.service';
 
 @Component({
@@ -10,7 +11,15 @@ import { UiStateService } from '../ui-state.service';
 })
 export class Header {
   ui = inject(UiStateService);
+  router = inject(Router);
   userProfile: any = null;
+
+  onSearch(event: Event, query: string) {
+    event.preventDefault();
+    if (query.trim()) {
+      this.router.navigate(['/products'], { queryParams: { q: query.trim() } });
+    }
+  }
 
   ngOnInit() {
     const saved = localStorage.getItem('user_profile');
