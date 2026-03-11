@@ -3,13 +3,19 @@ const Coupon = require('../models/Coupon');
 // 1. Lấy tất cả mã khuyến mãi (Dùng cho trang Admin chính)
 exports.getAllCoupons = async (req, res) => {
     try {
+        const now = new Date();
+        // Tự động cập nhật trạng thái expired cho các mã đã quá hạn mà chưa là expired
+        await Coupon.updateMany(
+            { end_at: { $lt: now }, status: { $ne: 'expired' } },
+            { $set: { status: 'expired' } }
+        );
+
         const coupons = await Coupon.find().sort({ createdAt: -1 });
         res.status(200).json(coupons);
     } catch (error) {
-        res.status(500).json({ message: "Lỗi khi lấy danh sách: " + error.message });
+        res.status(500).json({ message: "Lỗi hệ thống: " + error.message });
     }
 };
-
 // 2. Tạo mã mới
 exports.createCoupon = async (req, res) => {
     try {

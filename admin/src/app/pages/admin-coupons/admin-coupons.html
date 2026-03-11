@@ -1,40 +1,147 @@
-<div class="admin-coupons">
+<div class="admin-coupons-container p-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 style="color: #908372; font-weight: 600;">Danh sách Khuyến mãi</h2>
-    <button class="btn-popup-danger" (click)="openModal()">+ Thêm mã mới</button>
+    <h2 class="title-page">Quản lý Mã Khuyến mãi</h2>
+    <button class="btn-add-new" (click)="openModal()">
+      <i class="fas fa-plus-circle"></i> Thêm mã mới
+    </button>
   </div>
 
-  <div class="table-container shadow-sm">
-    <table class="table custom-table">
+  <div class="table-responsive shadow-sm bg-white rounded">
+    <table class="table custom-table mb-0">
       <thead>
         <tr>
           <th>Mã Code</th>
           <th>Loại</th>
           <th>Giá trị</th>
+          <th>Đơn tối thiểu</th>
           <th>Giảm tối đa</th>
-          <th>Sử dụng</th>
+          <th>Đã dùng</th>
+          <th>Thời gian hạn</th>
           <th>Trạng thái</th>
           <th>Hành động</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let item of coupons">
-          <td class="fw-bold">{{ item.code }}</td>
-          <td>{{ item.discount_type }}</td>
+          <td class="fw-bold text-primary">{{ item.code }}</td>
+          <td>{{ item.discount_type === 'percent' ? 'Phần trăm' : 'Cố định' }}</td>
           <td>{{ item.discount_value | number }}{{ item.discount_type === 'percent' ? '%' : 'đ' }}</td>
-          <td>{{ item.max_discount_amount ? (item.max_discount_amount | number) + 'đ' : '-' }}</td>
-          <td>{{ item.used }} / {{ item.total_limit }}</td>
-          <td>
-            <span class="badge" [ngClass]="item.status === 'active' ? 'bg-success' : 'bg-secondary'">
-              {{ item.status }}
-            </span>
+          <td>{{ item.min_order_value | number }}đ</td>
+          <td>{{ item.max_discount_amount | number }}đ</td>
+          <td class="text-center">
+            <span class="usage-text">{{ item.used }} / {{ item.total_limit }}</span>
+            <div class="progress-mini">
+              <div class="progress-bar" [style.width.%]="(item.used/item.total_limit)*100"></div>
+            </div>
+          </td>
+          <td class="date-cell">
+            <small>{{ item.start_at | date:'dd/MM/yyyy' }} - {{ item.end_at | date:'dd/MM/yyyy' }}</small>
           </td>
           <td>
-            <button class="btn btn-sm btn-outline-primary me-2"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-sm btn-outline-danger" (click)="delete(item._id)"><i class="fas fa-trash"></i></button>
+            <select [(ngModel)]="item.status" (change)="updateStatus(item)" 
+                    [className]="'status-dropdown ' + item.status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="expired" disabled>Expired</option>
+            </select>
+          </td>
+          <td>
+            <button class="btn-edit-action" (click)="openModal(item)">
+              <i class="fas fa-edit"></i> Sửa
+            </button>
           </td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal-card shadow-lg">
+      <div class="modal-card-header">
+        <h3>{{ isEdit ? 'Chỉnh sửa Khuyến mãi' : 'Tạo Mã Khuyến mãi Mới' }}</h3>
+        <button class="close-modal" (click)="closeModal()">&times;</button>
+      </div>
+      
+      <div class="modal-card-body">
+        <div *ngIf="validationError" class="validation-alert">
+          <i class="fas fa-exclamation-triangle"></i> {{ validationError }}
+        </div>
+
+        <form>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" >Mã Code *</label>
+              <input type="text" [(ngModel)]="currentCoupon.code" name="code" 
+                     (input)="realTimeValidate()" class="form-control text-uppercase" [disabled]="isEdit">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Loại giảm giá</label>
+              <select [(ngModel)]="currentCoupon.discount_type" name="type" 
+                      (change)="onTypeChange()" class="form-select">
+                <option value="percent">Phần trăm (%)</option>
+                <option value="fixed">Số tiền cố định (đ)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Giá trị giảm *</label>
+              <input type="number" [(ngModel)]="currentCoupon.discount_value" name="val" 
+                     (input)="realTimeValidate()" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Giảm tối đa (đ)</label>
+              <input type="number" [(ngModel)]="currentCoupon.max_discount_amount" name="max" 
+                     [disabled]="currentCoupon.discount_type === 'fixed'" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Đơn tối thiểu (đ)</label>
+              <input type="number" [(ngModel)]="currentCoupon.min_order_value" name="min" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Tổng lượt dùng *</label>
+              <input type="number" [(ngModel)]="currentCoupon.total_limit" name="limit" 
+                     (input)="realTimeValidate()" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Ngày bắt đầu *</label>
+              <input type="date" [ngModel]="currentCoupon.start_at" (ngModelChange)="currentCoupon.start_at=$event; realTimeValidate()" 
+                     name="start" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Ngày kết thúc *</label>
+              <input type="date" [ngModel]="currentCoupon.end_at" (ngModelChange)="currentCoupon.end_at=$event; realTimeValidate()" 
+                     name="end" class="form-control">
+            </div>
+            <div class="col-12 text-muted small">
+              <i class="fas fa-info-circle"></i> Đã sử dụng: {{ currentCoupon.used || 0 }} lượt.
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-card-footer">
+        <button class="btn-secondary-custom" (click)="closeModal()">Hủy bỏ</button>
+        <button class="btn-primary-custom" [disabled]="validationError" (click)="confirmSave()">Lưu thông tin</button>
+      </div>
+    </div>
+  </div>
+
+<div class="confirm-overlay" *ngIf="showConfirmPopup">
+    <div class="confirm-box">
+      <div class="icon-confirm">?</div>
+      <h4>Xác nhận lưu?</h4>
+      <p>Hệ thống sẽ cập nhật thông tin mã khuyến mãi này.</p>
+      <div class="btn-group-custom">
+        <button class="btn btn-light" (click)="showConfirmPopup = false">Quay lại</button>
+        <button class="btn btn-primary" (click)="executeSave()">Đồng ý lưu</button>
+      </div>
+    </div>
+  </div>
+<div class="confirm-overlay" *ngIf="showResultPopup">
+    <div class="confirm-box result-box" [class]="resultMessage.type">
+      <div class="icon-result">{{ resultMessage.type === 'success' ? '✓' : '✕' }}</div>
+      <h4>{{ resultMessage.title }}</h4>
+      <p>{{ resultMessage.message }}</p>
+      <button class="btn btn-result" (click)="showResultPopup = false">Đóng</button>
+    </div>
   </div>
 </div>
