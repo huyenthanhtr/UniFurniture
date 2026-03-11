@@ -18,4 +18,8 @@ export class AdminCouponsService {
   deleteCoupon(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
+  // src/app/services/admin-coupons.ts
+  updateCoupon(id: string, data: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}`, data);
+}
 }
