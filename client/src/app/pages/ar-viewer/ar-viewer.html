@@ -58,21 +58,17 @@
 
     <div class="ar-filters">
         <button class="filter-btn" [class.active]="activeFilter === 'all'" (click)="setFilter('all')">Tất cả</button>
-        <button class="filter-btn" [class.active]="activeFilter === 'sofa'" (click)="setFilter('sofa')">Sofa</button>
-        <button class="filter-btn" [class.active]="activeFilter === 'chair'" (click)="setFilter('chair')">Ghế</button>
-        <button class="filter-btn" [class.active]="activeFilter === 'table'" (click)="setFilter('table')">Bàn</button>
+        @for (cat of categories; track cat.slug) {
+            <button class="filter-btn" [class.active]="activeFilter === cat.slug" (click)="setFilter(cat.slug)">
+                {{ cat.name }}
+            </button>
+        }
     </div>
 
-    <div class="ar-product-grid">
+    <div class="ar-product-grid" *ngIf="!isLoading(); else loadingTpl">
         @for (product of filteredProducts; track product.id) {
         <div class="ar-product-card">
             <div class="viewer-wrap">
-
-                <div class="loading-overlay" [id]="'loading-' + product.id">
-                    <div class="loading-spinner"></div>
-                    <span>Đang tải model...</span>
-                </div>
-
                 <model-viewer [id]="'mv-' + product.id" [src]="product.src" [poster]="product.poster" ar
                     ar-modes="webxr scene-viewer quick-look" camera-controls auto-rotate auto-rotate-delay="1000"
                     rotation-per-second="30deg" shadow-intensity="1" exposure="1" [alt]="product.name">
@@ -101,11 +97,90 @@
                 </div>
                 <p class="card-desc">{{ product.desc }}</p>
                 <div class="card-footer">
-                    <div class="card-price">{{ product.price }}</div>
+                    <div class="card-price">{{ product.price | number }}₫</div>
                     <div class="card-dims">{{ product.dims }}</div>
                 </div>
             </div>
         </div>
         }
+    </div>
+
+    <ng-template #loadingTpl>
+        <div class="ar-loading-state">
+            <div class="spinner"></div>
+            <p>Đang quét dữ liệu sản phẩm AR...</p>
+        </div>
+    </ng-template>
+</section>
+
+<!-- ROOM DESIGNER SECTION -->
+<section class="ar-room-designer">
+    <div class="designer-intro">
+        <h2><em>3D</em> Room Designer</h2>
+        <p>Bố cục nội thất trong không gian ảo trước khi đặt hàng.</p>
+    </div>
+
+    <div class="designer-container">
+        <!-- RD Header -->
+        <header class="rd-header">
+            <div class="rd-title">Room<span>Design</span>3D</div>
+            <div class="rd-controls">
+                <label>
+                    W: <input type="range" [(ngModel)]="rd_roomW" (input)="buildRDRoom()" min="3" max="12" step="0.5">
+                    <span>{{ rd_roomW }}m</span>
+                </label>
+                <label>
+                    L: <input type="range" [(ngModel)]="rd_roomL" (input)="buildRDRoom()" min="3" max="12" step="0.5">
+                    <span>{{ rd_roomL }}m</span>
+                </label>
+            </div>
+            <div class="rd-actions">
+                <button class="rd-btn" (click)="clearRDRoom()">Xóa phòng</button>
+            </div>
+        </header>
+
+        <div class="rd-main">
+            <!-- Sidebar Furniture Library -->
+            <div class="rd-sidebar">
+                <div class="sidebar-scroll">
+                    <div class="sidebar-title" style="padding: 10px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Library</div>
+                    <div class="search-wrap" style="padding: 0 10px 10px;">
+                        <input type="text" [(ngModel)]="rd_searchTerm" placeholder="Tìm sản phẩm..." style="width: 100%; padding: 6px; border-radius: 4px; background: #1e1e28; border: 1px solid #2a2a38; color: white; font-size: 11px;">
+                    </div>
+                    <div class="furniture-item-rd" *ngFor="let p of rd_filteredProducts" (click)="addRDFurniture(p)">
+                        <img [src]="p.poster" alt="" onerror="this.src='https://via.placeholder.com/60px'">
+                        <p>{{ p.name }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas -->
+            <div class="rd-canvas-area" style="cursor: move;">
+                <canvas #rdCanvas id="rdCanvas"></canvas>
+                <div class="rd-overlay">
+                    <button class="rd-btn" [class.active]="rd_viewMode === 'perspective'" (click)="setRDView('perspective')">3D View</button>
+                    <button class="rd-btn" [class.active]="rd_viewMode === 'top'" (click)="setRDView('top')">Top View</button>
+                </div>
+            </div>
+
+            <!-- Properties -->
+            <div class="rd-properties">
+                <div class="prop-title">Properties</div>
+                <div *ngIf="selectedObj; else noSelection" class="prop-content">
+                    <div class="prop-group">
+                        <div class="prop-label">Product</div>
+                        <div class="prop-val">{{ selectedObj.name }}</div>
+                    </div>
+                    <div class="prop-group">
+                        <div class="prop-label">Rotation</div>
+                        <input type="range" min="0" max="360" [value]="selectedObj.rotY * 180 / 3.14" (input)="rotateRDSelected(+$any($event.target).value)" style="width: 100%; accent-color: #c8f064;">
+                    </div>
+                    <button class="rd-btn rd-btn-delete" (click)="deleteSelectedRD()">Xóa đồ vật</button>
+                </div>
+                <ng-template #noSelection>
+                    <div class="prop-none">Chọn đồ vật để chỉnh sửa</div>
+                </ng-template>
+            </div>
+        </div>
     </div>
 </section>
