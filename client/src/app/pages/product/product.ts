@@ -18,6 +18,12 @@ interface SortQueryConfig {
   order: NonNullable<ProductQueryOptions['order']>;
 }
 
+interface SizeFilterProfile {
+  targetCm: number;
+  toleranceCm: number;
+  aliases: string[];
+}
+
 const DEFAULT_BANNER_IMAGE =
   'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=1920';
 
@@ -29,6 +35,34 @@ const GROUP_CATEGORY_SLUGS: Record<string, string[]> = {
   'phong-lam-viec': ['ban-lam-viec', 'ghe-van-phong'],
   'tu-bep': ['tu-ke'],
   nem: ['combo-phong-ngu', 'giuong-ngu'],
+};
+
+const SIZE_FILTERS: Record<string, SizeFilterProfile> = {
+  'size-90cm': {
+    targetCm: 90,
+    toleranceCm: 10,
+    aliases: ['90cm', '0.9m', '900mm', '90x', 'x90'],
+  },
+  'size-1m2': {
+    targetCm: 120,
+    toleranceCm: 10,
+    aliases: ['1m2', '1.2m', '120cm', '1200mm', '120x', 'x120'],
+  },
+  'size-1m4': {
+    targetCm: 140,
+    toleranceCm: 10,
+    aliases: ['1m4', '1.4m', '140cm', '1400mm', '140x', 'x140'],
+  },
+  'size-1m6': {
+    targetCm: 160,
+    toleranceCm: 10,
+    aliases: ['1m6', '1.6m', '160cm', '1600mm', '160x', 'x160'],
+  },
+  'size-1m8': {
+    targetCm: 180,
+    toleranceCm: 10,
+    aliases: ['1m8', '1.8m', '180cm', '1800mm', '180x', 'x180'],
+  },
 };
 
 @Component({
@@ -111,16 +145,14 @@ export class ProductComponent implements OnInit {
   });
 
   readonly categoryFilterLabel = computed(() => {
-    if (this.selectedCategoryName()) {
-      return this.selectedCategoryName();
-    }
-    if (this.selectedCollectionName()) {
-      return this.selectedCollectionName();
-    }
     if (this.selectedGroupLabel()) {
       return this.selectedGroupLabel();
     }
     return 'Tat ca danh muc';
+  });
+
+  readonly selectedFilterCategoryId = computed(() => {
+    return this.selectedCollectionId() || this.selectedCategoryId();
   });
 
   readonly bannerImageUrls = computed(() => {
@@ -187,25 +219,35 @@ export class ProductComponent implements OnInit {
   });
 
   readonly filterCategoryOptions = computed(() => {
+    const groupSlug = this.selectedGroupSlug();
+
+    if (groupSlug === 'bo-suu-tap' || Boolean(this.selectedCollectionId())) {
+      return this.collections().map((item) => ({
+        value: item.id,
+        label: item.name,
+        type: 'collection' as const,
+      }));
+    }
+
     const allCategories = this.categories();
-    const collectionId = this.selectedCollectionId();
-    const links = this.collectionCategoryLinks();
-    if (collectionId && links[collectionId] && links[collectionId].length > 0) {
-      const availableCategoryIds = new Set(links[collectionId]);
-      return allCategories
-        .filter((category) => availableCategoryIds.has(category.id))
-        .map((item) => ({ value: item.id, label: item.name }));
+    const groupCategorySlugs = GROUP_CATEGORY_SLUGS[groupSlug] || [];
+    if (groupCategorySlugs.length > 0) {
+      const categoryBySlug = new Map(allCategories.map((item) => [item.slug, item] as const));
+      return groupCategorySlugs
+        .map((slug) => categoryBySlug.get(slug))
+        .filter((item): item is TaxonomyItem => Boolean(item))
+        .map((item) => ({ value: item.id, label: item.name, type: 'category' as const }));
     }
 
     const selectedCategoryIds = this.selectedCategoryIds();
-    if (selectedCategoryIds.length > 1) {
+    if (selectedCategoryIds.length > 0 && Boolean(groupSlug)) {
       const selectedIdSet = new Set(selectedCategoryIds);
       return allCategories
         .filter((category) => selectedIdSet.has(category.id))
-        .map((item) => ({ value: item.id, label: item.name }));
+        .map((item) => ({ value: item.id, label: item.name, type: 'category' as const }));
     }
 
-    return allCategories.map((item) => ({ value: item.id, label: item.name }));
+    return allCategories.map((item) => ({ value: item.id, label: item.name, type: 'category' as const }));
   });
 
   readonly visibleProducts = computed(() => this.applyLocalFilters(this.products()));
@@ -287,14 +329,39 @@ export class ProductComponent implements OnInit {
     this.selectedPriceRange.set(filters.priceRange);
     this.selectedColor.set(filters.color);
     this.selectedSize.set(filters.size);
-    this.selectedCategoryIds.set(filters.categoryId ? [filters.categoryId] : []);
 
-    if (filters.categoryId !== this.selectedCategoryId()) {
+    if (filters.categoryType === 'collection') {
+      this.selectedCollectionId.set(filters.categoryId);
+      this.selectedCategoryIds.set([]);
+      this.selectedCategoryId.set('');
       this.updateRouteQuery({
+        collection: filters.categoryId || null,
+        category: null,
+        page: 1,
+      });
+      return;
+    }
+
+    if (filters.categoryType === 'category') {
+      this.selectedCollectionId.set('');
+      this.selectedCategoryIds.set(filters.categoryId ? [filters.categoryId] : []);
+      this.selectedCategoryId.set(filters.categoryId || '');
+      this.updateRouteQuery({
+        collection: null,
         category: filters.categoryId || null,
         page: 1,
       });
+      return;
     }
+
+    this.selectedCollectionId.set('');
+    this.selectedCategoryIds.set([]);
+    this.selectedCategoryId.set('');
+    this.updateRouteQuery({
+      collection: null,
+      category: null,
+      page: 1,
+    });
   }
 
   onSortChange(sortValue: ProductSortValue): void {
@@ -400,10 +467,10 @@ export class ProductComponent implements OnInit {
       if (!this.matchesPriceFilter(item.price, this.selectedPriceRange())) {
         return false;
       }
-      if (!this.matchesKeywordFilter(item, this.selectedColor())) {
+      if (!this.matchesColorFilter(item, this.selectedColor())) {
         return false;
       }
-      if (!this.matchesKeywordFilter(item, this.selectedSize())) {
+      if (!this.matchesSizeFilter(item, this.selectedSize())) {
         return false;
       }
       return true;
@@ -460,7 +527,7 @@ export class ProductComponent implements OnInit {
     });
   }
 
-  private matchesKeywordFilter(item: ProductListItem, keyword: string): boolean {
+  private matchesColorFilter(item: ProductListItem, keyword: string): boolean {
     if (keyword === 'all') {
       return true;
     }
@@ -470,12 +537,104 @@ export class ProductComponent implements OnInit {
     return searchContent.includes(normalizedKeyword);
   }
 
+  private matchesSizeFilter(item: ProductListItem, sizeKey: string): boolean {
+    if (sizeKey === 'all') {
+      return true;
+    }
+
+    const profile = SIZE_FILTERS[sizeKey];
+    if (!profile) {
+      return true;
+    }
+
+    const combinedText = `${item.sizeText} ${item.name}`;
+    const normalized = this.normalizeSizeText(combinedText);
+    if (profile.aliases.some((alias) => normalized.includes(alias))) {
+      return true;
+    }
+
+    const candidates = this.extractSizeValuesInCm(combinedText);
+    return candidates.some((valueCm) => Math.abs(valueCm - profile.targetCm) <= profile.toleranceCm);
+  }
+
   private normalizeText(value: string): string {
     return String(value || '')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .trim();
+  }
+
+  private normalizeSizeText(value: string): string {
+    return this.normalizeText(value).replace(/[\s_:-]+/g, '');
+  }
+
+  private extractSizeValuesInCm(rawValue: string): number[] {
+    const source = String(rawValue || '').toLowerCase().replace(/,/g, '.');
+    if (!source) {
+      return [];
+    }
+
+    const values = new Set<number>();
+    const addValue = (nextValue: number): void => {
+      if (!Number.isFinite(nextValue)) {
+        return;
+      }
+      const rounded = Math.round(nextValue);
+      if (rounded >= 40 && rounded <= 260) {
+        values.add(rounded);
+      }
+    };
+
+    const compactMeterRegex = /(\d)\s*m\s*(\d{1,2})(?!\d)/g;
+    for (const match of source.matchAll(compactMeterRegex)) {
+      const base = Number(match[1]);
+      const decimalPart = Number(match[2]);
+      const divisor = Math.pow(10, String(match[2]).length);
+      addValue((base + decimalPart / divisor) * 100);
+    }
+
+    const decimalMeterRegex = /(\d+(?:\.\d+)?)\s*m(?![a-z])/g;
+    for (const match of source.matchAll(decimalMeterRegex)) {
+      addValue(Number(match[1]) * 100);
+    }
+
+    const cmRegex = /(\d{2,3}(?:\.\d+)?)\s*cm\b/g;
+    for (const match of source.matchAll(cmRegex)) {
+      addValue(Number(match[1]));
+    }
+
+    const mmRegex = /(\d{3,4})\s*mm\b/g;
+    for (const match of source.matchAll(mmRegex)) {
+      addValue(Number(match[1]) / 10);
+    }
+
+    const dimensionRegex = /(\d{2,4})\s*[x*]\s*(\d{2,4})/g;
+    for (const match of source.matchAll(dimensionRegex)) {
+      const left = this.normalizeDimensionNumber(Number(match[1]));
+      const right = this.normalizeDimensionNumber(Number(match[2]));
+      if (left !== null) {
+        addValue(left);
+      }
+      if (right !== null) {
+        addValue(right);
+      }
+    }
+
+    return Array.from(values);
+  }
+
+  private normalizeDimensionNumber(value: number): number | null {
+    if (!Number.isFinite(value) || value <= 0) {
+      return null;
+    }
+    if (value >= 1000 && value <= 2600) {
+      return value / 10;
+    }
+    if (value >= 40 && value <= 260) {
+      return value;
+    }
+    return null;
   }
 
   private normalizeSortValue(value: string): ProductSortValue {

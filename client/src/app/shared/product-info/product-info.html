@@ -17,37 +17,26 @@
   </div>
 
   <div class="section">
-    <div class="label">Màu sắc</div>
+    <div class="label">M&#224;u s&#7855;c</div>
     <ng-container *ngIf="product.colors.length > 0; else noColors">
       <div class="color-swatches-row">
         <button *ngFor="let color of product.colors" type="button" class="color-swatch-lg"
           [class.active]="selectedColor?.name === color.name" [style.background-color]="color.hex" [title]="color.name"
           (click)="selectColor(color)" [attr.aria-label]="color.name"></button>
       </div>
-      <div class="selected-color-label" *ngIf="selectedColor">{{ selectedColor.name }}</div>
-
-      <!-- Variant options below color -->
-      <ng-container *ngIf="selectedColor?.variants as variants">
-        <div class="variants-row" *ngIf="variants.length > 0">
-          <button *ngFor="let v of variants" type="button" class="variant-btn"
-            [class.active]="selectedVariant?._id === v._id" (click)="selectVariant(v)">
-            {{ v.variant_name || v.name }}
-          </button>
-        </div>
-      </ng-container>
     </ng-container>
     <ng-template #noColors>
-      <div>Đang cập nhật</div>
+      <div>&#272;ang c&#7853;p nh&#7853;t</div>
     </ng-template>
   </div>
 
   <div class="section">
-    <div class="label">Kích thước</div>
-    <div>{{ product.sizeText || 'Đang cập nhật' }}</div>
+    <div class="label">K&#237;ch th&#432;&#7899;c</div>
+    <div>{{ product.sizeText || '&#272;ang c&#7853;p nh&#7853;t' }}</div>
   </div>
 
   <div class="section" *ngIf="product.materialText">
-    <div class="label">Chất liệu</div>
+    <div class="label">Ch&#7845;t li&#7879;u</div>
     <div>{{ product.materialText }}</div>
   </div>
 
@@ -74,9 +63,9 @@
       aria-label="T&#259;ng s&#7889; l&#432;&#7907;ng">+</button>
   </div>
 
-  <button type="button" class="btn-add" (click)="addToCart()">THÊM VÀO GIỎ</button>
+  <button type="button" class="btn-add" (click)="addToCart()">TH&#202;M V&#192;O GI&#7886;</button>
   <button type="button" class="btn-buy" (click)="buyNow()">MUA NGAY</button>
   <p class="add-message" *ngIf="addMessage">{{ addMessage }}</p>
 </div>
 
-<ng-template #contactPrice>Liên hệ</ng-template>
+<ng-template #contactPrice>Li&#234;n h&#7879;</ng-template>

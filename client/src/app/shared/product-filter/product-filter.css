@@ -121,6 +121,15 @@
   user-select: none;
 }
 
+.filter-menu--size {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  padding: 0;
+  border-radius: 0;
+  background: #ffffff;
+}
+
 .filter-option {
   border: 1px solid transparent;
   background: #ffffff;
@@ -140,6 +149,18 @@
   transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
+.filter-option--size {
+  min-height: 62px;
+  justify-content: center;
+  border-radius: 0;
+  border: 1px solid #d9d9d9;
+  margin: -1px 0 0 -1px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #27384f;
+  padding: 8px 6px;
+}
+
 .filter-option:hover {
   background: #f6f9ff;
   border-color: #d7e2f3;
@@ -151,6 +172,17 @@
   border-color: rgba(239, 104, 58, 0.35);
   color: #b74820;
   font-weight: 700;
+}
+
+.filter-option--size:hover {
+  background: #f9fafb;
+  border-color: #d0d7e2;
+}
+
+.filter-option--size.is-selected {
+  background: #f2f6ff;
+  border-color: #8ba2c2;
+  color: #1f3048;
 }
 
 .filter-menu::-webkit-scrollbar {
@@ -204,5 +236,15 @@
   .filter-field {
     min-width: 100%;
     width: 100%;
+  }
+
+  .filter-menu--size {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 460px) {
+  .filter-menu--size {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

@@ -25,6 +25,9 @@ export class ProductInfoComponent implements OnChanges {
     if (changes['product']) {
       this.selectedColor = this.product.colors?.[0] ?? null;
       this.selectedVariant = this.selectedColor?.variants?.[0] ?? null;
+      if (this.selectedColor) {
+        this.colorChange.emit(this.selectedColor);
+      }
       if (this.selectedVariant) {
         this.variantChange.emit(this.selectedVariant);
       }
@@ -32,13 +35,11 @@ export class ProductInfoComponent implements OnChanges {
   }
 
   selectColor(color: ColorSwatch): void {
-    if (this.selectedColor?.name !== color.name) {
-      this.selectedColor = color;
-      this.selectedVariant = color.variants?.[0] ?? null;
-      this.colorChange.emit(color);
-      if (this.selectedVariant) {
-        this.variantChange.emit(this.selectedVariant);
-      }
+    this.selectedColor = color;
+    this.selectedVariant = color.variants?.[0] ?? null;
+    this.colorChange.emit(color);
+    if (this.selectedVariant) {
+      this.variantChange.emit(this.selectedVariant);
     }
   }
 

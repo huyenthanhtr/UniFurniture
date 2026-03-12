@@ -78,10 +78,10 @@
         <span class="filter-value">{{ getSizeLabel() }}</span>
       </button>
 
-      <div class="filter-menu" *ngIf="openDropdown === 'size'">
+      <div class="filter-menu filter-menu--size" *ngIf="openDropdown === 'size'">
         <button
           type="button"
-          class="filter-option"
+          class="filter-option filter-option--size"
           *ngFor="let option of sizeOptions"
           [class.is-selected]="selectedSize === option.value"
           (click)="selectSize(option.value)"
