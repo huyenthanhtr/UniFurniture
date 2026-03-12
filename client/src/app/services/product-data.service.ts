@@ -9,6 +9,15 @@ interface ApiListResponse<T> {
   items: T[];
 }
 
+export interface ProductModel3D {
+  _id: string;
+  product_id: string;
+  variant_id?: string;
+  file_id: string;
+  filename: string;
+  status: string;
+}
+
 export interface ProductDocument {
   _id: string;
   name: string;
@@ -415,6 +424,24 @@ export class ProductDataService {
         };
       }),
     );
+  }
+
+  getProductModels(productId: string): Observable<ProductModel3D[]> {
+    return this.http.get<ProductModel3D[]>(`${this.apiBaseUrl}/product-models-3d/product/${productId}`).pipe(
+      timeout(10000),
+      catchError(() => of([]))
+    );
+  }
+
+  getAllProductModels(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiBaseUrl}/product-models-3d`).pipe(
+      timeout(10000),
+      catchError(() => of([]))
+    );
+  }
+
+  getModelFileUrl(fileId: string): string {
+    return `${this.apiBaseUrl}/product-models-3d/file/${fileId}`;
   }
 
   private emptyListResponse<T>(): ApiListResponse<T> {

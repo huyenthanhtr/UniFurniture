@@ -23,6 +23,7 @@ const productVariantsRoutes = require("./src/routes/product-variants.routes");
 const productsRoutes = require("./src/routes/products.routes");
 const profilesRoutes = require("./src/routes/profiles.routes");
 const authRoutes = require("./src/routes/auth.routes");
+const productModels3dRoutes = require("./src/routes/product-model-3d.routes");
 
 const app = express();
 app.use(cors());
@@ -30,7 +31,7 @@ app.use(express.json({ limit: "20mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/assets/upload", express.static(path.join(__dirname, "..", "admin", "src", "assets", "upload")));
 
-connectDB();
+// connectDB(); // Moved to end of file
 
 app.get("/", (req, res) => res.send("UniFurniture API running"));
 
@@ -53,10 +54,13 @@ app.use("/api/product-variants", productVariantsRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/profiles", profilesRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/product-models-3d", productModels3dRoutes);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  const url = `http://localhost:${PORT}`;
-  console.log(`✅ Server running: ${url}`);
-  console.log(`➡ Products API:  ${url}/api/products`);
+connectDB().then(() => {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    const url = `http://localhost:${PORT}`;
+    console.log(`✅ Server running: ${url}`);
+    console.log(`➡ Products API:  ${url}/api/products`);
+  });
 });
