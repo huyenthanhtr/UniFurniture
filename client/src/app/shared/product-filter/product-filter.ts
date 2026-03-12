@@ -4,10 +4,12 @@ import { Component, ElementRef, EventEmitter, HostListener, Input, Output, injec
 export interface FilterSelectOption {
   value: string;
   label: string;
+  type?: 'category' | 'collection';
 }
 
 export interface ProductFilterState {
   categoryId: string;
+  categoryType: 'category' | 'collection' | 'none';
   priceRange: string;
   color: string;
   size: string;
@@ -54,10 +56,11 @@ export class ProductFilterComponent {
   ];
 
   readonly sizeOptions: FilterSelectOption[] = [
-    { value: 'all', label: 'Tất cả kích thước' },
-    { value: 'nho', label: 'Nhỏ' },
-    { value: 'vua', label: 'Vừa' },
-    { value: 'lon', label: 'Lớn' },
+    { value: 'size-90cm', label: '90cm' },
+    { value: 'size-1m2', label: '1m2' },
+    { value: 'size-1m4', label: '1m4' },
+    { value: 'size-1m6', label: '1m6' },
+    { value: 'size-1m8', label: '1m8' },
   ];
 
   openDropdown: DropdownKey | null = null;
@@ -100,7 +103,7 @@ export class ProductFilterComponent {
   }
 
   selectSize(value: string): void {
-    this.selectedSize = value;
+    this.selectedSize = this.selectedSize === value ? 'all' : value;
     this.emitFilters();
     this.closeDropdown();
   }
@@ -122,8 +125,11 @@ export class ProductFilterComponent {
   }
 
   emitFilters(): void {
+    const selectedCategoryOption = this.categoryOptions.find((option) => option.value === this.selectedCategoryId);
+
     this.filtersChange.emit({
       categoryId: this.selectedCategoryId,
+      categoryType: selectedCategoryOption?.type || 'none',
       priceRange: this.selectedPriceRange,
       color: this.selectedColor,
       size: this.selectedSize,

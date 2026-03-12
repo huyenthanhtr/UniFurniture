@@ -62,12 +62,6 @@
     transform: scale(1.05);
 }
 
-.selected-color-label {
-    margin-top: 6px;
-    font-size: 13px;
-    color: #555;
-}
-
 .quantity {
     display: flex;
     align-items: center;
@@ -165,32 +159,3 @@
     font-weight: 500;
 }
 
-.variants-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.variant-btn {
-    background-color: #fff;
-    border: 1px solid #e0e0e0;
-    color: #333;
-    padding: 8px 12px;
-    font-size: 13px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    outline: none;
-}
-
-.variant-btn:hover {
-    border-color: #999;
-}
-
-.variant-btn.active {
-    background-color: #000;
-    color: #fff;
-    border-color: #000;
-    font-weight: 600;
-}
