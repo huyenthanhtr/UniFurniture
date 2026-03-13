@@ -15,7 +15,7 @@ export class AdminCoupons implements OnInit {
   private cdr = inject(ChangeDetectorRef); // Inject ChangeDetectorRef để ép cập nhật UI
   coupons: any[] = [];
   currentCoupon: any = {};
-  
+  pendingStatusChange: { item: any, newStatus: string } | null = null;
   // Quản lý trạng thái Popup
   showModal: boolean = false;
   isEdit: boolean = false;
@@ -24,7 +24,19 @@ export class AdminCoupons implements OnInit {
   
   validationError: string = '';
   resultMessage = { title: '', message: '', type: '' as 'success' | 'error' };
+  filter = {
+    search: '',
+    type: '',
+    status: '',
+    onlyAvailable: false, // Lọc còn lượt dùng
+    startDate: '',
+    endDate: ''
+  };
 
+  sortConfig = {
+    column: '',
+    direction: 'asc' // 'asc' hoặc 'desc'
+  };
   ngOnInit(): void {
     this.loadCoupons();
   }
@@ -117,25 +129,7 @@ if (!c.code || c.code.trim() === '') {
       this.showConfirmPopup = true;
     }
   }
-executeSave(): void {
-    this.showConfirmPopup = false;
-    const request = this.isEdit 
-      ? this.couponService.updateCoupon(this.currentCoupon._id, this.currentCoupon)
-      : this.couponService.createCoupon(this.currentCoupon);
 
-    request.subscribe({
-      next: () => {
-        this.showModal = false;
-        this.loadCoupons();
-        this.showResult('Thành công', 'Dữ liệu khuyến mãi đã được lưu.', 'success');
-        this.cdr.detectChanges(); // Ép hiện Popup thành công ngay lập tức
-      },
-      error: (err: any) => {
-        this.showResult('Thất bại', err.error?.message || 'Lỗi server', 'error');
-        this.cdr.detectChanges(); // Ép hiện Popup lỗi ngay lập tức
-      }
-    });
-  }
 
 showResult(title: string, msg: string, type: 'success' | 'error') {
     this.resultMessage = { title, message: msg, type };
@@ -149,12 +143,68 @@ closeModal(): void {
     this.cdr.detectChanges();
   }
 
-  updateStatus(item: any): void {
-    this.couponService.updateCoupon(item._id, { status: item.status }).subscribe({
-      next: () => this.showResult('Thành công', 'Đã cập nhật trạng thái.', 'success'),
-      error: () => this.showResult('Lỗi', 'Cập nhật trạng thái thất bại.', 'error')
+// Sửa lại hàm updateStatus
+updateStatus(item: any): void {
+  // 1. Lưu lại thông tin muốn thay đổi vào biến tạm
+  this.pendingStatusChange = { 
+    item: item, 
+    newStatus: item.status 
+  };
+  
+  // 2. Mở popup xác nhận (tận dụng popup có sẵn)
+  this.showConfirmPopup = true;
+}
+
+// Sửa lại hàm executeSave để phân biệt giữa "Lưu từ Modal" và "Lưu từ Table"
+executeSave(): void {
+  this.showConfirmPopup = false;
+
+  // TRƯỜNG HỢP 1: Cập nhật trạng thái từ bảng chính
+  if (this.pendingStatusChange) {
+    const { item, newStatus } = this.pendingStatusChange;
+    
+    this.couponService.updateCoupon(item._id, { status: newStatus }).subscribe({
+      next: () => {
+        this.showResult('Thành công', 'Đã cập nhật trạng thái mới.', 'success');
+        this.pendingStatusChange = null; // Reset biến tạm
+        this.loadCoupons(); // Load lại để đảm bảo data đồng bộ
+      },
+      error: (err: any) => {
+        this.showResult('Lỗi', err.error?.message || 'Cập nhật thất bại.', 'error');
+        this.pendingStatusChange = null;
+        this.loadCoupons(); // Reset lại UI về trạng thái cũ do lỗi
+      }
     });
+    return; // Thoát hàm, không chạy phần code lưu Modal bên dưới
   }
+
+  // TRƯỜNG HỢP 2: Lưu từ Modal (Code cũ của bạn)
+  const request = this.isEdit 
+    ? this.couponService.updateCoupon(this.currentCoupon._id, this.currentCoupon)
+    : this.couponService.createCoupon(this.currentCoupon);
+
+  request.subscribe({
+    next: () => {
+      this.showModal = false;
+      this.loadCoupons();
+      this.showResult('Thành công', 'Dữ liệu khuyến mãi đã được lưu.', 'success');
+      this.cdr.detectChanges();
+    },
+    error: (err: any) => {
+      this.showResult('Thất bại', err.error?.message || 'Lỗi server', 'error');
+      this.cdr.detectChanges();
+    }
+  });
+}
+
+// Cập nhật lại nút "Quay lại" hoặc "Hủy" trong popup xác nhận
+cancelConfirm(): void {
+  if (this.pendingStatusChange) {
+    this.loadCoupons(); // Load lại để Dropdown quay về giá trị cũ trong DB
+  }
+  this.showConfirmPopup = false;
+  this.pendingStatusChange = null;
+}
   
 // Thêm hàm kiểm tra ngày vào class AdminCoupons
 checkAndFormatCoupons(data: any[]): any[] {
@@ -177,5 +227,89 @@ checkAndFormatCoupons(data: any[]): any[] {
     return coupon;
   });
 }
+get filteredCoupons() {
+    let result = [...this.coupons];
 
+    // 1. Lọc theo Search (Mã code)
+    if (this.filter.search) {
+      const s = this.filter.search.toLowerCase();
+      result = result.filter(c => c.code.toLowerCase().includes(s));
+    }
+
+    // 2. Lọc theo Loại
+    if (this.filter.type) {
+      result = result.filter(c => c.discount_type === this.filter.type);
+    }
+
+    // 3. Lọc theo Trạng thái
+    if (this.filter.status) {
+      result = result.filter(c => c.status === this.filter.status);
+    }
+
+    // 4. Lọc theo "Còn lượt dùng"
+    if (this.filter.onlyAvailable) {
+      result = result.filter(c => c.used < c.total_limit);
+    }
+
+    // 5. Lọc theo Thời hạn (Mã có hiệu lực trong khoảng ngày đã chọn)
+  if (this.filter.startDate && this.filter.endDate) {
+    const fStart = new Date(this.filter.startDate).getTime();
+    const fEnd = new Date(this.filter.endDate).getTime();
+
+    result = result.filter(c => {
+      const cStart = new Date(c.start_at).getTime();
+      const cEnd = new Date(c.end_at).getTime();
+      
+      // Logic: Ngày bắt đầu của mã phải <= ngày bắt đầu lọc
+      // VÀ ngày kết thúc của mã phải >= ngày kết thúc lọc
+      return cStart <= fStart && cEnd >= fEnd;
+    });
+  }
+
+    // 6. Sắp xếp
+if (this.sortConfig.column) {
+    const col = this.sortConfig.column;
+    const dir = this.sortConfig.direction === 'asc' ? 1 : -1;
+
+    result.sort((a, b) => {
+      let valA = a[col];
+      let valB = b[col];
+
+      // Xử lý riêng cho ngày tháng
+      if (col === 'start_at' || col === 'end_at') {
+        valA = new Date(valA).getTime();
+        valB = new Date(valB).getTime();
+      }
+
+      // So sánh
+      if (valA < valB) return -1 * dir;
+      if (valA > valB) return 1 * dir;
+      return 0;
+    });
+  }
+    return result;
+  }
+
+  // Hàm xử lý khi bấm vào tiêu đề cột để sắp xếp
+  toggleSort(column: string) {
+    if (this.sortConfig.column === column) {
+      this.sortConfig.direction = this.sortConfig.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortConfig.column = column;
+      this.sortConfig.direction = 'asc';
+    }
+  }
+
+  // Hàm đặt lại bộ lọc
+  resetFilters() {
+    this.filter = {
+      search: '',
+      type: '',
+      status: '',
+      onlyAvailable: false,
+      startDate: '',
+      endDate: ''
+    };
+    this.sortConfig = { column: '', direction: 'asc' };
+  }
 }
