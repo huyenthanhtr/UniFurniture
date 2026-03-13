@@ -211,7 +211,7 @@ export class ProductDataService {
     if (options.categoryIds && options.categoryIds.length > 0) {
       const categoryParam = options.categoryIds.map((value) => value.trim()).filter(Boolean).join(',');
       if (categoryParam) {
-        params = params.set('category', categoryParam);
+        params = params.set('categories', categoryParam).set('category', categoryParam);
       }
     }
 
