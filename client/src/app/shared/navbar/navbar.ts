@@ -99,7 +99,7 @@ export class Navbar implements OnInit {
 
     const categoryIds = group.children.filter((item) => item.type === 'category').map((item) => item.id);
     if (categoryIds.length > 0) {
-      params['category'] = categoryIds.join(',');
+      params['categories'] = categoryIds.join(',');
     }
 
     return params;
@@ -116,7 +116,7 @@ export class Navbar implements OnInit {
     if (item.type === 'collection') {
       params['collection'] = item.id;
     } else {
-      params['category'] = item.id;
+      params['categories'] = item.id;
     }
 
     return params;

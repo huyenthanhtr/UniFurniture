@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -9,7 +9,11 @@ import {
   TaxonomyItem,
   ProductQueryOptions,
 } from '../../services/product-data.service';
-import { ProductFilterComponent, ProductFilterState } from '../../shared/product-filter/product-filter';
+import {
+  FilterCategoryTreeGroup,
+  ProductFilterComponent,
+  ProductFilterState,
+} from '../../shared/product-filter/product-filter';
 import { ProductSortComponent, ProductSortValue } from '../../shared/product-sort/product-sort';
 import { ProductGridComponent } from '../../shared/product-grid/product-grid';
 
@@ -36,6 +40,17 @@ const GROUP_CATEGORY_SLUGS: Record<string, string[]> = {
   'tu-bep': ['tu-ke'],
   nem: ['combo-phong-ngu', 'giuong-ngu'],
 };
+
+const CATEGORY_GROUP_LABELS: Record<string, string> = {
+  'phong-ngu': 'Phòng ngủ',
+  'phong-khach': 'Phòng khách',
+  'phong-an': 'Phòng ăn',
+  'phong-lam-viec': 'Phòng làm việc',
+  'tu-bep': 'Tủ bếp',
+  nem: 'Nệm',
+};
+
+const CATEGORY_GROUP_ORDER = ['phong-ngu', 'phong-khach', 'phong-an', 'phong-lam-viec', 'tu-bep', 'nem'];
 
 const SIZE_FILTERS: Record<string, SizeFilterProfile> = {
   'size-90cm': {
@@ -81,6 +96,9 @@ export class ProductComponent implements OnInit {
   private bannerRotationTimer: ReturnType<typeof setInterval> | null = null;
   private hasRequestedCollectionLinks = false;
   private lastLoadSignature = '';
+  private lastCategoryScrollSignature = '';
+  @ViewChild('filterSectionRef') private filterSectionRef?: ElementRef<HTMLElement>;
+  @ViewChild('categorySectionRef') private categorySectionRef?: ElementRef<HTMLElement>;
 
   readonly products = signal<ProductListItem[]>([]);
   readonly isLoading = signal(true);
@@ -95,9 +113,9 @@ export class ProductComponent implements OnInit {
   readonly searchQuery = signal('');
   readonly selectedCategoryIds = signal<string[]>([]);
   readonly selectedCategoryId = signal('');
-  readonly selectedPriceRange = signal('price-asc');
-  readonly selectedColor = signal('all');
-  readonly selectedSize = signal('all');
+  readonly selectedPriceRanges = signal<string[]>([]);
+  readonly selectedColors = signal<string[]>([]);
+  readonly selectedSizes = signal<string[]>([]);
   readonly selectedSort = signal<ProductSortValue>('best-selling');
   readonly currentBannerIndex = signal(0);
 
@@ -145,9 +163,6 @@ export class ProductComponent implements OnInit {
   });
 
   readonly categoryFilterLabel = computed(() => {
-    if (this.selectedGroupLabel()) {
-      return this.selectedGroupLabel();
-    }
     return 'Tat ca danh muc';
   });
 
@@ -229,25 +244,69 @@ export class ProductComponent implements OnInit {
       }));
     }
 
+    return this.categories().map((item) => ({ value: item.id, label: item.name, type: 'category' as const }));
+  });
+
+  readonly filterCategoryTree = computed<FilterCategoryTreeGroup[]>(() => {
+    if (this.selectedGroupSlug() === 'bo-suu-tap' || Boolean(this.selectedCollectionId())) {
+      return [];
+    }
+
     const allCategories = this.categories();
-    const groupCategorySlugs = GROUP_CATEGORY_SLUGS[groupSlug] || [];
-    if (groupCategorySlugs.length > 0) {
-      const categoryBySlug = new Map(allCategories.map((item) => [item.slug, item] as const));
-      return groupCategorySlugs
-        .map((slug) => categoryBySlug.get(slug))
-        .filter((item): item is TaxonomyItem => Boolean(item))
-        .map((item) => ({ value: item.id, label: item.name, type: 'category' as const }));
+    if (allCategories.length === 0) {
+      return [];
     }
 
-    const selectedCategoryIds = this.selectedCategoryIds();
-    if (selectedCategoryIds.length > 0 && Boolean(groupSlug)) {
-      const selectedIdSet = new Set(selectedCategoryIds);
-      return allCategories
-        .filter((category) => selectedIdSet.has(category.id))
-        .map((item) => ({ value: item.id, label: item.name, type: 'category' as const }));
+    const categoryBySlug = new Map(allCategories.map((item) => [item.slug, item] as const));
+    return CATEGORY_GROUP_ORDER
+      .map((slug) => {
+        const childSlugs = GROUP_CATEGORY_SLUGS[slug] || [];
+        const children = childSlugs
+          .map((childSlug) => categoryBySlug.get(childSlug))
+          .filter((item): item is TaxonomyItem => Boolean(item))
+          .map((item) => ({
+            value: item.id,
+            label: item.name,
+            type: 'category' as const,
+          }));
+
+        return {
+          id: slug,
+          label: CATEGORY_GROUP_LABELS[slug] || slug,
+          children,
+        };
+      })
+      .filter((group) => group.children.length > 0);
+  });
+
+  readonly preferredExpandedFilterGroupIds = computed<string[]>(() => {
+    const result = new Set<string>();
+    const selectedGroupSlug = this.selectedGroupSlug();
+    if (selectedGroupSlug && selectedGroupSlug !== 'bo-suu-tap') {
+      result.add(selectedGroupSlug);
     }
 
-    return allCategories.map((item) => ({ value: item.id, label: item.name, type: 'category' as const }));
+    const selectedCategoryIds = new Set(this.selectedCategoryIds());
+    if (selectedCategoryIds.size > 0) {
+      const slugToGroup = new Map<string, string>();
+      for (const groupSlug of CATEGORY_GROUP_ORDER) {
+        for (const categorySlug of GROUP_CATEGORY_SLUGS[groupSlug] || []) {
+          slugToGroup.set(categorySlug, groupSlug);
+        }
+      }
+
+      this.categories().forEach((category) => {
+        if (!selectedCategoryIds.has(category.id)) {
+          return;
+        }
+        const parentGroupSlug = slugToGroup.get(category.slug);
+        if (parentGroupSlug) {
+          result.add(parentGroupSlug);
+        }
+      });
+    }
+
+    return Array.from(result);
   });
 
   readonly visibleProducts = computed(() => this.applyLocalFilters(this.products()));
@@ -263,11 +322,11 @@ export class ProductComponent implements OnInit {
       const nextGroupSlug = String(params['group'] || '').trim();
       const nextGroupLabel = String(params['groupLabel'] || '').trim();
       const rawCollectionId = String(params['collection'] || '').trim();
-      const nextCategoryParam = String(params['category'] || '').trim();
+      const nextCategoryParam = String(params['categories'] || params['category'] || '').trim();
       const nextCategoryIds = nextCategoryParam
         .split(',')
         .map((value) => value.trim())
-        .filter((value) => Boolean(value) && this.isMongoObjectId(value));
+        .filter((value) => Boolean(value) && this.isCategoryQueryValue(value));
       const nextCollectionId = this.isMongoObjectId(rawCollectionId) ? rawCollectionId : '';
       const nextCategoryId = nextCategoryIds.length === 1 ? nextCategoryIds[0] : '';
       const nextSort = this.normalizeSortValue(String(params['sort'] || '').trim());
@@ -297,6 +356,17 @@ export class ProductComponent implements OnInit {
       this.selectedSort.set(nextSort);
       this.currentPage.set(nextPage);
       this.searchQuery.set(nextSearchQuery);
+
+      const nextCategoryScrollSignature = JSON.stringify({
+        groupSlug: nextGroupSlug,
+        collectionId: nextCollectionId,
+        categoryIds: nextCategoryIds,
+      });
+      if (nextCategoryScrollSignature !== this.lastCategoryScrollSignature) {
+        this.lastCategoryScrollSignature = nextCategoryScrollSignature;
+        this.scrollToCategorySection();
+      }
+
       this.loadCollectionCategoryLinksIfNeeded();
       this.syncSelectedCategoryWithCollection();
       this.updateBannerRotation();
@@ -310,7 +380,7 @@ export class ProductComponent implements OnInit {
       return;
     }
     this.updateRouteQuery({ page });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.scrollToCategorySection();
   }
 
   previousPage(): void {
@@ -326,9 +396,10 @@ export class ProductComponent implements OnInit {
   }
 
   onFilterChange(filters: ProductFilterState): void {
-    this.selectedPriceRange.set(filters.priceRange);
-    this.selectedColor.set(filters.color);
-    this.selectedSize.set(filters.size);
+    this.scrollToCategorySection();
+    this.selectedPriceRanges.set(filters.priceRanges || (filters.priceRange ? [filters.priceRange] : []));
+    this.selectedColors.set(filters.colors || (filters.color ? [filters.color] : []));
+    this.selectedSizes.set(filters.sizes || (filters.size ? [filters.size] : []));
 
     if (filters.categoryType === 'collection') {
       this.selectedCollectionId.set(filters.categoryId);
@@ -336,19 +407,20 @@ export class ProductComponent implements OnInit {
       this.selectedCategoryId.set('');
       this.updateRouteQuery({
         collection: filters.categoryId || null,
-        category: null,
+        categories: null,
         page: 1,
       });
       return;
     }
 
     if (filters.categoryType === 'category') {
+      const nextCategoryIds = filters.categoryIds.length > 0 ? filters.categoryIds : filters.categoryId ? [filters.categoryId] : [];
       this.selectedCollectionId.set('');
-      this.selectedCategoryIds.set(filters.categoryId ? [filters.categoryId] : []);
-      this.selectedCategoryId.set(filters.categoryId || '');
+      this.selectedCategoryIds.set(nextCategoryIds);
+      this.selectedCategoryId.set(nextCategoryIds.length === 1 ? nextCategoryIds[0] : '');
       this.updateRouteQuery({
         collection: null,
-        category: filters.categoryId || null,
+        categories: nextCategoryIds.length > 0 ? nextCategoryIds.join(',') : null,
         page: 1,
       });
       return;
@@ -359,7 +431,7 @@ export class ProductComponent implements OnInit {
     this.selectedCategoryId.set('');
     this.updateRouteQuery({
       collection: null,
-      category: null,
+      categories: null,
       page: 1,
     });
   }
@@ -458,103 +530,82 @@ export class ProductComponent implements OnInit {
     if (!linkedCategoryIds.includes(categoryId)) {
       this.selectedCategoryIds.set([]);
       this.selectedCategoryId.set('');
-      this.updateRouteQuery({ category: null, page: 1 });
+      this.updateRouteQuery({ categories: null, page: 1 });
     }
   }
 
   private applyLocalFilters(items: ProductListItem[]): ProductListItem[] {
-    const filteredItems = items.filter((item) => {
-      if (!this.matchesPriceFilter(item.price, this.selectedPriceRange())) {
+    return items.filter((item) => {
+      if (!this.matchesPriceFilter(item.price, this.selectedPriceRanges())) {
         return false;
       }
-      if (!this.matchesColorFilter(item, this.selectedColor())) {
+      if (!this.matchesColorFilter(item, this.selectedColors())) {
         return false;
       }
-      if (!this.matchesSizeFilter(item, this.selectedSize())) {
+      if (!this.matchesSizeFilter(item, this.selectedSizes())) {
         return false;
       }
       return true;
     });
-
-    return this.applyPriceOrdering(filteredItems, this.selectedPriceRange());
   }
 
-  private matchesPriceFilter(price: number | null, range: string): boolean {
-    if (range === 'price-asc' || range === 'price-desc') {
+  private matchesPriceFilter(price: number | null, ranges: string[]): boolean {
+    if (!ranges.length) {
       return true;
     }
     if (price === null) {
       return false;
     }
-    if (range === 'under-2m') {
-      return price < 2_000_000;
-    }
-    if (range === '2m-5m') {
-      return price >= 2_000_000 && price < 5_000_000;
-    }
-    if (range === '5m-10m') {
-      return price >= 5_000_000 && price < 10_000_000;
-    }
-    if (range === '10m-15m') {
-      return price >= 10_000_000 && price <= 15_000_000;
-    }
-    if (range === 'over-15m') {
-      return price > 15_000_000;
-    }
-    return true;
-  }
-
-  private applyPriceOrdering(items: ProductListItem[], range: string): ProductListItem[] {
-    if (range !== 'price-asc' && range !== 'price-desc') {
-      return items;
-    }
-
-    return [...items].sort((a, b) => {
-      const priceA = a.price;
-      const priceB = b.price;
-
-      if (priceA === null && priceB === null) {
-        return 0;
+    return ranges.some((range) => {
+      if (range === 'under-2m') {
+        return price < 2_000_000;
       }
-      if (priceA === null) {
-        return 1;
+      if (range === '2m-5m') {
+        return price >= 2_000_000 && price < 5_000_000;
       }
-      if (priceB === null) {
-        return -1;
+      if (range === '5m-10m') {
+        return price >= 5_000_000 && price < 10_000_000;
       }
-
-      return range === 'price-asc' ? priceA - priceB : priceB - priceA;
+      if (range === '10m-15m') {
+        return price >= 10_000_000 && price <= 15_000_000;
+      }
+      if (range === 'over-15m') {
+        return price > 15_000_000;
+      }
+      return false;
     });
   }
 
-  private matchesColorFilter(item: ProductListItem, keyword: string): boolean {
-    if (keyword === 'all') {
+  private matchesColorFilter(item: ProductListItem, keywords: string[]): boolean {
+    if (!keywords.length) {
       return true;
     }
 
-    const normalizedKeyword = this.normalizeText(keyword);
     const searchContent = this.normalizeText(`${item.name} ${item.materialText} ${item.sizeText}`);
-    return searchContent.includes(normalizedKeyword);
+    return keywords.some((keyword) => searchContent.includes(this.normalizeText(keyword)));
   }
 
-  private matchesSizeFilter(item: ProductListItem, sizeKey: string): boolean {
-    if (sizeKey === 'all') {
-      return true;
-    }
-
-    const profile = SIZE_FILTERS[sizeKey];
-    if (!profile) {
+  private matchesSizeFilter(item: ProductListItem, sizeKeys: string[]): boolean {
+    if (!sizeKeys.length) {
       return true;
     }
 
     const combinedText = `${item.sizeText} ${item.name}`;
     const normalized = this.normalizeSizeText(combinedText);
-    if (profile.aliases.some((alias) => normalized.includes(alias))) {
-      return true;
-    }
-
     const candidates = this.extractSizeValuesInCm(combinedText);
-    return candidates.some((valueCm) => Math.abs(valueCm - profile.targetCm) <= profile.toleranceCm);
+
+    return sizeKeys.some((sizeKey) => {
+      const profile = SIZE_FILTERS[sizeKey];
+      if (!profile) {
+        return false;
+      }
+
+      if (profile.aliases.some((alias) => normalized.includes(alias))) {
+        return true;
+      }
+
+      return candidates.some((valueCm) => Math.abs(valueCm - profile.targetCm) <= profile.toleranceCm);
+    });
   }
 
   private normalizeText(value: string): string {
@@ -664,7 +715,7 @@ export class ProductComponent implements OnInit {
 
   private updateRouteQuery(changes: {
     collection?: string | null;
-    category?: string | null;
+    categories?: string | null;
     sort?: ProductSortValue | null;
     page?: number | null;
   }): void {
@@ -673,8 +724,9 @@ export class ProductComponent implements OnInit {
     if (changes.collection !== undefined) {
       queryParams['collection'] = changes.collection || null;
     }
-    if (changes.category !== undefined) {
-      queryParams['category'] = changes.category || null;
+    if (changes.categories !== undefined) {
+      queryParams['categories'] = changes.categories || null;
+      queryParams['category'] = null;
     }
     if (changes.sort !== undefined) {
       queryParams['sort'] = changes.sort || null;
@@ -718,5 +770,48 @@ export class ProductComponent implements OnInit {
 
   private isMongoObjectId(value: string): boolean {
     return /^[a-fA-F0-9]{24}$/.test(String(value || ''));
+  }
+
+  private isCategoryQueryValue(value: string): boolean {
+    const nextValue = String(value || '').trim();
+    if (!nextValue) {
+      return false;
+    }
+    if (this.isMongoObjectId(nextValue)) {
+      return true;
+    }
+    return /^[a-z0-9-]{2,80}$/i.test(nextValue);
+  }
+
+  private scrollToCategorySection(): void {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
+    const sectionElement = this.categorySectionRef?.nativeElement || this.filterSectionRef?.nativeElement;
+    if (!sectionElement) {
+      return;
+    }
+
+    setTimeout(() => {
+      const top = sectionElement.getBoundingClientRect().top + window.scrollY - this.getStickyHeaderOffset();
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    }, 0);
+  }
+
+  private getStickyHeaderOffset(): number {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return 96;
+    }
+
+    const header = document.querySelector('.moho-header') as HTMLElement | null;
+    const navbar = document.querySelector('.moho-navbar') as HTMLElement | null;
+
+    const headerHeight = header?.getBoundingClientRect().height || 0;
+    const navbarRect = navbar?.getBoundingClientRect();
+    const navbarVisible = Boolean(navbarRect && navbarRect.height > 0 && navbarRect.bottom > 0);
+    const navbarHeight = navbarVisible ? navbarRect?.height || 0 : 0;
+
+    return Math.max(96, Math.round(headerHeight + navbarHeight + 12));
   }
 }

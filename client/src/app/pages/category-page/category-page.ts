@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -72,6 +72,7 @@ const KEYWORDS_BY_SLUG: Record<string, string[]> = {
   styleUrl: './category-page.css',
 })
 export class CategoryPageComponent implements OnInit, OnDestroy {
+  @ViewChild('categorySectionRef') private categorySectionRef?: ElementRef<HTMLElement>;
   category: Category | null = null;
   products: any[] = [];
   loading = true;
@@ -106,6 +107,7 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
       this.currentSlug = slug;
       this.keywordFilters = this.getKeywordFilters(slug, this.groupTitle);
       this.localFilteredProducts = null;
+      this.scrollToCategorySection();
 
       this.stopSlideshow();
       this.slideshowImages = [];
@@ -364,13 +366,13 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
 
     if (this.localFilteredProducts) {
       this.applyLocalPagination(page);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.scrollToCategorySection();
       return;
     }
 
     const ids = this.category ? this.category._id : this.categoryIds;
     this.loadProducts(ids, page, this.keywordFilters);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.scrollToCategorySection();
   }
 
   get pageNumbers(): number[] {
@@ -387,5 +389,36 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
     }
 
     return `${new Intl.NumberFormat('vi-VN').format(price)}\u0111`;
+  }
+
+  private scrollToCategorySection(): void {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
+    setTimeout(() => {
+      const section = this.categorySectionRef?.nativeElement;
+      if (!section) {
+        return;
+      }
+      const top = section.getBoundingClientRect().top + window.scrollY - this.getStickyHeaderOffset();
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    }, 0);
+  }
+
+  private getStickyHeaderOffset(): number {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return 96;
+    }
+
+    const header = document.querySelector('.moho-header') as HTMLElement | null;
+    const navbar = document.querySelector('.moho-navbar') as HTMLElement | null;
+
+    const headerHeight = header?.getBoundingClientRect().height || 0;
+    const navbarRect = navbar?.getBoundingClientRect();
+    const navbarVisible = Boolean(navbarRect && navbarRect.height > 0 && navbarRect.bottom > 0);
+    const navbarHeight = navbarVisible ? navbarRect?.height || 0 : 0;
+
+    return Math.max(96, Math.round(headerHeight + navbarHeight + 12));
   }
 }

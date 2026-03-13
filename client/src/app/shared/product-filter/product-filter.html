@@ -3,39 +3,70 @@
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
     </svg>
-    <span class="heading-text">BỘ LỌC</span>
+    <span class="heading-text">BO LOC</span>
   </div>
 
   <div class="filter-controls">
     <div class="filter-field" [class.is-open]="openDropdown === 'category'">
-      <span class="filter-label">DANH MỤC</span>
+      <span class="filter-label">DANH MUC</span>
       <button type="button" class="filter-trigger" (click)="toggleDropdown('category')">
         <span class="filter-value">{{ getCategoryLabel() }}</span>
       </button>
 
-      <div class="filter-menu" *ngIf="openDropdown === 'category'">
-        <button
-          type="button"
-          class="filter-option"
-          [class.is-selected]="selectedCategoryId === ''"
-          (click)="selectCategory('')"
-        >
+      <div class="filter-menu filter-menu--category" *ngIf="openDropdown === 'category'">
+        <button type="button" class="filter-option" [class.is-selected]="isCategorySelected('')" (click)="selectCategory('')">
+          <span class="filter-checkbox" [class.is-checked]="isCategorySelected('')"></span>
           {{ categoryDefaultLabel }}
         </button>
-        <button
-          type="button"
-          class="filter-option"
-          *ngFor="let option of categoryOptions"
-          [class.is-selected]="selectedCategoryId === option.value"
-          (click)="selectCategory(option.value)"
-        >
-          {{ option.label }}
-        </button>
+
+        <ng-container *ngIf="isCategoryTreeMode(); else categoryFlatOptions">
+          <div class="category-group" *ngFor="let group of categoryTree; trackBy: trackByGroupId">
+            <div class="category-group-row">
+              <button type="button" class="group-expand-btn" (click)="toggleGroupExpand(group.id)">
+                <span class="group-arrow" [class.is-expanded]="isGroupExpanded(group.id)"></span>
+              </button>
+              <button type="button" class="group-select-btn" (click)="toggleCategoryGroup(group)">
+                <span
+                  class="filter-checkbox"
+                  [class.is-checked]="isGroupChecked(group)"
+                  [class.is-indeterminate]="isGroupIndeterminate(group)"
+                ></span>
+                <span class="group-label">{{ group.label }}</span>
+              </button>
+            </div>
+
+            <div class="category-children" *ngIf="isGroupExpanded(group.id)">
+              <button
+                type="button"
+                class="filter-option filter-option--child"
+                *ngFor="let child of group.children; trackBy: trackByOptionValue"
+                [class.is-selected]="isCategorySelected(child.value)"
+                (click)="selectCategory(child.value)"
+              >
+                <span class="filter-checkbox" [class.is-checked]="isCategorySelected(child.value)"></span>
+                {{ child.label }}
+              </button>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #categoryFlatOptions>
+          <button
+            type="button"
+            class="filter-option"
+            *ngFor="let option of categoryOptions; trackBy: trackByOptionValue"
+            [class.is-selected]="isCategorySelected(option.value)"
+            (click)="selectCategory(option.value)"
+          >
+            <span *ngIf="isCategoryMultiSelect()" class="filter-checkbox" [class.is-checked]="isCategorySelected(option.value)"></span>
+            {{ option.label }}
+          </button>
+        </ng-template>
       </div>
     </div>
 
     <div class="filter-field" [class.is-open]="openDropdown === 'price'">
-      <span class="filter-label">GIÁ SẢN PHẨM</span>
+      <span class="filter-label">GIA SAN PHAM</span>
       <button type="button" class="filter-trigger" (click)="toggleDropdown('price')">
         <span class="filter-value">{{ getPriceLabel() }}</span>
       </button>
@@ -44,51 +75,81 @@
         <button
           type="button"
           class="filter-option"
-          *ngFor="let option of priceOptions"
-          [class.is-selected]="selectedPriceRange === option.value"
+          *ngFor="let option of priceOptions; trackBy: trackByOptionValue"
+          [class.is-selected]="isPriceSelected(option.value)"
           (click)="selectPrice(option.value)"
         >
+          <span class="filter-checkbox" [class.is-checked]="isPriceSelected(option.value)"></span>
           {{ option.label }}
         </button>
       </div>
     </div>
 
     <div class="filter-field" [class.is-open]="openDropdown === 'color'">
-      <span class="filter-label">MÀU SẮC</span>
+      <span class="filter-label">MAU SAC</span>
       <button type="button" class="filter-trigger" (click)="toggleDropdown('color')">
         <span class="filter-value">{{ getColorLabel() }}</span>
       </button>
 
-      <div class="filter-menu" *ngIf="openDropdown === 'color'">
-        <button
-          type="button"
-          class="filter-option"
-          *ngFor="let option of colorOptions"
-          [class.is-selected]="selectedColor === option.value"
-          (click)="selectColor(option.value)"
-        >
-          {{ option.label }}
-        </button>
+      <div class="filter-menu filter-menu--color" *ngIf="openDropdown === 'color'">
+        <div class="color-grid">
+          <button
+            type="button"
+            class="color-option"
+            *ngFor="let option of colorOptions; trackBy: trackByOptionValue"
+            [class.is-selected]="isColorSelected(option.value)"
+            (click)="selectColor(option.value)"
+            [title]="option.label"
+            [attr.aria-label]="'Mau ' + option.label"
+          >
+            <span class="color-dot" [style.background]="getColorSwatchStyle(option.value).background"></span>
+          </button>
+        </div>
       </div>
     </div>
 
     <div class="filter-field" [class.is-open]="openDropdown === 'size'">
-      <span class="filter-label">KÍCH THƯỚC</span>
+      <span class="filter-label">KICH THUOC</span>
       <button type="button" class="filter-trigger" (click)="toggleDropdown('size')">
         <span class="filter-value">{{ getSizeLabel() }}</span>
       </button>
 
-      <div class="filter-menu filter-menu--size" *ngIf="openDropdown === 'size'">
+      <div class="filter-menu" *ngIf="openDropdown === 'size'">
         <button
           type="button"
-          class="filter-option filter-option--size"
-          *ngFor="let option of sizeOptions"
-          [class.is-selected]="selectedSize === option.value"
+          class="filter-option"
+          *ngFor="let option of sizeOptions; trackBy: trackByOptionValue"
+          [class.is-selected]="isSizeSelected(option.value)"
           (click)="selectSize(option.value)"
         >
+          <span class="filter-checkbox" [class.is-checked]="isSizeSelected(option.value)"></span>
           {{ option.label }}
         </button>
       </div>
     </div>
   </div>
+</div>
+
+<div class="selected-filter-row" *ngIf="hasSelectedFilters()">
+  <button type="button" class="selected-filter-chip" *ngIf="selectedCategoryChips().length > 0" (click)="removeFilterChip('category')">
+    <span>Danh muc: <strong>{{ getCategoryChipLabel() }}</strong></span>
+    <span class="chip-close">x</span>
+  </button>
+
+  <button type="button" class="selected-filter-chip" *ngIf="selectedPriceChips().length > 0" (click)="removeFilterChip('price')">
+    <span>Gia san pham: <strong>{{ getPriceChipLabel() }}</strong></span>
+    <span class="chip-close">x</span>
+  </button>
+
+  <button type="button" class="selected-filter-chip" *ngIf="selectedColorChips().length > 0" (click)="removeFilterChip('color')">
+    <span>Mau sac: <strong>{{ getColorChipLabel() }}</strong></span>
+    <span class="chip-close">x</span>
+  </button>
+
+  <button type="button" class="selected-filter-chip" *ngIf="selectedSizeChips().length > 0" (click)="removeFilterChip('size')">
+    <span>Kich thuoc: <strong>{{ getSizeChipLabel() }}</strong></span>
+    <span class="chip-close">x</span>
+  </button>
+
+  <button type="button" class="clear-all-filters" (click)="clearAllFilters()">Xoa het</button>
 </div>

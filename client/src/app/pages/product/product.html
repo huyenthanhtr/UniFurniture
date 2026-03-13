@@ -22,19 +22,22 @@
   </div>
 
   <div class="container content-container">
-    <div class="page-header">
+    <div class="page-header" #categorySectionRef>
       <h1 class="page-title">{{ pageTitle() }}</h1>
       <app-product-sort [selectedSort]="selectedSort()" (sortChange)="onSortChange($event)"></app-product-sort>
     </div>
 
-    <div class="filter-section">
+    <div class="filter-section" #filterSectionRef>
       <app-product-filter
         [categoryOptions]="filterCategoryOptions()"
+        [categoryTree]="filterCategoryTree()"
+        [preferredExpandedGroupIds]="preferredExpandedFilterGroupIds()"
         [categoryDefaultLabel]="categoryFilterLabel()"
         [selectedCategoryId]="selectedFilterCategoryId()"
-        [selectedPriceRange]="selectedPriceRange()"
-        [selectedColor]="selectedColor()"
-        [selectedSize]="selectedSize()"
+        [selectedCategoryIds]="selectedCategoryIds()"
+        [selectedPriceRanges]="selectedPriceRanges()"
+        [selectedColors]="selectedColors()"
+        [selectedSizes]="selectedSizes()"
         (filtersChange)="onFilterChange($event)"
       ></app-product-filter>
     </div>
