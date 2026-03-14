@@ -1,127 +1,149 @@
-<div class="admin-coupons-container p-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="title-page">Quản lý Khuyến mãi</h2>
-    <button class="btn-add-new" (click)="openModal()">
-      <i class="fas fa-plus-circle"></i> Thêm mã mới
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Quản lý Khuyến mãi</h1>
+    </div>
+    <button class="btn btn-primary" (click)="openModal()">
+      <i class="fas fa-plus" style="margin-right: 6px;"></i> Thêm mã mới
     </button>
   </div>
 
-<div class="filter-bar bg-white p-3 rounded shadow-sm mb-4">
-  <div class="filter-wrapper d-flex flex-wrap align-items-end gap-3">
-    
-    <div class="filter-item">
-      <input type="text" class="form-control form-control-sm" placeholder="Mã code..." [(ngModel)]="filter.search">
-    </div>
-
-    <div class="filter-item">
-      <select class="form-select form-select-sm" [(ngModel)]="filter.type">
-        <option value="">-- Loại --</option>
-        <option value="percent">Phần trăm</option>
-        <option value="fixed">Cố định</option>
-      </select>
-    </div>
-
-    <div class="filter-item">
-      <select class="form-select form-select-sm" [(ngModel)]="filter.status">
-        <option value="">-- Trạng thái --</option>
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
-        <option value="expired">Expired</option>
-      </select>
-    </div>
-
-    <div class="filter-item-date d-flex flex-column">
-      <div class="d-flex align-items-center gap-1">
-        <label class="form-label small fw-bold text-muted">Thời hạn </label>
-        <input type="date" class="form-control form-control-sm date-input" [(ngModel)]="filter.startDate">
-        <span class="text-muted">-</span>
-        <input type="date" class="form-control form-control-sm date-input" [(ngModel)]="filter.endDate">
+  <div class="filter-bar card mb-4">
+    <div class="filter-wrapper d-flex flex-wrap align-items-center gap-3">
+      <div class="filter-item">
+        <input type="text" class="search-input" placeholder="Mã code..." [(ngModel)]="filter.search">
       </div>
-    </div>
 
+      <div class="filter-item">
+        <select class="toolbar-select" [(ngModel)]="filter.type">
+          <option value="">-- Loại --</option>
+          <option value="percent">Phần trăm</option>
+          <option value="fixed">Cố định</option>
+        </select>
+      </div>
 
-      <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" 
-              (click)="resetFilters()" title="Đặt lại" style="width: 35px; height: 35px;">
+      <div class="filter-item">
+        <select class="toolbar-select" [(ngModel)]="filter.status">
+          <option value="">-- Trạng thái --</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="expired">Expired</option>
+        </select>
+      </div>
+
+      <div class="filter-item-date d-flex flex-column">
+        <div class="d-flex align-items-center gap-2">
+          <label class="form-label small fw-bold mb-0" style="white-space: nowrap; color: #908372;">Thời hạn</label>
+          <input type="date" class="search-input date-input" [(ngModel)]="filter.startDate">
+          <span class="fw-bold" style="color: #908372;">-</span>
+          <input type="date" class="search-input date-input" [(ngModel)]="filter.endDate">
+        </div>
+      </div>
+
+      <button class="btn btn-ghost btn-icon d-flex align-items-center justify-content-center" 
+              (click)="resetFilters()" title="Đặt lại">
         <i class="fas fa-undo"></i>
       </button>
     </div>
+  </div>
 
-</div>
-  <div class="table-responsive shadow-sm bg-white rounded">
-    <table class="table custom-table mb-0">
+  <div class="table-wrap card">
+    <table>
       <thead>
         <tr>
-          <th (click)="toggleSort('code')" class="sortable">Mã Code <i class="fas" [ngClass]="{
+          <th class="cell-title sortable" (click)="toggleSort('code')">
+            Mã Code <i class="fas" [ngClass]="{
               'fa-sort': sortConfig.column !== 'code',
               'fa-sort-up active': sortConfig.column === 'code' && sortConfig.direction === 'asc',
               'fa-sort-down active': sortConfig.column === 'code' && sortConfig.direction === 'desc'
             }"></i>
           </th>
-          <th (click)="toggleSort('discount_type')" class="sortable">Loại <i class="fas" [ngClass]="{
-    'fa-sort': sortConfig.column !== 'discount_type',
-    'fa-sort-up active': sortConfig.column === 'discount_type' && sortConfig.direction === 'asc',
-    'fa-sort-down active': sortConfig.column === 'discount_type' && sortConfig.direction === 'desc'
-  }"></i></th>
-          <th (click)="toggleSort('discount_value')" class="sortable">Giá trị <i class="fas" [ngClass]="{
-    'fa-sort': sortConfig.column !== 'discount_value',
-    'fa-sort-up active': sortConfig.column === 'discount_value' && sortConfig.direction === 'asc',
-    'fa-sort-down active': sortConfig.column === 'discount_value' && sortConfig.direction === 'desc'
-  }"></i></th>
-          <th (click)="toggleSort('min_order_value')" class="sortable">Đơn tối thiểu <i class="fas" [ngClass]="{
-    'fa-sort': sortConfig.column !== 'min_order_value',
-    'fa-sort-up active': sortConfig.column === 'min_order_value' && sortConfig.direction === 'asc',
-    'fa-sort-down active': sortConfig.column === 'min_order_value' && sortConfig.direction === 'desc'
-  }"></i></th>
-          <th (click)="toggleSort('max_discount_amount')" class="sortable">Giảm tối đa <i class="fas" [ngClass]="{
-    'fa-sort': sortConfig.column !== 'max_discount_amount',
-    'fa-sort-up active': sortConfig.column === 'max_discount_amount' && sortConfig.direction === 'asc',
-    'fa-sort-down active': sortConfig.column === 'max_discount_amount' && sortConfig.direction === 'desc'
-  }"></i></th>
-          <th (click)="toggleSort('used')" class="sortable">Đã dùng <i class="fas" [ngClass]="{
-    'fa-sort': sortConfig.column !== 'used',
-    'fa-sort-up active': sortConfig.column === 'used' && sortConfig.direction === 'asc',
-    'fa-sort-down active': sortConfig.column === 'used' && sortConfig.direction === 'desc'
-  }"></i></th>
-          <th (click)="toggleSort('end_at')" class="sortable">Thời gian hạn <i class="fas" [ngClass]="{
-    'fa-sort': sortConfig.column !== 'end_at',
-    'fa-sort-up active': sortConfig.column === 'end_at' && sortConfig.direction === 'asc',
-    'fa-sort-down active': sortConfig.column === 'end_at' && sortConfig.direction === 'desc'
-  }"></i></th>
-          <th (click)="toggleSort('status')" class="sortable">Trạng thái <i class="fas" [ngClass]="{
-    'fa-sort': sortConfig.column !== 'status',
-    'fa-sort-up active': sortConfig.column === 'status' && sortConfig.direction === 'asc',
-    'fa-sort-down active': sortConfig.column === 'status' && sortConfig.direction === 'desc'
-  }"></i></th>
-          <th>Hành động</th> </tr>
+          <th class="cell-title sortable" (click)="toggleSort('discount_type')">
+            Loại <i class="fas" [ngClass]="{
+              'fa-sort': sortConfig.column !== 'discount_type',
+              'fa-sort-up active': sortConfig.column === 'discount_type' && sortConfig.direction === 'asc',
+              'fa-sort-down active': sortConfig.column === 'discount_type' && sortConfig.direction === 'desc'
+            }"></i>
+          </th>
+          <th class="cell-title sortable" (click)="toggleSort('discount_value')">
+            Giá trị <i class="fas" [ngClass]="{
+              'fa-sort': sortConfig.column !== 'discount_value',
+              'fa-sort-up active': sortConfig.column === 'discount_value' && sortConfig.direction === 'asc',
+              'fa-sort-down active': sortConfig.column === 'discount_value' && sortConfig.direction === 'desc'
+            }"></i>
+          </th>
+          <th class="cell-title sortable" (click)="toggleSort('min_order_value')">
+            Đơn tối thiểu <i class="fas" [ngClass]="{
+              'fa-sort': sortConfig.column !== 'min_order_value',
+              'fa-sort-up active': sortConfig.column === 'min_order_value' && sortConfig.direction === 'asc',
+              'fa-sort-down active': sortConfig.column === 'min_order_value' && sortConfig.direction === 'desc'
+            }"></i>
+          </th>
+          <th class="cell-title sortable" (click)="toggleSort('max_discount_amount')">
+            Giảm tối đa <i class="fas" [ngClass]="{
+              'fa-sort': sortConfig.column !== 'max_discount_amount',
+              'fa-sort-up active': sortConfig.column === 'max_discount_amount' && sortConfig.direction === 'asc',
+              'fa-sort-down active': sortConfig.column === 'max_discount_amount' && sortConfig.direction === 'desc'
+            }"></i>
+          </th>
+          <th class="cell-title sortable" (click)="toggleSort('used')">
+            Đã dùng <i class="fas" [ngClass]="{
+              'fa-sort': sortConfig.column !== 'used',
+              'fa-sort-up active': sortConfig.column === 'used' && sortConfig.direction === 'asc',
+              'fa-sort-down active': sortConfig.column === 'used' && sortConfig.direction === 'desc'
+            }"></i>
+          </th>
+          <th class="cell-title sortable" (click)="toggleSort('end_at')">
+            Thời hạn <i class="fas" [ngClass]="{
+              'fa-sort': sortConfig.column !== 'end_at',
+              'fa-sort-up active': sortConfig.column === 'end_at' && sortConfig.direction === 'asc',
+              'fa-sort-down active': sortConfig.column === 'end_at' && sortConfig.direction === 'desc'
+            }"></i>
+          </th>
+          <th class="cell-title sortable" (click)="toggleSort('status')">
+            Trạng thái <i class="fas" [ngClass]="{
+              'fa-sort': sortConfig.column !== 'status',
+              'fa-sort-up active': sortConfig.column === 'status' && sortConfig.direction === 'asc',
+              'fa-sort-down active': sortConfig.column === 'status' && sortConfig.direction === 'desc'
+            }"></i>
+          </th>
+          <th class="th-actions text-center">Hành động</th>
+        </tr>
       </thead>
+
       <tbody>
+        <tr *ngIf="filteredCoupons.length === 0">
+          <td colspan="9" class="state">Không có mã khuyến mãi nào phù hợp.</td>
+        </tr>
+
         <tr *ngFor="let item of filteredCoupons">
-          <td class="fw-bold text-primary">{{ item.code }}</td>
+          <td><strong>{{ item.code }}</strong></td>
           <td>{{ item.discount_type === 'percent' ? 'Phần trăm' : 'Cố định' }}</td>
           <td>{{ item.discount_value | number }}{{ item.discount_type === 'percent' ? '%' : 'đ' }}</td>
           <td>{{ item.min_order_value | number }}đ</td>
           <td>{{ item.max_discount_amount | number }}đ</td>
-          <td class="text-center">
-            <span class="usage-text">{{ item.used }} / {{ item.total_limit }}</span>
+          <td>
+            <div class="usage-text">{{ item.used }} / {{ item.total_limit }}</div>
             <div class="progress-mini">
               <div class="progress-bar" [style.width.%]="(item.used/item.total_limit)*100"></div>
             </div>
           </td>
-          <td class="date-cell">
-            <small>{{ item.start_at | date:'dd/MM/yyyy' }} - {{ item.end_at | date:'dd/MM/yyyy' }}</small>
+          <td class="text-nowrap text-center">
+            {{ item.start_at | date:'dd/MM/yyyy' }} - {{ item.end_at | date:'dd/MM/yyyy' }}
           </td>
-          <td>
-            <select [(ngModel)]="item.status" (change)="updateStatus(item)" 
-                    [className]="'status-dropdown ' + item.status">
+          <td class="text-center">
+            <select [(ngModel)]="item.status" (change)="updateStatus(item)" [className]="'status-dropdown ' + item.status" [disabled]="item.status === 'expired'">
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
               <option value="expired" disabled>Expired</option>
             </select>
           </td>
-          <td>
-            <button class="btn-edit-action" (click)="openModal(item)">
-              <i class="fas fa-edit"></i> Sửa
-            </button>
+          <td class="actions-cell">
+            <div class="actions justify-content-center">
+              <button class="btn btn-ghost btn-sm btn-icon-only" (click)="openModal(item)" title="Sửa mã khuyến mãi">
+                <i class="fas fa-edit"></i> 
+              </button>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -129,11 +151,9 @@
   </div>
 
   <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal-card shadow-lg">
+    <div class="modal-card">
       <div class="modal-card-header">
-        <h3 class="mb-0" style="font-weight: 700; color: #444;">
-          {{ isEdit ? 'Chỉnh sửa Khuyến mãi' : 'Tạo Mã Khuyến mãi Mới' }}
-        </h3>
+        <h3>{{ isEdit ? 'Chỉnh sửa Khuyến mãi' : 'Tạo Mã Khuyến mãi Mới' }}</h3>
         <button class="close-modal" (click)="closeModal()">
           <i class="fas fa-times"></i>
         </button>
@@ -144,79 +164,84 @@
           <i class="fas fa-exclamation-triangle"></i> {{ validationError }}
         </div>
 
-        <form>
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label" >Mã Code *</label>
-              <input type="text" [(ngModel)]="currentCoupon.code" name="code" 
-                     (input)="realTimeValidate()" class="form-control text-uppercase" [disabled]="isEdit">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Loại giảm giá</label>
-              <select [(ngModel)]="currentCoupon.discount_type" name="type" 
-                      (change)="onTypeChange()" class="form-select">
-                <option value="percent">Phần trăm (%)</option>
-                <option value="fixed">Số tiền cố định (đ)</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Giá trị giảm *</label>
-              <input type="number" [(ngModel)]="currentCoupon.discount_value" name="val" 
-                     (input)="realTimeValidate()" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Giảm tối đa (đ)</label>
-              <input type="number" [(ngModel)]="currentCoupon.max_discount_amount" name="max" 
-                     [disabled]="currentCoupon.discount_type === 'fixed'" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Đơn tối thiểu (đ)</label>
-              <input type="number" [(ngModel)]="currentCoupon.min_order_value" name="min" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Tổng lượt dùng *</label>
-              <input type="number" [(ngModel)]="currentCoupon.total_limit" name="limit" 
-                     (input)="realTimeValidate()" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Ngày bắt đầu *</label>
-              <input type="date" [ngModel]="currentCoupon.start_at" (ngModelChange)="currentCoupon.start_at=$event; realTimeValidate()" 
-                     name="start" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Ngày kết thúc *</label>
-              <input type="date" [ngModel]="currentCoupon.end_at" (ngModelChange)="currentCoupon.end_at=$event; realTimeValidate()" 
-                     name="end" class="form-control">
-            </div>
-            <div class="col-12 text-muted small">
-              <i class="fas fa-info-circle"></i> Đã sử dụng: {{ currentCoupon.used || 0 }} lượt.
+        <div class="modal-form-grid">
+          <div class="form-group">
+            <label class="form-label">Mã Code *</label>
+            <input type="text" [(ngModel)]="currentCoupon.code" name="code" (input)="realTimeValidate()" (blur)="realTimeValidate()" class="search-input text-uppercase" >
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Loại giảm giá</label>
+            <select [(ngModel)]="currentCoupon.discount_type" name="type" (change)="onTypeChange()" class="toolbar-select">
+              <option value="percent">Phần trăm (%)</option>
+              <option value="fixed">Số tiền cố định (đ)</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Giá trị giảm *</label>
+            <input type="number" [(ngModel)]="currentCoupon.discount_value" name="val" (input)="realTimeValidate()" (blur)="realTimeValidate()" class="search-input">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Giảm tối đa (đ)</label>
+            <input type="number" [(ngModel)]="currentCoupon.max_discount_amount" name="max" [disabled]="currentCoupon.discount_type === 'fixed'" class="search-input">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Đơn tối thiểu (đ)</label>
+            <input type="number" [(ngModel)]="currentCoupon.min_order_value" name="min" class="search-input">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Tổng lượt dùng *</label>
+            <input type="number" [(ngModel)]="currentCoupon.total_limit" name="limit" (input)="realTimeValidate()" (blur)="realTimeValidate()" class="search-input">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Ngày bắt đầu *</label>
+            <input type="date" [ngModel]="currentCoupon.start_at" (ngModelChange)="currentCoupon.start_at=$event; realTimeValidate()" (blur)="realTimeValidate()" name="start" class="search-input">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Ngày kết thúc *</label>
+            <input type="date" [ngModel]="currentCoupon.end_at" (ngModelChange)="currentCoupon.end_at=$event; realTimeValidate()" (blur)="realTimeValidate()" name="end" class="search-input">
+          </div>
+          
+          <div class="form-group full-width">
+            <div class="text-info-small">
+              <i class="fas fa-info-circle"></i> Đã sử dụng: <strong>{{ currentCoupon.used || 0 }}</strong> lượt.
             </div>
           </div>
-        </form>
+        </div>
       </div>
 
       <div class="modal-card-footer">
-        <button class="btn-secondary-custom" (click)="closeModal()">Hủy bỏ</button>
-        <button class="btn-primary-custom" [disabled]="validationError" (click)="confirmSave()">Lưu thông tin</button>
+        <button class="btn btn-ghost" (click)="closeModal()">Hủy bỏ</button>
+        <button class="btn btn-primary" [disabled]="!isFormValid" (click)="confirmSave()">Lưu thông tin</button>
       </div>
     </div>
   </div>
 
-<div class="confirm-overlay" *ngIf="showConfirmPopup">
-  <div class="confirm-box">
-    <h4>Xác nhận</h4>
-    <p>Bạn có chắc chắn muốn lưu các thay đổi cho mã khuyến mãi này không?</p>
-    <div class="d-flex justify-content-center">
-      <button class="btn-popup-cancel" (click)="cancelConfirm()">Hủy</button>
-      <button class="btn-popup-danger" (click)="executeSave()">Đồng ý lưu</button>
+  <div class="confirm-overlay" *ngIf="showConfirmPopup">
+    <div class="confirm-box">
+      <h4>Xác nhận</h4>
+      <p>Bạn có chắc chắn muốn lưu các thay đổi cho mã khuyến mãi này không?</p>
+      <div class="actions justify-content-center">
+        <button class="btn btn-ghost" (click)="cancelConfirm()">Hủy</button>
+        <button class="btn btn-primary" (click)="executeSave()">Đồng ý lưu</button>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="confirm-overlay" *ngIf="showResultPopup">
-  <div class="result-box" [class]="resultMessage.type">
-    <h4>{{ resultMessage.title }}</h4>
-    <p>{{ resultMessage.message }}</p>
-    <button class="btn-popup-danger w-100" (click)="showResultPopup = false">Đóng</button>
+  <div class="confirm-overlay" *ngIf="showResultPopup">
+    <div class="result-box" [class]="resultMessage.type">
+      <div class="icon-result">
+        <i class="fas" [ngClass]="resultMessage.type === 'success' ? 'fa-check' : 'fa-times'"></i>
+      </div>
+      <h4>{{ resultMessage.title }}</h4>
+      <p>{{ resultMessage.message }}</p>
+      <button class="btn btn-primary w-100" style="width: 100%;" (click)="showResultPopup = false">Đóng</button>
+    </div>
   </div>
 </div>

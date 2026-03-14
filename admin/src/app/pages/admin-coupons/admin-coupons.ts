@@ -75,50 +75,79 @@ openModal(coupon: any = null): void {
     }
     this.cdr.detectChanges();
   }
-
-  realTimeValidate(): void {
+// THÊM ĐOẠN NÀY VÀO: Getter kiểm tra form đã điền đủ thông tin cơ bản chưa
+  get isFormValid(): boolean {
     const c = this.currentCoupon;
-    this.validationError = '';
-
-if (!c.code || c.code.trim() === '') {
-    this.validationError = 'Mã code không được để trống.';
-    return;
+    if (!c) return false;
+    
+    // Kiểm tra các trường bắt buộc không được để trống hoặc bằng 0
+    if (!c.code || c.code.toString().trim() === '') return false;
+    if (c.discount_value === null || c.discount_value === undefined || c.discount_value <= 0) return false;
+    if (c.total_limit === null || c.total_limit === undefined || c.total_limit <= 0) return false;
+    if (!c.start_at || !c.end_at) return false;
+    
+    // Nếu đang có bất kỳ dòng thông báo lỗi đỏ nào thì cũng khóa nút
+    if (this.validationError !== '') return false; 
+    
+    return true;
   }
+realTimeValidate(): void {
+    const c = this.currentCoupon;
+    this.validationError = ''; // Reset lỗi trước khi kiểm tra
 
-  if (c.discount_value === null || c.discount_value === undefined) {
-    this.validationError = 'Vui lòng nhập giá trị giảm giá.';
-    return;
-  }
-
-  if (c.total_limit === null || c.total_limit === undefined) {
-    this.validationError = 'Vui lòng nhập tổng lượt sử dụng.';
-    return;
-  }
-    // 2. KIỂM TRA TRÙNG MÃ (Bổ sung mới)
-  const isCodeExists = this.coupons.some(item => 
-    item.code.trim().toUpperCase() === c.code.trim().toUpperCase() && 
-    item._id !== c._id // Loại trừ chính nó nếu đang chỉnh sửa
-  );
-
-  if (isCodeExists) {
-    this.validationError = `Mã "${c.code.toUpperCase()}" đã tồn tại trong hệ thống. Vui lòng chọn mã khác.`;
-    return;
-  }
-    if (c.discount_type === 'percent' && c.discount_value >= 100 || c.discount_value <=0) {
-      this.validationError = 'Phần trăm giảm giá phải lớn hơn 0% và nhỏ hơn 100%.';
+    // 1. Kiểm tra Mã code
+    if (!c.code || c.code.trim() === '') {
+      this.validationError = 'Mã code không được để trống.';
       return;
     }
 
+    // 2. Kiểm tra Trùng mã code
+    const isCodeExists = this.coupons.some(item => 
+      item.code.trim().toUpperCase() === c.code.trim().toUpperCase() && 
+      item._id !== c._id // Loại trừ chính nó nếu đang chỉnh sửa
+    );
+    if (isCodeExists) {
+      this.validationError = `Mã "${c.code.toUpperCase()}" đã tồn tại. Vui lòng chọn mã khác.`;
+      return;
+    }
+
+    // 3. Kiểm tra Giá trị giảm giá
+    if (c.discount_value === null || c.discount_value === undefined || c.discount_value <= 0) {
+      this.validationError = 'Giá trị giảm giá phải lớn hơn 0.';
+      return;
+    }
+
+    // 4. Ràng buộc phần trăm
+    if (c.discount_type === 'percent' && c.discount_value >= 100) {
+      this.validationError = 'Phần trăm giảm giá phải nhỏ hơn 100%.';
+      return;
+    }
+
+    // 5. Tự động đồng bộ giảm tối đa (Nếu là cố định)
+    if (c.discount_type === 'fixed') {
+      this.currentCoupon.max_discount_amount = c.discount_value;
+    }
+
+    // 6. Kiểm tra Tổng lượt dùng
+    if (c.total_limit === null || c.total_limit === undefined || c.total_limit <= 0) {
+      this.validationError = 'Tổng lượt sử dụng phải lớn hơn 0.';
+      return;
+    }
+
+    // 7. Kiểm tra Ngày tháng
+    if (!c.start_at) {
+      this.validationError = 'Vui lòng chọn ngày bắt đầu.';
+      return;
+    }
+    if (!c.end_at) {
+      this.validationError = 'Vui lòng chọn ngày kết thúc.';
+      return;
+    }
     if (new Date(c.start_at) > new Date(c.end_at)) {
       this.validationError = 'Ngày bắt đầu không được lớn hơn ngày kết thúc.';
       return;
     }
-
-    if (c.discount_type === 'fixed') {
-      this.currentCoupon.max_discount_amount = c.discount_value;
-    }
   }
-
   onTypeChange(): void {
     this.realTimeValidate();
   }

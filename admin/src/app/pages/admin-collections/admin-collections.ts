@@ -1,8 +1,9 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-// Lưu ý: Đổi tên Service dưới đây thành Service quản lý collection của bạn
 import { CollectionService } from '../../services/admin-collections'; 
+import { AdminProductsService } from '../../services/admin-products'; // Import service sản phẩm
+import { Router } from '@angular/router'; // Import Router chuyển trang
 
 @Component({
   selector: 'app-admin-collections',
@@ -37,27 +38,38 @@ export class AdminCollections implements OnInit {
   showConfirmPopup: boolean = false;
   showResultPopup: boolean = false;
   resultMessage = { title: '', message: '', type: '' as 'success' | 'error' };
-  pendingStatusChange: { item: any, newStatus: string } | null = null;
+  pendingStatusChange: { item: any, newStatus: string } | null = null; 
+
+  // --- BIẾN CHO MODAL XEM SẢN PHẨM ---
+  showProductsModal: boolean = false;
+  isLoadingProducts: boolean = false;
+  selectedCollectionForProducts: any = null;
+  collectionProducts: any[] = [];
 
   constructor(
     private collectionService: CollectionService,
-    private cdr: ChangeDetectorRef 
+    private productService: AdminProductsService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void { this.loadCollections(); }
 
   loadCollections() {
-    this.collectionService.getAllCollections().subscribe(data => {
-      this.collections = data;
-      this.applyFilters();
-      this.cdr.detectChanges();
+    this.collectionService.getAllCollections().subscribe({
+      next: (data: any) => {
+        this.collections = data;
+        this.applyFilters();
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => console.error(err)
     });
   }
 
   applyFilters() {
-    let filtered = this.collections.filter(item => {
-      const matchSearch = item.name.toLowerCase().includes(this.searchTerm.toLowerCase());
-      const matchStatus = this.statusFilter === 'all' || item.status === this.statusFilter;
+    let filtered = this.collections.filter(col => {
+      const matchSearch = col.name?.toLowerCase().includes(this.searchTerm.toLowerCase());
+      const matchStatus = this.statusFilter === 'all' || col.status === this.statusFilter;
       return matchSearch && matchStatus;
     });
 
@@ -89,7 +101,7 @@ export class AdminCollections implements OnInit {
 
   getSortIcon(column: string) {
     if (this.sortColumn !== column) return 'fa-sort text-muted';
-    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+    return this.sortDirection === 'asc' ? 'fa-sort-up active' : 'fa-sort-down active';
   }
 
   resetFilters() {
@@ -100,35 +112,29 @@ export class AdminCollections implements OnInit {
     this.applyFilters();
   }
 
+  changePage(page: number) { this.currentPage = page; }
+  
   get paginatedCollections() {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     return this.filteredCollections.slice(startIndex, startIndex + this.itemsPerPage);
   }
 
-  changePage(page: number) { this.currentPage = page; }
+  // KHÓA NÚT LƯU
+  get isFormValid(): boolean {
+    const c = this.currentCollection;
+    if (!c || !c.name || c.name.toString().trim() === '') return false;
+    if (this.validationError !== '') return false; 
+    return true;
+  }
 
-  // ================= RÀNG BUỘC (VALIDATION) =================
   realTimeValidate(): void {
     const c = this.currentCollection;
     this.validationError = '';
-
     if (!c.name || c.name.trim() === '') {
-      this.validationError = 'Tên bộ sưu tập không được để trống.'; return;
-    }
-
-    // Kiểm tra trùng Tên bộ sưu tập
-    const isNameExists = this.collections.some(item => 
-      item.name.trim().toUpperCase() === c.name.trim().toUpperCase() && 
-      item._id !== c._id
-    );
-
-    if (isNameExists) {
-      this.validationError = `Bộ sưu tập "${c.name.toUpperCase()}" đã tồn tại. Vui lòng chọn tên khác.`;
-      return;
+      this.validationError = 'Tên bộ sưu tập không được để trống.';
     }
   }
 
-  // ================= QUẢN LÝ MODAL & POPUP =================
   openAddModal() {
     this.isEditMode = false;
     this.validationError = '';
@@ -179,15 +185,15 @@ export class AdminCollections implements OnInit {
     this.showConfirmPopup = true;
   }
 
-  // ================= THỰC THI GỌI API =================
   executeSave(): void {
     this.showConfirmPopup = false;
 
     if (this.pendingStatusChange) {
       const { item, newStatus } = this.pendingStatusChange;
-      const updatedItem = { ...item, status: newStatus }; 
-      
-      this.collectionService.updateCollection(item._id, updatedItem).subscribe({
+      const formData = new FormData();
+      formData.append('status', newStatus);
+
+      this.collectionService.updateCollection(item._id, formData as any).subscribe({
         next: () => {
           this.showResult('Thành công', 'Đã cập nhật trạng thái mới.', 'success');
           this.pendingStatusChange = null;
@@ -197,7 +203,7 @@ export class AdminCollections implements OnInit {
         error: (err: any) => {
           this.showResult('Lỗi', err.error?.message || 'Cập nhật thất bại.', 'error');
           this.pendingStatusChange = null;
-          this.loadCollections(); 
+          this.loadCollections();
           this.cdr.detectChanges();
         }
       });
@@ -208,8 +214,6 @@ export class AdminCollections implements OnInit {
     formData.append('name', this.currentCollection.name);
     if (this.currentCollection.status) formData.append('status', this.currentCollection.status);
     if (this.currentCollection.description) formData.append('description', this.currentCollection.description);
-    
-    // TRƯỜNG HỢP NÀY LÀ BANNER NHÉ (Giả định Backend bạn dùng uploadImage.single('banner'))
     if (this.selectedFile) formData.append('banner', this.selectedFile);
 
     const request = this.isEditMode 
@@ -239,5 +243,64 @@ export class AdminCollections implements OnInit {
       reader.onload = (e) => { this.imagePreview = reader.result; };
       reader.readAsDataURL(file);
     }
+  }
+
+  // --- XỬ LÝ MODAL SẢN PHẨM ---
+// --- XỬ LÝ MODAL SẢN PHẨM ---
+  viewProducts(collection: any) {
+    this.selectedCollectionForProducts = collection;
+    this.showProductsModal = true;
+    this.isLoadingProducts = true;
+    this.collectionProducts = [];
+    this.cdr.detectChanges();
+
+    // 1. Lấy ID chuẩn của bộ sưu tập đang click
+    const targetId = String(collection._id?.$oid || collection._id).trim();
+
+    // 2. Ép Backend trả về toàn bộ sản phẩm (Không truyền collection_id lên nữa)
+    const params: any = { limit: 1000 }; 
+
+    this.productService.getProducts(params).subscribe({
+      next: (res: any) => {
+        setTimeout(() => {
+          let allProducts = res.items || res.data || res || []; 
+          
+          // 3. FRONTEND TỰ RA TAY LỌC DỮ LIỆU
+          this.collectionProducts = allProducts.filter((p: any) => {
+            // Nếu sản phẩm không có trường collection_id thì loại luôn
+            if (!p.collection_id) return false;
+
+            // Lấy ID bộ sưu tập của từng sản phẩm
+            const prodColId = String(p.collection_id?.$oid || p.collection_id).trim();
+
+            // So sánh: Chỉ giữ lại những sản phẩm có ID khớp với bộ sưu tập đang click
+            return prodColId === targetId;
+          });
+          
+          this.isLoadingProducts = false;
+          this.cdr.detectChanges();
+        }, 0);
+      },
+      error: (err: any) => {
+        setTimeout(() => {
+          console.error('Lỗi tải sản phẩm của bộ sưu tập:', err);
+          this.collectionProducts = [];
+          this.isLoadingProducts = false;
+          this.cdr.detectChanges();
+        }, 0);
+      }
+    });
+  }
+  closeProductsModal() {
+    this.showProductsModal = false;
+    this.selectedCollectionForProducts = null;
+    this.collectionProducts = [];
+    this.cdr.detectChanges();
+  }
+
+  goToProductDetail(prod: any) {
+    this.closeProductsModal();
+    const productId = prod._id?.$oid || prod._id || prod.slug; 
+    this.router.navigate(['/admin/products', productId]);
   }
 }
