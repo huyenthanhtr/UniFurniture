@@ -3,12 +3,12 @@
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
     </svg>
-    <span class="heading-text">BO LOC</span>
+    <span class="heading-text">BỘ LỌC</span>
   </div>
 
   <div class="filter-controls">
     <div class="filter-field" [class.is-open]="openDropdown === 'category'">
-      <span class="filter-label">DANH MUC</span>
+      <span class="filter-label">DANH MỤC</span>
       <button type="button" class="filter-trigger" (click)="toggleDropdown('category')">
         <span class="filter-value">{{ getCategoryLabel() }}</span>
       </button>
@@ -66,7 +66,7 @@
     </div>
 
     <div class="filter-field" [class.is-open]="openDropdown === 'price'">
-      <span class="filter-label">GIA SAN PHAM</span>
+      <span class="filter-label">GIÁ SẢN PHẨM</span>
       <button type="button" class="filter-trigger" (click)="toggleDropdown('price')">
         <span class="filter-value">{{ getPriceLabel() }}</span>
       </button>
@@ -86,7 +86,7 @@
     </div>
 
     <div class="filter-field" [class.is-open]="openDropdown === 'color'">
-      <span class="filter-label">MAU SAC</span>
+      <span class="filter-label">MÀU SẮC</span>
       <button type="button" class="filter-trigger" (click)="toggleDropdown('color')">
         <span class="filter-value">{{ getColorLabel() }}</span>
       </button>
@@ -109,7 +109,7 @@
     </div>
 
     <div class="filter-field" [class.is-open]="openDropdown === 'size'">
-      <span class="filter-label">KICH THUOC</span>
+      <span class="filter-label">KÍCH THƯỚC</span>
       <button type="button" class="filter-trigger" (click)="toggleDropdown('size')">
         <span class="filter-value">{{ getSizeLabel() }}</span>
       </button>
@@ -132,24 +132,24 @@
 
 <div class="selected-filter-row" *ngIf="hasSelectedFilters()">
   <button type="button" class="selected-filter-chip" *ngIf="selectedCategoryChips().length > 0" (click)="removeFilterChip('category')">
-    <span>Danh muc: <strong>{{ getCategoryChipLabel() }}</strong></span>
+    <span>Danh mục: <strong>{{ getCategoryChipLabel() }}</strong></span>
     <span class="chip-close">x</span>
   </button>
 
   <button type="button" class="selected-filter-chip" *ngIf="selectedPriceChips().length > 0" (click)="removeFilterChip('price')">
-    <span>Gia san pham: <strong>{{ getPriceChipLabel() }}</strong></span>
+    <span>Giá sản phẩm: <strong>{{ getPriceChipLabel() }}</strong></span>
     <span class="chip-close">x</span>
   </button>
 
   <button type="button" class="selected-filter-chip" *ngIf="selectedColorChips().length > 0" (click)="removeFilterChip('color')">
-    <span>Mau sac: <strong>{{ getColorChipLabel() }}</strong></span>
+    <span>Màu sắc: <strong>{{ getColorChipLabel() }}</strong></span>
     <span class="chip-close">x</span>
   </button>
 
   <button type="button" class="selected-filter-chip" *ngIf="selectedSizeChips().length > 0" (click)="removeFilterChip('size')">
-    <span>Kich thuoc: <strong>{{ getSizeChipLabel() }}</strong></span>
+    <span>Kích thước: <strong>{{ getSizeChipLabel() }}</strong></span>
     <span class="chip-close">x</span>
   </button>
 
-  <button type="button" class="clear-all-filters" (click)="clearAllFilters()">Xoa het</button>
+  <button type="button" class="clear-all-filters" (click)="clearAllFilters()">Xóa hết</button>
 </div>

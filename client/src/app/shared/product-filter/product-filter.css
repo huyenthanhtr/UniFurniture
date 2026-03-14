@@ -43,15 +43,22 @@
 }
 
 .filter-label {
+  display: inline-flex;
+  align-items: center;
   margin-right: 8px;
   white-space: nowrap;
   font-size: 13px;
   font-weight: 700;
+  line-height: 1.2;
   color: #243142;
 }
 
 .filter-trigger {
   position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  font: inherit;
   width: 100%;
   min-width: 0;
   border: none;
@@ -60,7 +67,7 @@
   text-align: left;
   cursor: pointer;
   padding: 0 22px 0 0;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
 .filter-trigger::after {
@@ -81,7 +88,9 @@
 }
 
 .filter-value {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
