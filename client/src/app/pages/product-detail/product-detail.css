@@ -130,9 +130,9 @@
     display: block;
     margin: 14px auto;
     width: auto !important;
-    max-width: min(100%, 760px) !important;
+    max-width: min(100%, 560px) !important;
     height: auto !important;
-    max-height: 420px;
+    max-height: 360px;
     object-fit: contain;
     border-radius: 12px;
     border: 1px solid #eadfd2;
@@ -141,8 +141,9 @@
 }
 
 .description-rich :where(iframe, video) {
-    width: min(100%, 760px);
+    width: min(100%, 560px);
     max-width: 100%;
+    max-height: 360px;
     border-radius: 12px;
     display: block;
     margin: 14px auto;

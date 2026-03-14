@@ -1,4 +1,4 @@
-﻿<div class="page">
+<div class="page">
   <div class="page-header">
     <div>
       <h1>Quản lý sản phẩm</h1>
@@ -7,54 +7,75 @@
     <button class="btn btn-primary" (click)="goNew()">+ Thêm sản phẩm</button>
   </div>
 
-  <div class="toolbar card">
-    <input
-      class="search-input"
-      type="text"
-      placeholder="Tìm theo tên, SKU, slug, thương hiệu"
-      [(ngModel)]="q"
-      (ngModelChange)="applyFilterSort()"
-    />
+  <div class="filter-bar card">
+    <div class="filter-wrapper">
+      <div class="filter-item filter-item-search">
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Tìm theo SKU, tên sản phẩm, BST, danh mục"
+          [(ngModel)]="filter.search"
+          (ngModelChange)="onSearchChange()"
+          (keyup.enter)="applyFilters()"
+        />
+      </div>
 
-    <select class="toolbar-select" [(ngModel)]="status" (ngModelChange)="onChangeStatus()">
-      <option value="active">Đang bán</option>
-      <option value="inactive">Ngừng bán</option>
-      <option value="">Tất cả trạng thái</option>
-    </select>
+      <div class="filter-item">
+        <select class="toolbar-select" [(ngModel)]="filter.status" (ngModelChange)="applyFilters()">
+          <option value="">-- Trạng thái sản phẩm --</option>
+          <option value="active">Đang bán</option>
+          <option value="inactive">Ngừng bán</option>
+        </select>
+      </div>
 
-    <select class="toolbar-select" [(ngModel)]="sortBy" (ngModelChange)="onChangeSort()">
-      <option value="updatedAt">Sắp xếp theo cập nhật</option>
-      <option value="sold">Sắp xếp theo đã bán</option>
-    </select>
-
-    <select class="toolbar-select small" [(ngModel)]="sortDir" (ngModelChange)="onChangeSort()">
-      <option value="desc">Giảm dần</option>
-      <option value="asc">Tăng dần</option>
-    </select>
+      <button class="btn btn-ghost btn-icon" (click)="resetFilters()" title="Đặt lại">
+        <i class="fas fa-undo"></i>
+      </button>
+    </div>
   </div>
 
   <div class="table-wrap card">
     <table>
       <thead>
         <tr>
-          <th>Sản phẩm</th>
-          <th>SKU</th>
-          <th>Thương hiệu</th>
-          <th>Danh mục</th>
-          <th>Bộ sưu tập</th>
-          <th>Giá thấp nhất</th>
-          <th>Đã bán</th>
-          <th>Trạng thái</th>
+          <th class="cell-title sortable" (click)="toggleSort('name')">
+            Sản phẩm
+            <i class="fas" [ngClass]="getSortIconClass('name')"></i>
+          </th>
+          <th class="cell-title sortable" (click)="toggleSort('sku')">
+            SKU
+            <i class="fas" [ngClass]="getSortIconClass('sku')"></i>
+          </th>
+          <th class="cell-title sortable" (click)="toggleSort('category')">
+            Danh mục
+            <i class="fas" [ngClass]="getSortIconClass('category')"></i>
+          </th>
+          <th class="cell-title sortable" (click)="toggleSort('collection')">
+            BST
+            <i class="fas" [ngClass]="getSortIconClass('collection')"></i>
+          </th>
+          <th class="cell-title sortable" (click)="toggleSort('min_price')">
+            Giá thấp nhất
+            <i class="fas" [ngClass]="getSortIconClass('min_price')"></i>
+          </th>
+          <th class="cell-title sortable" (click)="toggleSort('sold')">
+            Đã bán
+            <i class="fas" [ngClass]="getSortIconClass('sold')"></i>
+          </th>
+          <th class="cell-title sortable" (click)="toggleSort('status')">
+            Trạng thái
+            <i class="fas" [ngClass]="getSortIconClass('status')"></i>
+          </th>
           <th class="th-actions">Hành động</th>
         </tr>
       </thead>
 
       <tbody>
         <tr *ngIf="isLoading">
-          <td colspan="9" class="state">Đang tải...</td>
+          <td colspan="8" class="state">Đang tải...</td>
         </tr>
 
-        <tr *ngFor="let p of filtered">
+        <tr *ngFor="let p of products">
           <td class="cell-title" (click)="viewDetail(p)">
             <div class="product-cell">
               <img
@@ -64,40 +85,38 @@
               />
               <div class="title">
                 <strong>{{ p.name }}</strong>
-                <div class="sub">{{ p.slug || '-' }}</div>
+                <div class="sub">{{ p.brand || '-' }}</div>
               </div>
             </div>
           </td>
 
           <td>{{ p.sku || '-' }}</td>
-          <td>{{ p.brand || '-' }}</td>
           <td>{{ categoryName(p.category_id) }}</td>
           <td>{{ collectionName(p.collection_id) }}</td>
           <td>{{ p.min_price | number }}</td>
           <td>{{ p.sold || 0 }}</td>
           <td>
-            <span class="badge" [class.badge-active]="p.status==='active'" [class.badge-inactive]="p.status==='inactive'">
-              {{ statusLabel(p.status) }}
-            </span>
+            <select
+              class="status-dropdown"
+              [class]="'status-dropdown ' + (p._selectedStatus || p.status)"
+              [ngModel]="p._selectedStatus || p.status"
+              (ngModelChange)="askStatusChange(p, $event)"
+            >
+              <option value="active">Đang bán</option>
+              <option value="inactive">Ngừng bán</option>
+            </select>
           </td>
           <td class="actions-cell">
             <div class="actions">
-              <button class="btn btn-ghost btn-sm" (click)="goEdit(p); $event.stopPropagation()">Sửa</button>
-
-              <button
-                class="btn btn-sm"
-                [class.btn-danger]="p.status==='active'"
-                [class.btn-success]="p.status!=='active'"
-                (click)="askToggleStatus(p); $event.stopPropagation()"
-              >
-                {{ p.status==='active' ? 'Ngừng bán' : 'Đang bán' }}
+              <button class="btn btn-ghost btn-sm btn-icon-only" (click)="goEdit(p); $event.stopPropagation()" title="Sửa sản phẩm">
+                <i class="fas fa-edit"></i>
               </button>
             </div>
           </td>
         </tr>
 
-        <tr *ngIf="!isLoading && filtered.length===0">
-          <td colspan="9" class="state">Không có sản phẩm phù hợp.</td>
+        <tr *ngIf="!isLoading && products.length === 0">
+          <td colspan="8" class="state">Không có sản phẩm phù hợp.</td>
         </tr>
       </tbody>
     </table>
@@ -107,12 +126,7 @@
     <button class="pg pg-arrow" (click)="goPrev()" [disabled]="page===1">‹</button>
 
     <ng-container *ngFor="let p of pagesToShow()">
-      <button
-        *ngIf="p !== '...'"
-        class="pg"
-        [class.active]="p===page"
-        (click)="goPage(p)"
-      >
+      <button *ngIf="p !== '...'" class="pg" [class.active]="p===page" (click)="goPage(p)">
         {{ p }}
       </button>
       <span *ngIf="p === '...'" class="pg dots">…</span>
@@ -121,14 +135,25 @@
     <button class="pg pg-arrow" (click)="goNext()" [disabled]="page===totalPages">›</button>
   </div>
 
-  <div class="overlay" *ngIf="showConfirm"></div>
+  <div class="confirm-overlay" *ngIf="showConfirmPopup">
+    <div class="confirm-box">
+      <h4>Xác nhận</h4>
+      <p>{{ confirmMessage }}</p>
+      <div class="actions justify-content-center">
+        <button class="btn btn-ghost" (click)="cancelConfirm()">Hủy</button>
+        <button class="btn btn-primary" (click)="executeStatusChange()">Đồng ý lưu</button>
+      </div>
+    </div>
+  </div>
 
-  <div class="confirm" *ngIf="showConfirm">
-    <h3>{{ confirmTitle }}</h3>
-    <p>{{ confirmMessage }}</p>
-    <div class="confirm-actions">
-      <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
-      <button class="btn btn-primary" (click)="runConfirm()">Xác nhận</button>
+  <div class="confirm-overlay" *ngIf="showResultPopup">
+    <div class="result-box" [class]="resultMessage.type">
+      <div class="icon-result">
+        <i class="fas" [ngClass]="resultMessage.type === 'success' ? 'fa-check' : 'fa-times'"></i>
+      </div>
+      <h4>{{ resultMessage.title }}</h4>
+      <p>{{ resultMessage.message }}</p>
+      <button class="btn btn-primary result-close" (click)="showResultPopup = false">Đóng</button>
     </div>
   </div>
 </div>

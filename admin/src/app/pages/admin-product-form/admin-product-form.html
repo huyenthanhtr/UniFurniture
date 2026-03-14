@@ -1,12 +1,12 @@
-﻿<div class="page">
+<div class="page">
   <div class="page-header">
     <div>
       <h1>{{ isEdit ? 'Sửa sản phẩm' : 'Thêm sản phẩm' }}</h1>
-      <div class="sub">Slug sẽ tự tạo theo tên sản phẩm</div>
+      <div class="sub">Tất cả thay đổi của thông tin, ảnh và biến thể sẽ chỉ lưu khi bấm nút Lưu</div>
     </div>
 
     <div class="actions">
-      <button class="btn btn-ghost" (click)="back()">← Quay lại</button>
+      <button class="btn btn-ghost btn-back" (click)="back()">← Quay lại</button>
       <button class="btn btn-primary" (click)="askSave()">Lưu</button>
     </div>
   </div>
@@ -37,8 +37,8 @@
       <div class="field">
         <label>Trạng thái *</label>
         <select [formControl]="form.controls.status">
-          <option value="active">active</option>
-          <option value="inactive">inactive</option>
+          <option value="active">Đang bán</option>
+          <option value="inactive">Ngừng bán</option>
         </select>
       </div>
 
@@ -52,7 +52,7 @@
       </div>
 
       <div class="field">
-        <label>Bộ sưu tập</label>
+        <label>BST</label>
         <select [formControl]="form.controls.collection_id">
           <option value="">-- chọn --</option>
           <option *ngFor="let c of collections" [value]="c._id">{{ c.name }}</option>
@@ -68,7 +68,80 @@
         <label>URL nguồn</label>
         <input type="text" [formControl]="form.controls.url" />
       </div>
+    </div>
 
+    <section class="form-section">
+      <div class="section-header">
+        <div>
+          <h3>Hình ảnh sản phẩm</h3>
+          <p>Quản lý ảnh ngay trong form sửa sản phẩm. Có thể thêm, thay ảnh, đổi ảnh chính và gắn ảnh cho biến thể.</p>
+        </div>
+        <button class="btn btn-ghost" type="button" (click)="addImageRow()">+ Thêm ảnh</button>
+      </div>
+
+      <div class="image-list" *ngIf="images.length > 0; else noImageRows">
+        <div class="gallery-grid">
+          <div class="main-image">
+            <img
+              [src]="selectedFormImage?.preview_url || normalizeImageUrl(selectedFormImage?.image_url) || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'"
+              alt=""
+            />
+          </div>
+
+          <div class="thumbs">
+            <button
+              class="thumb"
+              type="button"
+              *ngFor="let image of images"
+              [class.thumb-active]="image.localId === selectedFormImageId"
+              (click)="selectFormImage(image)"
+            >
+              <img
+                [src]="image.preview_url || normalizeImageUrl(image.image_url) || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'"
+                alt=""
+              />
+            </button>
+          </div>
+        </div>
+
+        <div class="image-item" *ngIf="selectedFormImage as image">
+          <div class="image-fields">
+            <div class="field full" *ngIf="!image._id">
+              <label>Chọn file ảnh</label>
+              <input type="file" accept="image/*" (change)="onProductImageSelected($event, image)" />
+            </div>
+
+            <div class="field">
+              <label>Biến thể</label>
+              <select [(ngModel)]="image.variant_id" [ngModelOptions]="{ standalone: true }" (ngModelChange)="form.markAsDirty()">
+                <option [ngValue]="null">Ảnh chung của sản phẩm</option>
+                <option *ngFor="let variant of variants" [ngValue]="variant._id || variant.localId">{{ variant.variant_name }}</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Thứ tự hiển thị</label>
+              <input type="number" [(ngModel)]="image.sort_order" [ngModelOptions]="{ standalone: true }" (ngModelChange)="form.markAsDirty()" />
+            </div>
+
+            <label class="check">
+              <input type="checkbox" [(ngModel)]="image.is_primary" [ngModelOptions]="{ standalone: true }" (ngModelChange)="onImagePrimaryChange(image)" />
+              <span>Đặt làm ảnh chính</span>
+            </label>
+
+            <div class="image-row-actions">
+              <button class="btn btn-danger" type="button" (click)="removeImageRow(image)">Xóa ảnh</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noImageRows>
+        <div class="empty-panel">Chưa có ảnh nào trong bản chỉnh sửa này.</div>
+      </ng-template>
+    </section>
+
+    <div class="grid">
       <div class="field full">
         <label>Mô tả ngắn</label>
         <textarea rows="4" [formControl]="form.controls.short_description"></textarea>
@@ -82,9 +155,19 @@
             <button type="button" class="toolbar-btn" title="In nghiêng" (click)="formatDescription('italic')"><i>I</i></button>
             <button type="button" class="toolbar-btn" title="Gạch chân" (click)="formatDescription('underline')"><u>U</u></button>
             <span class="toolbar-sep"></span>
+            <button type="button" class="toolbar-btn mini-btn" title="Đoạn thường" (click)="formatBlock('p')">P</button>
+            <button type="button" class="toolbar-btn mini-btn" title="Tiêu đề lớn" (click)="formatBlock('h2')">H2</button>
+            <button type="button" class="toolbar-btn mini-btn" title="Tiêu đề nhỏ" (click)="formatBlock('h3')">H3</button>
+            <button type="button" class="toolbar-btn mini-btn" title="Trích dẫn" (click)="formatBlock('blockquote')">"</button>
+            <span class="toolbar-sep"></span>
             <button type="button" class="toolbar-btn icon-btn" title="Căn trái" (click)="alignDescription('justifyLeft')">≡</button>
             <button type="button" class="toolbar-btn icon-btn" title="Căn giữa" (click)="alignDescription('justifyCenter')">≣</button>
             <button type="button" class="toolbar-btn icon-btn" title="Căn phải" (click)="alignDescription('justifyRight')">☰</button>
+            <span class="toolbar-sep"></span>
+            <button type="button" class="toolbar-btn icon-btn" title="Danh sách chấm" (click)="toggleList('insertUnorderedList')">•</button>
+            <button type="button" class="toolbar-btn icon-btn" title="Danh sách số" (click)="toggleList('insertOrderedList')">1.</button>
+            <button type="button" class="toolbar-btn icon-btn" title="Chèn liên kết" (click)="insertLink()">🔗</button>
+            <button type="button" class="toolbar-btn icon-btn" title="Xóa định dạng" (click)="clearFormatting()">Tx</button>
             <span class="toolbar-sep"></span>
             <div class="image-menu">
               <button type="button" class="toolbar-btn icon-btn" title="Chèn ảnh" (click)="toggleImageMenu($event)">🖼</button>
@@ -112,6 +195,7 @@
                 min="10"
                 max="100"
                 [(ngModel)]="draftImagePercent"
+                [ngModelOptions]="{ standalone: true }"
                 (blur)="applyDraftImagePercent()"
                 (keydown)="onPercentInputKeydown($event)"
               />
@@ -131,27 +215,136 @@
         </div>
       </div>
     </div>
+
+    <section class="form-section">
+      <div class="section-header">
+        <div>
+          <h3>Biến thể</h3>
+          <p>Có thể tạo biến thể mới, sửa thông tin và chỉnh tồn kho trực tiếp tại đây. Thay đổi sẽ được lưu cùng sản phẩm.</p>
+        </div>
+        <button class="btn btn-ghost" type="button" (click)="openCreateVariant()">+ Tạo biến thể mới</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Biến thể</th>
+              <th>SKU</th>
+              <th>Màu</th>
+              <th>Giá</th>
+              <th>Tồn kho</th>
+              <th>Trạng thái</th>
+              <th class="th-actions">Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="variants.length === 0">
+              <td colspan="7" class="state">Chưa có biến thể.</td>
+            </tr>
+            <tr *ngFor="let variant of variants; let i = index">
+              <td><strong>{{ variant.variant_name }}</strong></td>
+              <td>{{ variant.sku }}</td>
+              <td>{{ variant.color || '-' }}</td>
+              <td>{{ variant.price | number }}</td>
+              <td>{{ variant.stock_quantity }}</td>
+              <td>
+                <span class="variant-badge" [class.inactive]="variant.variant_status === 'inactive'">
+                  {{ activeStatusLabel(variant.variant_status) }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <div class="actions">
+                  <button class="btn btn-ghost btn-sm" type="button" (click)="openEditVariant(i)">Sửa</button>
+                  <button class="btn btn-danger btn-sm" type="button" (click)="removeVariant(i)">Xóa</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </div>
 
-  <div class="overlay" *ngIf="showConfirm"></div>
-
-  <div class="confirm" *ngIf="showConfirm">
-    <h3>Xác nhận</h3>
-    <p>{{ confirmMessage }}</p>
-    <div class="confirm-actions">
-      <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
-      <button class="btn btn-primary" (click)="runConfirm()">OK</button>
+  <div class="confirm-overlay" *ngIf="showVariantModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ editingVariantIndex >= 0 ? 'Sửa biến thể' : 'Tạo biến thể mới' }}</h3>
+        <button class="close-btn" type="button" (click)="closeVariantModal()">×</button>
+      </div>
+      <div class="modal-body variant-grid">
+        <div class="field">
+          <label>Tên biến thể *</label>
+          <input type="text" [(ngModel)]="variantDraft.variant_name" [ngModelOptions]="{ standalone: true }" />
+        </div>
+        <div class="field">
+          <label>SKU *</label>
+          <input type="text" [(ngModel)]="variantDraft.sku" [ngModelOptions]="{ standalone: true }" />
+        </div>
+        <div class="field">
+          <label>Màu</label>
+          <input type="text" [(ngModel)]="variantDraft.color" [ngModelOptions]="{ standalone: true }" />
+        </div>
+        <div class="field">
+          <label>Giá</label>
+          <input type="number" [(ngModel)]="variantDraft.price" [ngModelOptions]="{ standalone: true }" />
+        </div>
+        <div class="field">
+          <label>Giá so sánh</label>
+          <input type="number" [(ngModel)]="variantDraft.compare_at_price" [ngModelOptions]="{ standalone: true }" />
+        </div>
+        <div class="field">
+          <label>Tồn kho</label>
+          <input type="number" [(ngModel)]="variantDraft.stock_quantity" [ngModelOptions]="{ standalone: true }" />
+        </div>
+        <div class="field">
+          <label>Trạng thái kho</label>
+          <select [(ngModel)]="variantDraft.status" [ngModelOptions]="{ standalone: true }">
+            <option value="available">Còn hàng</option>
+            <option value="unavailable">Hết hàng</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Trạng thái bán</label>
+          <select [(ngModel)]="variantDraft.variant_status" [ngModelOptions]="{ standalone: true }">
+            <option value="active">Đang bán</option>
+            <option value="inactive">Ngừng bán</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Đã bán</label>
+          <input type="number" [(ngModel)]="variantDraft.sold" [ngModelOptions]="{ standalone: true }" />
+        </div>
+        <div class="field full" *ngIf="variantError">
+          <div class="err-panel">{{ variantError }}</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" type="button" (click)="closeVariantModal()">Hủy</button>
+        <button class="btn btn-primary" type="button" (click)="saveVariantDraft()">Lưu biến thể</button>
+      </div>
     </div>
   </div>
 
-  <div class="overlay" *ngIf="showLeaveConfirm"></div>
+  <div class="confirm-overlay" *ngIf="showConfirm">
+    <div class="confirm-box">
+      <h3>Xác nhận</h3>
+      <p>{{ confirmMessage }}</p>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
+        <button class="btn btn-primary" (click)="runConfirm()">OK</button>
+      </div>
+    </div>
+  </div>
 
-  <div class="confirm" *ngIf="showLeaveConfirm">
-    <h3>Chưa lưu thay đổi</h3>
-    <p>Dữ liệu chưa được lưu. Nếu rời trang, các thay đổi sẽ bị mất.</p>
-    <div class="confirm-actions">
-      <button class="btn btn-ghost" (click)="stayOnPage()">Ở lại</button>
-      <button class="btn btn-primary" (click)="leavePage()">Rời trang</button>
+  <div class="confirm-overlay" *ngIf="showLeaveConfirm">
+    <div class="confirm-box">
+      <h3>Chưa lưu thay đổi</h3>
+      <p>Dữ liệu chưa được lưu. Nếu rời trang, các thay đổi sẽ bị mất.</p>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" (click)="stayOnPage()">Ở lại</button>
+        <button class="btn btn-primary" (click)="leavePage()">Rời trang</button>
+      </div>
     </div>
   </div>
 </div>

@@ -1,6 +1,6 @@
 import { Component, DestroyRef, effect, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Title } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ProductGalleryComponent } from '../../shared/product-gallery/product-gallery';
 import { ProductInfoComponent } from '../../shared/product-info/product-info';
@@ -21,6 +21,7 @@ export class ProductDetailComponent {
   private readonly router = inject(Router);
   private readonly productDataService = inject(ProductDataService);
   private readonly titleService = inject(Title);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly destroyRef = inject(DestroyRef);
   private loadingGuard: ReturnType<typeof setTimeout> | null = null;
 
@@ -71,13 +72,17 @@ export class ProductDetailComponent {
     return imagesUrls;
   });
 
-  readonly descriptionHtml = computed(() => {
+  readonly normalizedDescriptionHtml = computed(() => {
     const current = this.product();
     const rawDescription = current?.description || current?.shortDescription || 'Thong tin dang cap nhat.';
-    return this.stripLinks(rawDescription);
+    return this.normalizeDescriptionMedia(rawDescription);
+  });
+
+  readonly descriptionHtml = computed<SafeHtml>(() => {
+    return this.sanitizer.bypassSecurityTrustHtml(this.normalizedDescriptionHtml());
   });
   readonly shouldCollapseDescription = computed(() => {
-    const html = this.descriptionHtml();
+    const html = this.normalizedDescriptionHtml();
     const imageCount = (html.match(/<img\b/gi) || []).length;
     const textLength = html.replace(/<[^>]+>/g, '').trim().length;
     return imageCount >= 2 || textLength > 1400;
@@ -163,10 +168,29 @@ export class ProductDetailComponent {
     }
   }
 
-  private stripLinks(html: string): string {
-    if (!html) {
-      return '';
-    }
-    return html.replace(/<a\b[^>]*>(.*?)<\/a>/gis, '$1');
+  private normalizeDescriptionMedia(html: string): string {
+    const container = document.createElement('div');
+    container.innerHTML = String(html || '');
+
+    container.querySelectorAll<HTMLElement>('*').forEach((element) => {
+      element.style.maxWidth = '100%';
+      element.style.boxSizing = 'border-box';
+    });
+
+    container.querySelectorAll<HTMLElement>('img, video, iframe').forEach((element) => {
+      const rawSrc = element.getAttribute('src') || '';
+      if (rawSrc.startsWith('//')) element.setAttribute('src', `https:${rawSrc}`);
+      if (rawSrc.startsWith('/uploads/')) element.setAttribute('src', `http://localhost:3000${rawSrc}`);
+      element.style.display = 'block';
+      element.style.width = '70%';
+      element.style.maxWidth = '70%';
+      element.style.height = 'auto';
+      element.style.margin = '14px auto';
+      if (element.tagName === 'IFRAME' || element.tagName === 'VIDEO') {
+        element.style.aspectRatio = '16 / 9';
+      }
+    });
+
+    return container.innerHTML;
   }
 }
