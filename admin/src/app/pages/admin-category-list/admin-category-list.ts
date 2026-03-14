@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CategoryService } from '../../services/admin-categories';
 import { Category } from '../../models/category.model';
+import { AdminProductsService } from '../../services/admin-products'; // Đổi đường dẫn và tên cho đúng dự án của bạn
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-admin-category-list',
@@ -31,21 +33,26 @@ export class AdminCategoryList implements OnInit {
   currentCategory: Partial<Category> = {};
   rooms: string[] = ['Phòng khách', 'Phòng ăn', 'Phòng ngủ', 'Phòng làm việc'];
 
-selectedFile: File | null = null; // Lưu file ảnh vật lý
-imagePreview: string | ArrayBuffer | null = null; // Lưu chuỗi base64 để hiển thị xem trước
+  selectedFile: File | null = null; 
+  imagePreview: string | ArrayBuffer | null = null; 
   
-// --- BIẾN MỚI CHO RÀNG BUỘC VÀ THÔNG BÁO ---
   validationError: string = '';
   showConfirmPopup: boolean = false;
   showResultPopup: boolean = false;
   resultMessage = { title: '', message: '', type: '' as 'success' | 'error' };
-  pendingStatusChange: { item: any, newStatus: string } | null = null; // Dùng khi đổi trạng thái ngoài bảng
+  pendingStatusChange: { item: any, newStatus: string } | null = null; 
 
+  // --- BIẾN CHO MODAL XEM SẢN PHẨM ---
+  showProductsModal: boolean = false;
+  isLoadingProducts: boolean = false;
+  selectedCategoryForProducts: Category | null = null;
+  categoryProducts: any[] = []; // Chứa danh sách sản phẩm lấy từ API
 
-
-constructor(
+  constructor(
     private categoryService: CategoryService,
-    private cdr: ChangeDetectorRef 
+    private cdr: ChangeDetectorRef, 
+    private productService: AdminProductsService, // THÊM DÒNG NÀY ĐỂ GỌI API SẢN PHẨM
+    private router: Router // 2. THÊM DÒNG NÀY VÀO CONSTRUCTOR
   ) { }
 
   ngOnInit(): void { this.loadCategories(); }
@@ -95,7 +102,7 @@ constructor(
 
   getSortIcon(column: string) {
     if (this.sortColumn !== column) return 'fa-sort text-muted';
-    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+    return this.sortDirection === 'asc' ? 'fa-sort-up active' : 'fa-sort-down active';
   }
 
   resetFilters() {
@@ -107,54 +114,25 @@ constructor(
     this.applyFilters();
   }
 
-// Gọi hàm này khi chọn Trạng thái từ Dropdown
-
-
   changePage(page: number) { this.currentPage = page; }
-get paginatedCategories() {
+  
+  get paginatedCategories() {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     return this.filteredCategories.slice(startIndex, startIndex + this.itemsPerPage);
   }
-saveCategory() {
-    if (!this.currentCategory.category_code || !this.currentCategory.name || !this.currentCategory.room) {
-      alert('Vui lòng điền đầy đủ các trường bắt buộc!');
-      return;
-    }
 
-    // ĐÓNG GÓI DỮ LIỆU VÀO FORMDATA
-    const formData = new FormData();
-    formData.append('category_code', this.currentCategory.category_code);
-    formData.append('name', this.currentCategory.name);
-    formData.append('room', this.currentCategory.room);
-    
-    if (this.currentCategory.status) {
-      formData.append('status', this.currentCategory.status);
-    }
-    if (this.currentCategory.description) {
-      formData.append('description', this.currentCategory.description);
-    }
-
-    // NẾU CÓ CHỌN FILE ẢNH MỚI THÌ NHÉT VÀO GÓI HÀNG (Tên 'image' phải khớp với uploadImage.single('image') ở Backend)
-    if (this.selectedFile) {
-      formData.append('image', this.selectedFile);
-    }
-
-    // Gọi API lưu dữ liệu
-    if (this.isEditMode && this.currentCategory._id) {
-      this.categoryService.updateCategory(this.currentCategory._id, formData).subscribe({
-        next: () => { this.loadCategories(); this.closeModal(); },
-        error: (err) => alert('Lỗi Backend: ' + (err.error?.message || err.message))
-      });
-    } else {
-      this.categoryService.createCategory(formData).subscribe({
-        next: () => { this.loadCategories(); this.closeModal(); },
-        error: (err) => alert('Lỗi Backend: ' + (err.error?.message || err.message))
-      });
-    }
+  // GETTER KHÓA NÚT LƯU
+  get isFormValid(): boolean {
+    const c = this.currentCategory;
+    if (!c) return false;
+    if (!c.category_code || c.category_code.toString().trim() === '') return false;
+    if (!c.name || c.name.toString().trim() === '') return false;
+    if (!c.room || c.room.toString().trim() === '') return false;
+    if (this.validationError !== '') return false; 
+    return true;
   }
-  // Bắt sự kiện khi người dùng chọn file
 
-realTimeValidate(): void {
+  realTimeValidate(): void {
     const c = this.currentCategory;
     this.validationError = '';
 
@@ -168,10 +146,9 @@ realTimeValidate(): void {
       this.validationError = 'Vui lòng chọn không gian.'; return;
     }
 
-    // Kiểm tra trùng Mã Danh Mục
     const isCodeExists = this.categories.some(item => 
       item.category_code.trim().toUpperCase() === c.category_code!.trim().toUpperCase() && 
-      item._id !== c._id // Trừ chính nó nếu đang Edit
+      item._id !== c._id 
     );
 
     if (isCodeExists) {
@@ -179,7 +156,7 @@ realTimeValidate(): void {
       return;
     }
   }
-// ================= QUẢN LÝ MODAL & POPUP =================
+
   openAddModal() {
     this.isEditMode = false;
     this.validationError = '';
@@ -210,7 +187,6 @@ realTimeValidate(): void {
     this.cdr.detectChanges();
   }
 
-  // Bấm "Lưu thông tin" ở Form sẽ gọi hàm này để mở Popup hỏi lại
   confirmSave(): void {
     this.realTimeValidate();
     if (!this.validationError) {
@@ -220,45 +196,41 @@ realTimeValidate(): void {
 
   cancelConfirm(): void {
     if (this.pendingStatusChange) {
-      this.loadCategories(); // Reset lại UI nếu hủy đổi trạng thái ngoài bảng
+      this.loadCategories(); 
     }
     this.showConfirmPopup = false;
     this.pendingStatusChange = null;
   }
 
-  // Đổi trạng thái trực tiếp trên bảng
   updateStatus(item: Category): void {
     this.pendingStatusChange = { item: item, newStatus: item.status };
     this.showConfirmPopup = true;
   }
 
-  // ================= THỰC THI GỌI API =================
   executeSave(): void {
     this.showConfirmPopup = false;
 
-    // 1. Trường hợp lưu trạng thái từ bảng
     if (this.pendingStatusChange) {
       const { item, newStatus } = this.pendingStatusChange;
-      const updatedItem = { ...item, status: newStatus }; // Gói dữ liệu
+      const updatedItem = { ...item, status: newStatus }; 
       
       this.categoryService.updateCategory(item._id!, updatedItem as any).subscribe({
         next: () => {
           this.showResult('Thành công', 'Đã cập nhật trạng thái mới.', 'success');
           this.pendingStatusChange = null;
           this.loadCategories();
-          this.cdr.detectChanges(); // Thêm dòng này
+          this.cdr.detectChanges(); 
         },
         error: (err: any) => {
           this.showResult('Lỗi', err.error?.message || 'Cập nhật thất bại.', 'error');
           this.pendingStatusChange = null;
-          this.loadCategories(); // Reset UI do lỗi
-          this.cdr.detectChanges(); // Thêm dòng này
+          this.loadCategories(); 
+          this.cdr.detectChanges(); 
         }
       });
-      return; // Dừng hàm
+      return; 
     }
 
-    // 2. Trường hợp lưu từ Form Modal
     const formData = new FormData();
     formData.append('category_code', this.currentCategory.category_code!);
     formData.append('name', this.currentCategory.name!);
@@ -277,11 +249,11 @@ realTimeValidate(): void {
         this.loadCategories();
         this.showResult('Thành công', 'Danh mục đã được lưu vào hệ thống.', 'success');
         this.closeModal();
-        this.cdr.detectChanges(); // Thêm dòng này
+        this.cdr.detectChanges(); 
       },
       error: (err: any) => {
         this.showResult('Thất bại', err.error?.message || 'Lỗi server', 'error');
-        this.cdr.detectChanges(); // Thêm dòng này
+        this.cdr.detectChanges(); 
       }
     });
   }
@@ -295,5 +267,55 @@ realTimeValidate(): void {
       reader.readAsDataURL(file);
     }
   }
+  // --- HÀM XỬ LÝ ---
+viewProducts(category: Category) {
+    this.selectedCategoryForProducts = category;
+    this.showProductsModal = true;
+    this.isLoadingProducts = true;
+    this.categoryProducts = [];
+    this.cdr.detectChanges();
 
+    // GỌI API THỰC TẾ ĐỂ LẤY SẢN PHẨM THEO ID DANH MỤC
+    // Lưu ý: Đổi tên hàm getProducts() hoặc truyền tham số sao cho khớp với API của bạn
+    const params = { category_id: category._id }; 
+
+this.productService.getProducts(params).subscribe({
+      next: (res: any) => {
+        // DÙNG SETTIMEOUT ĐỂ ÉP ANGULAR VẼ LẠI GIAO DIỆN NGAY LẬP TỨC
+        setTimeout(() => {
+          this.categoryProducts = res.items || res || []; 
+          this.isLoadingProducts = false;
+          this.cdr.detectChanges();
+        }, 0);
+      },
+      error: (err: any) => {
+        setTimeout(() => {
+          console.error('Lỗi tải sản phẩm của danh mục:', err);
+          this.categoryProducts = [];
+          this.isLoadingProducts = false;
+          this.cdr.detectChanges();
+        }, 0);
+      }
+    });
+  }
+
+  closeProductsModal() {
+    this.showProductsModal = false;
+    this.selectedCategoryForProducts = null;
+    this.categoryProducts = [];
+    this.cdr.detectChanges();
+  }
+
+  // HÀM CHUYỂN HƯỚNG ĐẾN TRANG CHI TIẾT SẢN PHẨM
+  goToProductDetail(prod: any) {
+    // 1. Đóng modal danh sách sản phẩm
+    this.closeProductsModal();
+    
+    // 2. Lấy ID của sản phẩm (Xử lý linh hoạt cho cả data mock json hoặc ID chuẩn từ Database)
+    const productId = prod._id?.$oid || prod._id || prod.slug; 
+    
+    // 3. Chuyển hướng 
+    // (Lưu ý: Nếu đường dẫn trang chi tiết sản phẩm của bạn khác '/admin/products', hãy sửa lại cho khớp nhé)
+    this.router.navigate(['/admin/products', productId]);
+  }
 }
