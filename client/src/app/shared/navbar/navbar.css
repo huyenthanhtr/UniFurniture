@@ -209,6 +209,8 @@
 
 .product-mega__left {
     background: #fff;
+    display: flex;
+    flex-direction: column;
 }
 
 .product-mega.has-submenu {
@@ -220,6 +222,9 @@
 }
 
 .product-root-item {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
     min-height: 38px;
     padding: 10px 14px;
     font-size: 14px;

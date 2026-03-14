@@ -11,6 +11,7 @@ import {
 } from '../../services/product-data.service';
 import {
   FilterCategoryTreeGroup,
+  FilterSelectOption,
   ProductFilterComponent,
   ProductFilterState,
 } from '../../shared/product-filter/product-filter';
@@ -31,26 +32,16 @@ interface SizeFilterProfile {
 const DEFAULT_BANNER_IMAGE =
   'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=1920';
 
-const GROUP_CATEGORY_SLUGS: Record<string, string[]> = {
-  'bo-suu-tap': [],
-  'phong-ngu': ['combo-phong-ngu', 'tu-quan-ao', 'giuong-ngu', 'tu-dau-giuong', 'ban-trang-diem'],
-  'phong-khach': ['ghe-sofa', 'ban-sofa-ban-cafe-ban-tra', 'tu-ke-tivi', 'tu-giay-tu-trang-tri', 'tu-ke'],
-  'phong-an': ['ban-an', 'ghe-an', 'bo-ban-an'],
-  'phong-lam-viec': ['ban-lam-viec', 'ghe-van-phong'],
-  'tu-bep': ['tu-ke'],
-  nem: ['combo-phong-ngu', 'giuong-ngu'],
-};
+const ROOM_GROUP_ORDER = ['phong-ngu', 'phong-khach', 'phong-an', 'phong-lam-viec'];
 
-const CATEGORY_GROUP_LABELS: Record<string, string> = {
-  'phong-ngu': 'Phòng ngủ',
-  'phong-khach': 'Phòng khách',
-  'phong-an': 'Phòng ăn',
-  'phong-lam-viec': 'Phòng làm việc',
-  'tu-bep': 'Tủ bếp',
-  nem: 'Nệm',
-};
-
-const CATEGORY_GROUP_ORDER = ['phong-ngu', 'phong-khach', 'phong-an', 'phong-lam-viec', 'tu-bep', 'nem'];
+const FALLBACK_COLOR_OPTIONS: FilterSelectOption[] = [
+  { value: 'trang', label: 'Trắng', hex: '#f5f5f4' },
+  { value: 'den', label: 'Đen', hex: '#111827' },
+  { value: 'xam', label: 'Xám', hex: '#9ca3af' },
+  { value: 'nau', label: 'Nâu', hex: '#8b5e3c' },
+  { value: 'tu nhien', label: 'Màu tự nhiên', hex: '#c8a97e' },
+  { value: 'xanh', label: 'Xanh', hex: '#6f96bf' },
+];
 
 const SIZE_FILTERS: Record<string, SizeFilterProfile> = {
   'size-90cm': {
@@ -116,6 +107,7 @@ export class ProductComponent implements OnInit {
   readonly selectedPriceRanges = signal<string[]>([]);
   readonly selectedColors = signal<string[]>([]);
   readonly selectedSizes = signal<string[]>([]);
+  readonly topColorOptions = signal<FilterSelectOption[]>([]);
   readonly selectedSort = signal<ProductSortValue>('best-selling');
   readonly currentBannerIndex = signal(0);
 
@@ -140,7 +132,7 @@ export class ProductComponent implements OnInit {
 
   readonly pageTitle = computed(() => {
     if (this.searchQuery()) {
-      return `Kết quả tìm kiếm cho: '${this.searchQuery()}'`;
+      return `K\u1ebft qu\u1ea3 t\u00ecm ki\u1ebfm cho: '${this.searchQuery()}'`;
     }
     if (this.selectedCategoryName()) {
       return this.selectedCategoryName();
@@ -151,7 +143,7 @@ export class ProductComponent implements OnInit {
     if (this.selectedGroupLabel()) {
       return this.selectedGroupLabel();
     }
-    return 'Tất cả sản phẩm';
+    return 'T\u1ea5t c\u1ea3 s\u1ea3n ph\u1ea9m';
   });
 
   readonly breadcrumbParentName = computed(() => {
@@ -168,6 +160,38 @@ export class ProductComponent implements OnInit {
 
   readonly selectedFilterCategoryId = computed(() => {
     return this.selectedCollectionId() || this.selectedCategoryId();
+  });
+
+  readonly categoryGroups = computed<FilterCategoryTreeGroup[]>(() => {
+    const groupsMap = new Map<string, FilterCategoryTreeGroup>();
+
+    for (const category of this.categories()) {
+      const groupSlug = this.normalizeRoomToGroupSlug(category.room);
+      if (!groupSlug) {
+        continue;
+      }
+
+      if (!groupsMap.has(groupSlug)) {
+        groupsMap.set(groupSlug, {
+          id: groupSlug,
+          label: this.getRoomLabelBySlug(groupSlug, category.room),
+          children: [],
+        });
+      }
+
+      groupsMap.get(groupSlug)?.children.push({
+        value: category.id,
+        label: category.name,
+        type: 'category',
+      });
+    }
+
+    return Array.from(groupsMap.values())
+      .map((group) => ({
+        ...group,
+        children: [...group.children].sort((left, right) => left.label.localeCompare(right.label, 'vi')),
+      }))
+      .sort((left, right) => this.compareRoomGroupOrder(left.id, right.id));
   });
 
   readonly bannerImageUrls = computed(() => {
@@ -209,15 +233,11 @@ export class ProductComponent implements OnInit {
         }
       }
 
-      const groupCategorySlugs = GROUP_CATEGORY_SLUGS[groupSlug] || [];
-      if (groupCategorySlugs.length > 0) {
-        const groupSlugSet = new Set(groupCategorySlugs);
-        const groupImages = this.categories()
-          .filter((item) => groupSlugSet.has(item.slug) && Boolean(item.imageUrl))
-          .map((item) => item.imageUrl as string);
-        if (groupImages.length > 0) {
-          return Array.from(new Set(groupImages));
-        }
+      const groupImages = this.categories()
+        .filter((item) => this.normalizeRoomToGroupSlug(item.room) === groupSlug && Boolean(item.imageUrl))
+        .map((item) => item.imageUrl as string);
+      if (groupImages.length > 0) {
+        return Array.from(new Set(groupImages));
       }
     }
 
@@ -234,49 +254,29 @@ export class ProductComponent implements OnInit {
   });
 
   readonly filterCategoryOptions = computed(() => {
-    const groupSlug = this.selectedGroupSlug();
+    return this.filterCategoryTree().flatMap((group) => group.children);
+  });
 
-    if (groupSlug === 'bo-suu-tap' || Boolean(this.selectedCollectionId())) {
-      return this.collections().map((item) => ({
-        value: item.id,
-        label: item.name,
-        type: 'collection' as const,
-      }));
-    }
-
-    return this.categories().map((item) => ({ value: item.id, label: item.name, type: 'category' as const }));
+  readonly filterColorOptions = computed<FilterSelectOption[]>(() => {
+    const dynamicOptions = this.topColorOptions();
+    return dynamicOptions.length > 0 ? dynamicOptions : FALLBACK_COLOR_OPTIONS;
   });
 
   readonly filterCategoryTree = computed<FilterCategoryTreeGroup[]>(() => {
-    if (this.selectedGroupSlug() === 'bo-suu-tap' || Boolean(this.selectedCollectionId())) {
-      return [];
-    }
+    const collectionGroup: FilterCategoryTreeGroup = {
+      id: 'bo-suu-tap',
+      label: 'Bộ sưu tập',
+      children: this.collections()
+        .map((item) => ({
+          value: item.id,
+          label: item.name,
+          type: 'collection' as const,
+        }))
+        .sort((left, right) => left.label.localeCompare(right.label, 'vi')),
+    };
 
-    const allCategories = this.categories();
-    if (allCategories.length === 0) {
-      return [];
-    }
-
-    const categoryBySlug = new Map(allCategories.map((item) => [item.slug, item] as const));
-    return CATEGORY_GROUP_ORDER
-      .map((slug) => {
-        const childSlugs = GROUP_CATEGORY_SLUGS[slug] || [];
-        const children = childSlugs
-          .map((childSlug) => categoryBySlug.get(childSlug))
-          .filter((item): item is TaxonomyItem => Boolean(item))
-          .map((item) => ({
-            value: item.id,
-            label: item.name,
-            type: 'category' as const,
-          }));
-
-        return {
-          id: slug,
-          label: CATEGORY_GROUP_LABELS[slug] || slug,
-          children,
-        };
-      })
-      .filter((group) => group.children.length > 0);
+    const roomGroups = this.categoryGroups();
+    return [collectionGroup, ...roomGroups].filter((group) => group.children.length > 0);
   });
 
   readonly preferredExpandedFilterGroupIds = computed<string[]>(() => {
@@ -288,22 +288,12 @@ export class ProductComponent implements OnInit {
 
     const selectedCategoryIds = new Set(this.selectedCategoryIds());
     if (selectedCategoryIds.size > 0) {
-      const slugToGroup = new Map<string, string>();
-      for (const groupSlug of CATEGORY_GROUP_ORDER) {
-        for (const categorySlug of GROUP_CATEGORY_SLUGS[groupSlug] || []) {
-          slugToGroup.set(categorySlug, groupSlug);
+      for (const group of this.filterCategoryTree()) {
+        const hasSelectedChild = group.children.some((child) => selectedCategoryIds.has(child.value));
+        if (hasSelectedChild) {
+          result.add(group.id);
         }
       }
-
-      this.categories().forEach((category) => {
-        if (!selectedCategoryIds.has(category.id)) {
-          return;
-        }
-        const parentGroupSlug = slugToGroup.get(category.slug);
-        if (parentGroupSlug) {
-          result.add(parentGroupSlug);
-        }
-      });
     }
 
     return Array.from(result);
@@ -402,11 +392,12 @@ export class ProductComponent implements OnInit {
     this.selectedSizes.set(filters.sizes || (filters.size ? [filters.size] : []));
 
     if (filters.categoryType === 'collection') {
-      this.selectedCollectionId.set(filters.categoryId);
+      const selectedCollectionId = filters.categoryId || filters.categoryIds[0] || '';
+      this.selectedCollectionId.set(selectedCollectionId);
       this.selectedCategoryIds.set([]);
       this.selectedCategoryId.set('');
       this.updateRouteQuery({
-        collection: filters.categoryId || null,
+        collection: selectedCollectionId || null,
         categories: null,
         page: 1,
       });
@@ -440,6 +431,7 @@ export class ProductComponent implements OnInit {
     if (sortValue === this.selectedSort()) {
       return;
     }
+    this.scrollToCategorySection();
     this.updateRouteQuery({ sort: sortValue, page: 1 });
   }
 
@@ -447,11 +439,13 @@ export class ProductComponent implements OnInit {
     forkJoin({
       categories: this.productDataService.getCategories().pipe(catchError(() => of([]))),
       collections: this.productDataService.getCollections().pipe(catchError(() => of([]))),
+      topColors: this.productDataService.getTopColorOptions(20).pipe(catchError(() => of([]))),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ categories, collections }) => {
+      .subscribe(({ categories, collections, topColors }) => {
         this.categories.set(categories);
         this.collections.set(collections);
+        this.topColorOptions.set(topColors);
         this.syncSelectedCategoryWithCollection();
         this.updateBannerRotation();
       });
@@ -581,7 +575,8 @@ export class ProductComponent implements OnInit {
       return true;
     }
 
-    const searchContent = this.normalizeText(`${item.name} ${item.materialText} ${item.sizeText}`);
+    const colorText = (item.colors || []).map((color) => color.name).join(' ');
+    const searchContent = this.normalizeText(`${item.name} ${item.materialText} ${item.sizeText} ${colorText}`);
     return keywords.some((keyword) => searchContent.includes(this.normalizeText(keyword)));
   }
 
@@ -612,6 +607,8 @@ export class ProductComponent implements OnInit {
     return String(value || '')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
       .toLowerCase()
       .trim();
   }
@@ -686,6 +683,34 @@ export class ProductComponent implements OnInit {
       return value;
     }
     return null;
+  }
+
+  private normalizeRoomToGroupSlug(room?: string): string {
+    const normalized = this.normalizeText(room || '').replace(/\s+/g, ' ').trim();
+    if (!normalized) {
+      return '';
+    }
+    if (normalized === 'phong ngu') return 'phong-ngu';
+    if (normalized === 'phong khach') return 'phong-khach';
+    if (normalized === 'phong an') return 'phong-an';
+    if (normalized === 'phong lam viec') return 'phong-lam-viec';
+    return '';
+  }
+
+  private getRoomLabelBySlug(slug: string, fallbackRoom?: string): string {
+    if (slug === 'phong-ngu') return 'Phòng ngủ';
+    if (slug === 'phong-khach') return 'Phòng khách';
+    if (slug === 'phong-an') return 'Phòng ăn';
+    if (slug === 'phong-lam-viec') return 'Phòng làm việc';
+    return String(fallbackRoom || slug);
+  }
+
+  private compareRoomGroupOrder(leftSlug: string, rightSlug: string): number {
+    const leftIndex = ROOM_GROUP_ORDER.indexOf(leftSlug);
+    const rightIndex = ROOM_GROUP_ORDER.indexOf(rightSlug);
+    const normalizedLeft = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
+    const normalizedRight = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
+    return normalizedLeft - normalizedRight;
   }
 
   private normalizeSortValue(value: string): ProductSortValue {

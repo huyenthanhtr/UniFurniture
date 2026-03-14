@@ -36,7 +36,7 @@
 
     <div class="promo-hero__media">
       <img
-        src="assets/images/about1.jpg"
+        src="assets/images/banner5.jpg"
         alt="Không gian nội thất khuyến mãi U-Home Furni"
         loading="eager"
       />
@@ -97,12 +97,13 @@
       <article
         class="voucher-card"
         *ngFor="let voucher of vouchers; trackBy: trackByVoucher"
-        (click)="copyVoucherCode(voucher.code)"
+        [class.is-expired]="voucher.isExpired"
+        (click)="copyVoucherCode(voucher)"
       >
         <div class="voucher-head">
           <p class="voucher-code" [style.color]="voucher.color">{{ voucher.code }}</p>
-          <span class="voucher-copy-state" [class.active]="copiedCode === voucher.code">
-            {{ copiedCode === voucher.code ? 'Đã copy' : 'Copy mã' }}
+          <span class="voucher-copy-state" [class.active]="copiedCode === voucher.code" [class.expired]="voucher.isExpired">
+            {{ voucher.isExpired ? 'Đã hết' : (copiedCode === voucher.code ? 'Đã copy' : 'Copy mã') }}
           </span>
         </div>
         <h3>{{ voucher.label }}</h3>
@@ -117,7 +118,7 @@
     </ng-template>
   </section>
 
-  <section class="promo-section collections" *ngIf="!loading && !errorMessage && collections.length > 0">
+  <section class="promo-section collections" *ngIf="!loading && collections.length > 0">
     <div class="section-head section-head--collections">
       <div>
         <span class="collection-kicker">Bộ sưu tập nổi bật</span>

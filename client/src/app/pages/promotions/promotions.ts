@@ -36,6 +36,7 @@ interface VoucherDeal {
   label: string;
   details: string[];
   color: string;
+  isExpired: boolean;
 }
 
 interface PromoCollection {
@@ -125,12 +126,12 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
     return Math.min(Math.round((deal.sold / deal.total) * 100), 100);
   }
 
-  copyVoucherCode(code: string): void {
-    if (!code) {
+  copyVoucherCode(voucher: VoucherDeal): void {
+    if (!voucher || voucher.isExpired || !voucher.code) {
       return;
     }
 
-    const normalizedCode = code.trim();
+    const normalizedCode = voucher.code.trim();
     if (!normalizedCode) {
       return;
     }
@@ -168,7 +169,7 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
         this.vouchers = this.mapVouchers(coupons);
         this.collections = this.mapCollections(products);
 
-        if (!this.flashDeals.length && !this.vouchers.length) {
+        if (!this.flashDeals.length && !this.vouchers.length && !this.collections.length) {
           this.errorMessage =
             'Ch\u01B0a c\u00F3 d\u1EEF li\u1EC7u khuy\u1EBFn m\u00E3i t\u1EEB API.';
         }
@@ -232,7 +233,7 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
         }
         return (right.discount_value || 0) - (left.discount_value || 0);
       })
-      .slice(0, 6)
+      .slice(0, 9)
       .map((coupon) => {
         const code = coupon.code?.trim() || 'COUPON';
         const discountValue = coupon.discount_value || 0;
@@ -243,25 +244,27 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
         const isPercent = coupon.discount_type === 'percent';
 
         const label = isPercent
-          ? `Gi\u1EA3m ${discountValue}%${maxDiscount > 0 ? ` t\u1ED1i \u0111a ${this.formatPrice(maxDiscount)}` : ''}`
-          : `Gi\u1EA3m ${this.formatPrice(discountValue)}`;
+          ? `Giảm ${discountValue}%${maxDiscount > 0 ? ` tối đa ${this.formatPrice(maxDiscount)}` : ''}`
+          : `Giảm ${this.formatPrice(discountValue)}`;
 
         const endDateText = coupon.end_at ? this.formatDate(coupon.end_at) : '';
 
         const details = [
-          `\u0110\u01A1n t\u1ED1i thi\u1EC3u ${this.formatPrice(minOrder)}`,
+          `Đơn tối thiểu ${this.formatPrice(minOrder)}`,
           totalLimit > 0
-            ? `\u0110\u00E3 d\u00F9ng ${used}/${totalLimit}`
-            : 'Kh\u00F4ng gi\u1EDBi h\u1EA1n l\u01B0\u1EE3t d\u00F9ng',
+            ? `Đã dùng ${used}/${totalLimit}`
+            : 'Không giới hạn lượt dùng',
           endDateText ? `HSD: ${endDateText}` : '',
         ]
           .filter((item): item is string => Boolean(item));
 
+        const isActive = this.isCouponActive(coupon, now);
         return {
           code,
           label,
           details,
           color: this.getCouponColor(coupon, now),
+          isExpired: !isActive,
         };
       });
   }
@@ -273,7 +276,7 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
       .map((product) => ({
         id: product.id,
         title: product.name,
-        subtitle: `\u01AFu \u0111\u00E3i \u0111\u1EBFn ${product.discountBadge || '-18%'}`,
+        subtitle: `Ưu đãi ${product.discountBadge || '-18%'}`,
         imageUrl: product.imageUrl,
         route: `/products/${product.id}`,
       }));
@@ -283,18 +286,18 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
     const source = this.normalizeText(name);
 
     if (/sofa|ban tra|phong khach/.test(source)) {
-      return 'Ph\u00F2ng kh\u00E1ch';
+      return 'Phòng khách';
     }
     if (/giuong|tu|phong ngu/.test(source)) {
-      return 'Ph\u00F2ng ng\u1EE7';
+      return 'Phòng ngủ';
     }
     if (/ban an|ghe an|phong an/.test(source)) {
-      return 'Ph\u00F2ng \u0103n';
+      return 'Phòng ăn';
     }
     if (/ban lam viec|ke sach|van phong/.test(source)) {
-      return 'Ph\u00F2ng l\u00E0m vi\u1EC7c';
+      return 'Phòng làm việc';
     }
-    return 'N\u1ED9i th\u1EA5t';
+    return 'Nội thất';
   }
 
   private normalizeText(value: string): string {

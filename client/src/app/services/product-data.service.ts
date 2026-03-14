@@ -1,13 +1,16 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { catchError, forkJoin, map, Observable, of, shareReplay, timeout } from 'rxjs';
+import { catchError, forkJoin, map, Observable, of, shareReplay, switchMap, timeout } from 'rxjs';
 
 interface ApiListResponse<T> {
   page: number;
   limit: number;
   total: number;
+  totalPages?: number;
   items: T[];
 }
+
+type ApiListOrArrayResponse<T> = ApiListResponse<T> | T[];
 
 export interface ProductModel3D {
   _id: string;
@@ -36,12 +39,17 @@ export interface ProductDocument {
   warranty_months?: number;
   category_id?: string;
   collection_id?: string;
+  colors?: Array<{
+    name?: string;
+    hex?: string;
+  }>;
 }
 
 interface CategoryDocument {
   _id: string;
   name: string;
   slug: string;
+  room?: string;
   status?: string;
   image_url?: string;
 }
@@ -170,6 +178,7 @@ export interface TaxonomyItem {
   id: string;
   name: string;
   slug: string;
+  room?: string;
   imageUrl?: string;
 }
 
@@ -180,6 +189,12 @@ export interface ProductQueryOptions {
   collectionId?: string;
   search?: string;
   fields?: string;
+}
+
+export interface TopColorOption {
+  value: string;
+  label: string;
+  hex?: string;
 }
 
 
@@ -197,6 +212,7 @@ export class ProductDataService {
 
   getProducts(page = 1, limit = 24, options: ProductQueryOptions = {}): Observable<ProductListResponse> {
     let params = new HttpParams().set('page', String(page)).set('limit', String(limit));
+    params = params.set('status', 'active');
 
     const resolvedSortBy = options.sortBy || 'createdAt';
     const resolvedOrder = options.order || 'desc';
@@ -223,7 +239,7 @@ export class ProductDataService {
     }
 
     const listFields =
-      options.fields || 'name,thumbnail,thumbnail_url,min_price,compare_at_price,sold,category_id,collection_id,size,material';
+      options.fields || 'name,status,thumbnail,thumbnail_url,min_price,compare_at_price,sold,category_id,collection_id,size,material';
     params = params.set('fields', listFields);
 
     return this.http
@@ -231,7 +247,12 @@ export class ProductDataService {
       .pipe(
         timeout(15000),
         map((response) => {
-          const items = (response.items || []).map((product) => {
+          const items = (response.items || [])
+            .filter((product) => {
+              const status = String(product.status || '').toLowerCase();
+              return !status || status === 'active';
+            })
+            .map((product) => {
             const price = this.toNullableNumber(product.min_price);
             const originalPrice = this.toNullableNumber(product.compare_at_price);
 
@@ -251,7 +272,7 @@ export class ProductDataService {
               sizeText: this.valueToSizeText(product.size),
               materialText: this.valueToText(product.material),
             };
-          });
+            });
 
           return {
             page: response.page || page,
@@ -267,12 +288,15 @@ export class ProductDataService {
   getCategories(limit = 300): Observable<TaxonomyItem[]> {
     if (!this.categoriesCache$) {
       this.categoriesCache$ = this.http
-        .get<ApiListResponse<CategoryDocument>>(`${this.apiBaseUrl}/categories`, {
+        .get<ApiListOrArrayResponse<CategoryDocument>>(`${this.apiBaseUrl}/categories`, {
           params: { page: '1', limit: String(limit), sort: 'name', status: 'active' },
         })
         .pipe(
           timeout(15000),
-          map((response) => (response.items || []).map((item) => this.toTaxonomyItem(item))),
+          map((response) => {
+            const items = Array.isArray(response) ? response : response.items || [];
+            return items.map((item) => this.toTaxonomyItem(item));
+          }),
           shareReplay(1),
         );
     }
@@ -282,12 +306,15 @@ export class ProductDataService {
   getCollections(limit = 120): Observable<TaxonomyItem[]> {
     if (!this.collectionsCache$) {
       this.collectionsCache$ = this.http
-        .get<ApiListResponse<CollectionDocument>>(`${this.apiBaseUrl}/collections`, {
+        .get<ApiListOrArrayResponse<CollectionDocument>>(`${this.apiBaseUrl}/collections`, {
           params: { page: '1', limit: String(limit), sort: 'name', status: 'active' },
         })
         .pipe(
           timeout(15000),
-          map((response) => (response.items || []).map((item) => this.toTaxonomyItem(item))),
+          map((response) => {
+            const items = Array.isArray(response) ? response : response.items || [];
+            return items.map((item) => this.toTaxonomyItem(item));
+          }),
           shareReplay(1),
         );
     }
@@ -298,7 +325,7 @@ export class ProductDataService {
     if (!this.collectionCategoryLinksCache$) {
       this.collectionCategoryLinksCache$ = this.http
         .get<ApiListResponse<ProductDocument>>(`${this.apiBaseUrl}/products`, {
-          params: { page: '1', limit: String(limit), fields: 'collection_id,category_id' },
+          params: { page: '1', limit: String(limit), fields: 'collection_id,category_id,status', status: 'active' },
         })
         .pipe(
           timeout(15000),
@@ -306,6 +333,9 @@ export class ProductDataService {
             const relation = new Map<string, Set<string>>();
 
             for (const product of response.items || []) {
+              if (String(product.status || '').toLowerCase() !== 'active') {
+                continue;
+              }
               const collectionId = String(product.collection_id || '').trim();
               const categoryId = String(product.category_id || '').trim();
               if (!collectionId || !categoryId) {
@@ -333,6 +363,45 @@ export class ProductDataService {
 
   getProductList(limit = 24): Observable<ProductListItem[]> {
     return this.getProducts(1, limit).pipe(map((response) => response.items));
+  }
+
+  getTopColorOptions(top = 10, limitPerPage = 200): Observable<TopColorOption[]> {
+    return this.http
+      .get<ApiListResponse<ProductDocument>>(`${this.apiBaseUrl}/products`, {
+        params: { page: '1', limit: String(limitPerPage), fields: 'colors,status', status: 'active' },
+      })
+      .pipe(
+        timeout(15000),
+        switchMap((firstPage) => {
+          const totalPagesFromResponse =
+            typeof firstPage.totalPages === 'number' && firstPage.totalPages > 0
+              ? firstPage.totalPages
+              : Math.max(Math.ceil((firstPage.total || 0) / Math.max(firstPage.limit || limitPerPage, 1)), 1);
+          const totalPages = Math.min(totalPagesFromResponse, 10);
+
+          if (totalPages <= 1) {
+            return of([firstPage]);
+          }
+
+          const requests: Observable<ApiListResponse<ProductDocument>>[] = [];
+          for (let page = 2; page <= totalPages; page += 1) {
+            requests.push(
+              this.http
+                .get<ApiListResponse<ProductDocument>>(`${this.apiBaseUrl}/products`, {
+                  params: { page: String(page), limit: String(limitPerPage), fields: 'colors,status', status: 'active' },
+                })
+                .pipe(
+                  timeout(15000),
+                  catchError(() => of(this.emptyListResponse<ProductDocument>())),
+                ),
+            );
+          }
+
+          return forkJoin([of(firstPage), ...requests]);
+        }),
+        map((responses) => this.buildTopColorOptions(responses.flatMap((response) => response.items || []), top)),
+        catchError(() => of([])),
+      );
   }
 
   getProductRecommendations(slug: string): Observable<ProductListItem[]> {
@@ -506,6 +575,104 @@ export class ProductDataService {
     return Array.from(seen.values());
   }
 
+  private buildTopColorOptions(products: ProductDocument[], top: number): TopColorOption[] {
+    const counter = new Map<string, { count: number; label: string; hex?: string }>();
+
+    for (const product of products) {
+      const colors = Array.isArray(product.colors) ? product.colors : [];
+      for (const color of colors) {
+        const rawName = String(color?.name || '').trim();
+        if (!rawName) {
+          continue;
+        }
+
+        const key = this.toColorKey(rawName);
+        if (!key) {
+          continue;
+        }
+
+        const previous = counter.get(key);
+        const label = this.toColorLabel(key, rawName);
+        const hex = this.toColorHex(key, color?.hex);
+
+        counter.set(key, {
+          count: (previous?.count || 0) + 1,
+          label: previous?.label || label,
+          hex: previous?.hex || hex,
+        });
+      }
+    }
+
+    return Array.from(counter.entries())
+      .sort((left, right) => right[1].count - left[1].count)
+      .slice(0, top)
+      .map(([value, meta]) => ({
+        value,
+        label: meta.label,
+        hex: meta.hex,
+      }));
+  }
+
+  private toColorKey(name: string): string {
+    const normalized = this.normalizeText(name).replace(/\s+/g, ' ').trim();
+    if (!normalized) {
+      return '';
+    }
+
+    if (normalized.includes('trang')) return 'trang';
+    if (normalized.includes('xam')) return 'xam';
+    if (normalized.includes('nau')) return 'nau';
+    if (normalized.includes('tu nhien')) return 'tu nhien';
+    if (normalized.includes('den')) return 'den';
+    if (normalized.includes('xanh duong')) return 'xanh duong';
+    if (normalized.includes('xanh')) return 'xanh';
+    if (normalized.includes('beige') || normalized === 'be') return 'beige';
+    if (normalized.includes('camel')) return 'camel';
+    if (normalized.includes('olive')) return 'olive';
+    if (normalized.includes('cam')) return 'cam';
+    return normalized;
+  }
+
+  private toColorLabel(key: string, rawName: string): string {
+    const labels: Record<string, string> = {
+      trang: 'Trắng',
+      xam: 'Xám',
+      nau: 'Nâu',
+      'tu nhien': 'Màu tự nhiên',
+      den: 'Đen',
+      'xanh duong': 'Xanh dương',
+      xanh: 'Xanh',
+      beige: 'Beige',
+      camel: 'Camel',
+      olive: 'Olive',
+      cam: 'Cam',
+    };
+    return labels[key] || rawName.trim();
+  }
+
+  private toColorHex(key: string, rawHex?: string): string {
+    const normalizedHex = String(rawHex || '').trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(normalizedHex) && normalizedHex.toLowerCase() !== '#f0f0f0') {
+      return normalizedHex;
+    }
+
+    const palette: Record<string, string> = {
+      trang: '#f5f5f4',
+      xam: '#9ca3af',
+      nau: '#8b5e3c',
+      'tu nhien': '#c8a97e',
+      den: '#111827',
+      'xanh duong': '#5b8cc0',
+      xanh: '#6f96bf',
+      beige: '#e8dcc7',
+      camel: '#c19a6b',
+      olive: '#808000',
+      cam: '#e58a4e',
+    };
+
+    return palette[key] || '#d1d5db';
+  }
+
   private getDiscountBadge(price: number | null, originalPrice: number | null): string | null {
     if (price === null || originalPrice === null || originalPrice <= price) {
       return null;
@@ -526,13 +693,25 @@ export class ProductDataService {
         : 'banner_url' in source
           ? source.banner_url?.trim() || ''
           : '';
+    const room = 'room' in source && typeof source.room === 'string' ? source.room.trim() : '';
 
     return {
       id: source._id,
       name: source.name?.trim() || '',
       slug: source.slug?.trim() || '',
+      room: room || undefined,
       imageUrl: imageUrl || undefined,
     };
+  }
+
+  private normalizeText(value: string): string {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .trim();
   }
 
   private valueToText(value: unknown): string {

@@ -31,7 +31,7 @@
   display: grid;
   gap: 36px;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  align-items: center;
+  align-items: start;
   border-radius: 28px;
   width: min(1120px, 100%);
   margin: 5px auto 0;
@@ -139,13 +139,16 @@
 
 .promo-hero__media {
   position: relative;
+  align-self: stretch;
+  height: 100%;
 }
 
 .promo-hero__media img {
   width: 100%;
+  height: 100%;
   border-radius: 24px;
   object-fit: cover;
-  min-height: 320px;
+  min-height: 100%;
   box-shadow: 0 24px 50px rgba(42, 36, 31, 0.18);
 }
 
@@ -318,6 +321,7 @@
   box-shadow: 0 14px 26px rgba(83, 52, 24, 0.12);
 }
 
+
 .voucher-card::after {
   content: '';
   position: absolute;
@@ -358,6 +362,12 @@
   color: #1f6b5a;
   background: #e6f4ef;
   border-color: #b5dfd2;
+}
+
+.voucher-copy-state.expired {
+  color: #dc2626;
+  background: #fff1f2;
+  border-color: #fecaca;
 }
 
 .voucher-card h3 {

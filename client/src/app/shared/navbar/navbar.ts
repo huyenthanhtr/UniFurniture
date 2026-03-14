@@ -1,20 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, computed, inject, signal, HostListener } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, DestroyRef, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 import { ProductDataService, TaxonomyItem } from '../../services/product-data.service';
 
 interface RootCategoryItem {
   label: string;
   slug: string;
-  categorySlugs: string[];
 }
 
 interface NavSubItem {
   id: string;
   label: string;
-  type: 'collection' | 'category';
+  type: 'category' | 'collection';
 }
 
 interface NavGroupItem {
@@ -22,23 +21,7 @@ interface NavGroupItem {
   children: NavSubItem[];
 }
 
-const ROOT_CATEGORIES: RootCategoryItem[] = [
-  { label: 'B\u1ed9 S\u01b0u T\u1eadp', slug: 'bo-suu-tap', categorySlugs: [] },
-  {
-    label: 'Ph\u00f2ng Ng\u1ee7',
-    slug: 'phong-ngu',
-    categorySlugs: ['combo-phong-ngu', 'tu-quan-ao', 'giuong-ngu', 'tu-dau-giuong', 'ban-trang-diem'],
-  },
-  {
-    label: 'Ph\u00f2ng Kh\u00e1ch',
-    slug: 'phong-khach',
-    categorySlugs: ['ghe-sofa', 'ban-sofa-ban-cafe-ban-tra', 'tu-ke-tivi', 'tu-giay-tu-trang-tri', 'tu-ke'],
-  },
-  { label: 'Ph\u00f2ng \u0102n', slug: 'phong-an', categorySlugs: ['ban-an', 'ghe-an', 'bo-ban-an'] },
-  { label: 'Ph\u00f2ng L\u00e0m Vi\u1ec7c', slug: 'phong-lam-viec', categorySlugs: ['ban-lam-viec', 'ghe-van-phong'] },
-  { label: 'T\u1ee7 B\u1ebfp', slug: 'tu-bep', categorySlugs: ['tu-ke'] },
-  { label: 'N\u1ec7m', slug: 'nem', categorySlugs: ['combo-phong-ngu', 'giuong-ngu'] },
-];
+const ROOM_ORDER = ['phong-ngu', 'phong-khach', 'phong-an', 'phong-lam-viec'];
 
 @Component({
   selector: 'app-navbar',
@@ -62,22 +45,19 @@ export class Navbar implements OnInit {
   onWindowScroll() {
     const currentScroll = window.scrollY || document.documentElement.scrollTop;
     if (currentScroll > this.lastScrollY && currentScroll > 110) {
-      // Scrolling down and passed header height
       this.isHidden.set(true);
     } else {
-      // Scrolling up
       this.isHidden.set(false);
     }
     this.lastScrollY = currentScroll;
   }
+
   readonly activeGroup = computed(() => {
     const activeSlug = this.activeGroupSlug();
     return this.productGroups().find((group) => group.root.slug === activeSlug) || null;
   });
 
-  readonly activeSubItems = computed(() => {
-    return this.activeGroup()?.children || [];
-  });
+  readonly activeSubItems = computed(() => this.activeGroup()?.children || []);
 
   ngOnInit(): void {
     this.loadProductGroups();
@@ -96,6 +76,10 @@ export class Navbar implements OnInit {
       group: group.root.slug,
       groupLabel: group.root.label,
     };
+
+    if (group.root.slug === 'bo-suu-tap') {
+      return params;
+    }
 
     const categoryIds = group.children.filter((item) => item.type === 'category').map((item) => item.id);
     if (categoryIds.length > 0) {
@@ -153,33 +137,93 @@ export class Navbar implements OnInit {
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ categories, collections }) => {
-        const categoryBySlug = new Map(categories.map((item) => [item.slug, item]));
+        const groupsMap = new Map<string, NavGroupItem>();
 
-        const groups: NavGroupItem[] = ROOT_CATEGORIES.map((root) => {
-          if (root.slug === 'bo-suu-tap') {
-            const children: NavSubItem[] = collections
-              .map((collection) => ({
-                id: collection.id,
-                label: collection.name,
-                type: 'collection' as const,
-              }))
-              .sort((left, right) => left.label.localeCompare(right.label, 'vi'));
-            return { root, children };
+        const collectionChildren: NavSubItem[] = collections
+          .map((collection) => ({
+            id: collection.id,
+            label: collection.name,
+            type: 'collection' as const,
+          }))
+          .sort((left, right) => left.label.localeCompare(right.label, 'vi'));
+
+        groupsMap.set('bo-suu-tap', {
+          root: { slug: 'bo-suu-tap', label: 'Bộ sưu tập' },
+          children: collectionChildren,
+        });
+
+        for (const category of categories) {
+          const roomSlug = this.normalizeRoomToGroupSlug(category.room);
+          if (!roomSlug) {
+            continue;
           }
 
-          const children: NavSubItem[] = root.categorySlugs
-            .map((slug) => categoryBySlug.get(slug))
-            .filter((item): item is TaxonomyItem => Boolean(item))
-            .map((category) => ({
-              id: category.id,
-              label: category.name,
-              type: 'category' as const,
-            }));
+          if (!groupsMap.has(roomSlug)) {
+            groupsMap.set(roomSlug, {
+              root: {
+                slug: roomSlug,
+                label: this.getRoomLabelBySlug(roomSlug),
+              },
+              children: [],
+            });
+          }
 
-          return { root, children };
-        });
+          groupsMap.get(roomSlug)?.children.push({
+            id: category.id,
+            label: category.name,
+            type: 'category',
+          });
+        }
+
+        const roomGroups = Array.from(groupsMap.values())
+          .filter((group) => group.root.slug !== 'bo-suu-tap')
+          .map((group) => ({
+            ...group,
+            children: group.children.sort((left, right) => left.label.localeCompare(right.label, 'vi')),
+          }))
+          .sort((left, right) => this.compareRoomOrder(left.root.slug, right.root.slug));
+
+        const collectionGroup = groupsMap.get('bo-suu-tap');
+        const groups = collectionGroup ? [collectionGroup, ...roomGroups] : roomGroups;
 
         this.productGroups.set(groups);
       });
+  }
+
+  private normalizeRoomToGroupSlug(room?: string): string {
+    if (!room) {
+      return '';
+    }
+
+    const normalized = room
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (normalized === 'phong ngu') return 'phong-ngu';
+    if (normalized === 'phong khach') return 'phong-khach';
+    if (normalized === 'phong an') return 'phong-an';
+    if (normalized === 'phong lam viec') return 'phong-lam-viec';
+    return '';
+  }
+
+  private getRoomLabelBySlug(slug: string): string {
+    if (slug === 'phong-ngu') return 'Phòng ngủ';
+    if (slug === 'phong-khach') return 'Phòng khách';
+    if (slug === 'phong-an') return 'Phòng ăn';
+    if (slug === 'phong-lam-viec') return 'Phòng làm việc';
+    return slug;
+  }
+
+  private compareRoomOrder(leftSlug: string, rightSlug: string): number {
+    const leftIndex = ROOM_ORDER.indexOf(leftSlug);
+    const rightIndex = ROOM_ORDER.indexOf(rightSlug);
+    const normalizedLeft = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
+    const normalizedRight = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
+    return normalizedLeft - normalizedRight;
   }
 }

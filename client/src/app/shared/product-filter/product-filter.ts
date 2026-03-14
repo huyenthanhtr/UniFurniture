@@ -4,6 +4,7 @@ import { Component, ElementRef, EventEmitter, HostListener, Input, Output, injec
 export interface FilterSelectOption {
   value: string;
   label: string;
+  hex?: string;
   type?: 'category' | 'collection';
 }
 
@@ -28,6 +29,15 @@ export interface ProductFilterState {
 type DropdownKey = 'category' | 'price' | 'color' | 'size';
 type FilterChipType = 'category' | 'price' | 'color' | 'size';
 
+const DEFAULT_COLOR_OPTIONS: FilterSelectOption[] = [
+  { value: 'trang', label: 'Trang', hex: '#f5f5f4' },
+  { value: 'den', label: 'Den', hex: '#111827' },
+  { value: 'xam', label: 'Xam', hex: '#9ca3af' },
+  { value: 'nau', label: 'Nau', hex: '#8b5e3c' },
+  { value: 'xanh', label: 'Xanh', hex: '#6f96bf' },
+  { value: 'mix', label: 'Mix', hex: '#d1d5db' },
+];
+
 @Component({
   selector: 'app-product-filter',
   standalone: true,
@@ -41,7 +51,7 @@ export class ProductFilterComponent {
   @Input() categoryOptions: FilterSelectOption[] = [];
   @Input() categoryTree: FilterCategoryTreeGroup[] = [];
   @Input() preferredExpandedGroupIds: string[] = [];
-  @Input() categoryDefaultLabel = 'Tat ca danh muc';
+  @Input() categoryDefaultLabel = 'Tất cả danh mục';
   @Input() selectedCategoryId = '';
   @Input() selectedCategoryIds: string[] = [];
   @Input() selectedPriceRanges: string[] = [];
@@ -51,21 +61,14 @@ export class ProductFilterComponent {
   @Output() filtersChange = new EventEmitter<ProductFilterState>();
 
   readonly priceOptions: FilterSelectOption[] = [
-    { value: 'under-2m', label: 'Duoi 2 trieu' },
-    { value: '2m-5m', label: '2 - 5 trieu' },
-    { value: '5m-10m', label: '5 - 10 trieu' },
-    { value: '10m-15m', label: '10 - 15 trieu' },
-    { value: 'over-15m', label: 'Tren 15 trieu' },
+    { value: 'under-2m', label: 'Dưới 2 triệu' },
+    { value: '2m-5m', label: '2 - 5 triệu' },
+    { value: '5m-10m', label: '5 - 10 triệu' },
+    { value: '10m-15m', label: '10 - 15 triệu' },
+    { value: 'over-15m', label: 'Trên 15 triệu' },
   ];
 
-  readonly colorOptions: FilterSelectOption[] = [
-    { value: 'trang', label: 'Trang' },
-    { value: 'den', label: 'Den' },
-    { value: 'xam', label: 'Xam' },
-    { value: 'nau', label: 'Nau' },
-    { value: 'xanh', label: 'Xanh' },
-    { value: 'mix', label: 'Mix' },
-  ];
+  @Input() colorOptions: FilterSelectOption[] = DEFAULT_COLOR_OPTIONS;
 
   readonly sizeOptions: FilterSelectOption[] = [
     { value: 'size-90cm', label: '90cm' },
@@ -148,21 +151,21 @@ export class ProductFilterComponent {
   getCategoryLabel(): string {
     if (this.isCategoryTreeMode() || this.isCategoryMultiSelect()) {
       const selectedCount = this.getResolvedSelectedCategoryIds().length;
-      return selectedCount > 0 ? `Da chon ${selectedCount}` : this.categoryDefaultLabel;
+      return selectedCount > 0 ? `Đã chọn ${selectedCount}` : this.categoryDefaultLabel;
     }
     return this.resolveLabel(this.categoryOptions, this.selectedCategoryId, this.categoryDefaultLabel);
   }
 
   getPriceLabel(): string {
-    return this.selectedPriceRanges.length > 0 ? `Da chon ${this.selectedPriceRanges.length}` : 'Tat ca gia';
+    return this.selectedPriceRanges.length > 0 ? `Đã chọn ${this.selectedPriceRanges.length}` : 'Tất cả';
   }
 
   getColorLabel(): string {
-    return this.selectedColors.length > 0 ? `Da chon ${this.selectedColors.length}` : 'Tat ca mau';
+    return this.selectedColors.length > 0 ? `Đã chọn ${this.selectedColors.length}` : 'Tất cả';
   }
 
   getSizeLabel(): string {
-    return this.selectedSizes.length > 0 ? `Da chon ${this.selectedSizes.length}` : 'Tat ca kich thuoc';
+    return this.selectedSizes.length > 0 ? `Đã chọn ${this.selectedSizes.length}` : 'Tất cả';
   }
 
   isPriceSelected(value: string): boolean {
@@ -249,7 +252,9 @@ export class ProductFilterComponent {
   }
 
   getColorChipLabel(): string {
-    return this.buildGroupedChipText(this.selectedColorChips().map((option) => option.label), 2);
+    return this.selectedColorChips()
+      .map((option) => option.label)
+      .join(',');
   }
 
   getSizeChipLabel(): string {
@@ -257,6 +262,11 @@ export class ProductFilterComponent {
   }
 
   getColorSwatchStyle(value: string): { background: string } {
+    const dynamicColor = this.colorOptions.find((option) => option.value === value);
+    if (dynamicColor?.hex) {
+      return { background: dynamicColor.hex };
+    }
+
     const map: Record<string, string> = {
       trang: '#f5f5f4',
       den: '#111827',
@@ -321,15 +331,24 @@ export class ProductFilterComponent {
 
   emitFilters(): void {
     const selectedCategoryIds = this.getResolvedSelectedCategoryIds();
-    const selectedCategoryOption = this.categoryOptions.find((option) => option.value === this.selectedCategoryId);
-    const categoryType: 'category' | 'collection' | 'none' = selectedCategoryOption?.type
-      ? selectedCategoryOption.type
-      : selectedCategoryIds.length > 0
-        ? 'category'
+    const sourceOptions =
+      this.categoryOptions.length > 0 ? this.categoryOptions : this.categoryTree.flatMap((group) => group.children);
+    const selectedOptions = sourceOptions.filter((option) => selectedCategoryIds.includes(option.value));
+    const hasCollection = selectedOptions.some((option) => option.type === 'collection');
+    const hasCategory = selectedOptions.some((option) => option.type !== 'collection');
+    const categoryType: 'category' | 'collection' | 'none' = hasCategory
+      ? 'category'
+      : hasCollection
+        ? 'collection'
         : 'none';
+    const firstCollectionId = selectedOptions.find((option) => option.type === 'collection')?.value || '';
+    const effectiveCategoryId =
+      categoryType === 'collection'
+        ? firstCollectionId
+        : this.selectedCategoryId || (selectedCategoryIds.length === 1 ? selectedCategoryIds[0] : '');
 
     this.filtersChange.emit({
-      categoryId: this.selectedCategoryId || (selectedCategoryIds.length === 1 ? selectedCategoryIds[0] : ''),
+      categoryId: effectiveCategoryId,
       categoryIds: selectedCategoryIds,
       categoryType,
       priceRanges: this.selectedPriceRanges,
@@ -406,7 +425,7 @@ export class ProductFilterComponent {
     }
 
     const visibleValues = values.slice(0, maxVisible);
-    const suffix = values.length > maxVisible ? ',Khac' : '';
+    const suffix = values.length > maxVisible ? ',Khác' : '';
     return `${visibleValues.join(',')}${suffix}`;
   }
 }
