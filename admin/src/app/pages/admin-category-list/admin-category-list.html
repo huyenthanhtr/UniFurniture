@@ -1,0 +1,167 @@
+<div class="admin-category-container p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="title-page">Quản lý Danh mục</h2>
+    <button class="btn-add-new" (click)="openAddModal()">
+      <i class="fas fa-plus-circle"></i> Thêm danh mục
+    </button>
+  </div>
+
+  <div class="filter-bar bg-white p-3 rounded shadow-sm mb-4">
+    <div class="filter-wrapper d-flex flex-wrap align-items-center gap-3">
+      
+      <div class="filter-item">
+        <input type="text" class="form-control form-control-sm" placeholder="Tìm theo mã, tên..." [(ngModel)]="searchTerm" (input)="applyFilters()">
+      </div>
+
+      <div class="filter-item">
+        <select class="form-select form-select-sm" [(ngModel)]="roomFilter" (change)="applyFilters()">
+          <option value="all">-- Không gian --</option>
+          <option *ngFor="let r of rooms" [value]="r">{{ r }}</option>
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <select class="form-select form-select-sm" [(ngModel)]="statusFilter" (change)="applyFilters()">
+          <option value="all">-- Trạng thái --</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      <div class="filter-item-btn">
+        <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" (click)="resetFilters()" title="Đặt lại bộ lọc" style="width: 35px; height: 35px;">
+          <i class="fas fa-redo"></i>
+        </button>
+      </div>
+      
+    </div>
+  </div>
+
+  <div class="bg-white rounded shadow-sm overflow-hidden border border-light">
+<div class="table-responsive shadow-sm bg-white rounded">
+  <table class="table custom-table mb-0">
+    <thead>
+      <tr>
+        <th>Hình ảnh</th>
+        <th (click)="sortBy('category_code')" class="sortable">Mã DM <i class="fas" [ngClass]="getSortIcon('category_code')"></i></th>
+        <th (click)="sortBy('name')" class="sortable">Tên danh mục <i class="fas" [ngClass]="getSortIcon('name')"></i></th>
+        <th (click)="sortBy('room')" class="sortable">Không gian <i class="fas" [ngClass]="getSortIcon('room')"></i></th>
+        <th>Trạng thái</th>
+        <th>Hành động</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of paginatedCategories">
+        <td>
+          <img [src]="item.image_url" alt="" class="img-thumbnail-custom">
+        </td>
+        <td class="fw-bold text-primary">{{ item.category_code }}</td>
+        <td>{{ item.name }}</td>
+        <td>{{ item.room }}</td>
+        <td>
+          <select [(ngModel)]="item.status" (change)="updateStatus(item)" 
+                  [className]="'status-dropdown ' + item.status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </td>
+        <td>
+          <button class="btn-edit-action" (click)="openEditModal(item)">
+            <i class="fas fa-edit"></i> Sửa
+          </button>
+        </td>
+      </tr>
+      <tr *ngIf="filteredCategories.length === 0">
+        <td colspan="6" class="text-center py-4 text-muted">Không tìm thấy danh mục nào.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+    
+    <div class="p-3 border-top d-flex justify-content-between align-items-center bg-white">
+      <span class="text-muted small">Hiển thị {{ paginatedCategories.length }} / {{ filteredCategories.length }} danh mục</span>
+      <div class="d-flex gap-1">
+        <button class="btn btn-sm btn-outline-secondary" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)"><i class="fas fa-chevron-left"></i></button>
+        <button class="btn btn-sm text-white" style="background-color: #908372; border: none;">{{ currentPage }}</button>
+        <button class="btn btn-sm btn-outline-secondary" [disabled]="currentPage >= Math.ceil(filteredCategories.length / itemsPerPage)" (click)="changePage(currentPage + 1)"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" *ngIf="showModal">
+  <div class="modal-card" style="max-width: 700px; width: 95%;">
+    <div class="modal-card-header d-flex justify-content-between align-items-center">
+      <h3 class="mb-0 fw-bold" style="color: #444;">{{ isEditMode ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới' }}</h3>
+      <button class="close-modal" (click)="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="modal-card-body">
+      <div *ngIf="validationError" class="validation-alert">
+        <i class="fas fa-exclamation-triangle"></i> {{ validationError }}
+      </div>
+
+      <form>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold mb-1">Mã danh mục *</label>
+            <input type="text" class="form-control form-control-sm text-uppercase" [(ngModel)]="currentCategory.category_code" name="code" (input)="realTimeValidate()">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold mb-1">Tên danh mục *</label>
+            <input type="text" class="form-control form-control-sm" [(ngModel)]="currentCategory.name" name="name" (input)="realTimeValidate()">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold mb-1">Không gian *</label>
+            <select class="form-select form-select-sm" [(ngModel)]="currentCategory.room" name="room" (change)="realTimeValidate()">
+              <option *ngFor="let r of rooms" [value]="r">{{ r }}</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold mb-1">Trạng thái</label>
+            <select class="form-select form-select-sm" [(ngModel)]="currentCategory.status" name="status">
+              <option value="active">Hoạt động</option>
+              <option value="inactive">Không hoạt động</option>
+            </select>
+          </div>
+          <div class="col-12 mt-3">
+            <label class="form-label text-muted small fw-bold mb-1">Hình ảnh đại diện</label>
+            <input type="file" class="form-control form-control-sm" (change)="onFileSelected($event)" accept="image/*">
+            <div class="mt-2 text-center p-2 border rounded" *ngIf="imagePreview || currentCategory.image_url" style="background-color: #f8f9fa;">
+              <img [src]="imagePreview || currentCategory.image_url" alt="Preview" style="max-height: 120px; border-radius: 6px; object-fit: cover;">
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label text-muted small fw-bold mb-1">Mô tả</label>
+            <textarea class="form-control form-control-sm" [(ngModel)]="currentCategory.description" name="desc" rows="3"></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-card-footer">
+      <button class="btn-secondary-custom" (click)="closeModal()">Hủy bỏ</button>
+      <button class="btn-primary-custom" [disabled]="validationError" (click)="confirmSave()">Lưu thông tin</button>
+    </div>
+  </div>
+</div>
+
+<div class="confirm-overlay" *ngIf="showConfirmPopup">
+  <div class="confirm-box">
+    <h4>Xác nhận</h4>
+    <p>Bạn có chắc chắn muốn lưu các thay đổi cho danh mục này không?</p>
+    <div class="d-flex justify-content-center">
+      <button class="btn-popup-cancel" (click)="cancelConfirm()">Hủy</button>
+      <button class="btn-popup-danger" (click)="executeSave()">Đồng ý lưu</button>
+    </div>
+  </div>
+</div>
+
+<div class="confirm-overlay" *ngIf="showResultPopup">
+  <div class="result-box" [class]="resultMessage.type">
+    <div class="icon-result">
+      <i class="fas" [ngClass]="resultMessage.type === 'success' ? 'fa-check-circle' : 'fa-times-circle'"></i>
+    </div>
+    <h4>{{ resultMessage.title }}</h4>
+    <p>{{ resultMessage.message }}</p>
+    <button class="btn-popup-danger w-100" (click)="showResultPopup = false">Đóng</button>
+  </div>
+</div>

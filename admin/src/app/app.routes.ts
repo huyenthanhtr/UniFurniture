@@ -1,7 +1,7 @@
 ﻿import { Routes, CanDeactivateFn } from '@angular/router';
 import { AdminLayout } from './admin-layout/admin-layout';
 import { AdminCoupons } from './pages/admin-coupons/admin-coupons';
-
+import { AdminCategoryList } from './pages/admin-category-list/admin-category-list';
 import { AdminProducts } from './pages/admin-products/admin-products';
 import { AdminProductDetail } from './pages/admin-product-detail/admin-product-detail';
 import { AdminProductForm } from './pages/admin-product-form/admin-product-form';
@@ -11,7 +11,7 @@ import { AdminOrderDetail } from './pages/admin-order-detail/admin-order-detail'
 import { AdminCustomers } from './pages/admin-customers/admin-customers';
 import { AdminCustomerDetail } from './pages/admin-customer-detail/admin-customer-detail';
 import { AdminCustomerAddressDetail } from './pages/admin-customer-address-detail/admin-customer-address-detail';
-
+import { AdminCollections } from './pages/admin-collections/admin-collections';
 type PendingChangesComponent = {
   canDeactivate: () => boolean | Promise<boolean>;
 };
@@ -29,7 +29,8 @@ export const routes: Routes = [
     component: AdminLayout,
     children: [
       { path: 'promotions', component: AdminCoupons },
-
+      { path: 'categories', component: AdminCategoryList},
+      { path: 'collections', component: AdminCollections},
       { path: 'products', component: AdminProducts },
       { path: 'products/new', component: AdminProductForm, canDeactivate: [pendingChangesGuard] },
       { path: 'products/:id', component: AdminProductDetail },
