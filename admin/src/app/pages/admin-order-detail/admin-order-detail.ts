@@ -26,6 +26,7 @@ export class AdminOrderDetail implements OnInit {
   items: any[] = [];
   payments: any[] = [];
   display: any = null;
+  pricing: any = null;
 
   editableStatus = 'pending';
 
@@ -67,6 +68,7 @@ export class AdminOrderDetail implements OnInit {
         this.items = res?.items ?? [];
         this.payments = res?.payments ?? [];
         this.display = res?.display ?? null;
+        this.pricing = res?.pricing ?? null;
         this.editableStatus = this.order?.status || 'pending';
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -80,6 +82,12 @@ export class AdminOrderDetail implements OnInit {
 
   back() {
     this.router.navigate(['/admin/orders']);
+  }
+
+  viewProductDetail(item: any): void {
+    const productId = String(item?.product_id || '').trim();
+    if (!productId) return;
+    this.router.navigate(['/admin/products', productId]);
   }
 
   askSaveStatus() {
@@ -147,6 +155,28 @@ export class AdminOrderDetail implements OnInit {
     return remaining > 0 ? remaining : 0;
   }
 
+  get hasOrderItems(): boolean {
+    return this.items.length > 0;
+  }
+
+  get discountAmount(): number {
+    return this.toNumber(this.pricing?.discount_amount);
+  }
+
+  get grandTotal(): number {
+    const total = this.toNumber(this.pricing?.grand_total);
+    return total || this.toNumber(this.order?.total_amount);
+  }
+
+  get showDiscountRow(): boolean {
+    return this.discountAmount > 0 || !!String(this.pricing?.coupon_code || '').trim();
+  }
+
+  get discountLabel(): string {
+    const code = String(this.pricing?.coupon_code || '').trim();
+    return code ? `Mã khuyến mãi: ${code}` : 'Khuyến mãi';
+  }
+
   getPaymentTypeText(type: any): string {
     const key = String(type || '').toLowerCase();
     if (key === 'deposit') return 'Đặt cọc';
@@ -206,5 +236,17 @@ export class AdminOrderDetail implements OnInit {
     if (key === 'inactive') return 'Ngừng hoạt động';
     if (key === 'blocked') return 'Đã khóa';
     return status || '-';
+  }
+
+  normalizeImageUrl(value: any): string {
+    const src = String(value || '').trim();
+    if (!src) return 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif';
+    if (src.startsWith('//')) return `https:${src}`;
+    if (src.startsWith('/')) return `http://localhost:3000${src}`;
+    return src;
+  }
+
+  canViewProduct(item: any): boolean {
+    return !!String(item?.product_id || '').trim();
   }
 }

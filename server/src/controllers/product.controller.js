@@ -2,6 +2,9 @@ const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const ProductVariant = require("../models/ProductVariant");
 const ProductImage = require("../models/ProductImage");
+const Category = require("../models/Category");
+const Collection = require("../models/Collection");
+const { normalizeRichHtml } = require("../utils/normalize-rich-html");
 const {
   ensureUniqueSlug,
   recalculateProductAggregates,
@@ -24,7 +27,7 @@ function normalizeProductPayload(body = {}) {
     product_type: String(body.product_type || "").trim(),
     url: String(body.url || "").trim(),
     short_description: String(body.short_description || ""),
-    description: String(body.description || ""),
+    description: normalizeRichHtml(body.description || ""),
     size: body.size ?? undefined,
     material: body.material ?? undefined,
   };
@@ -51,39 +54,56 @@ async function getProducts(req, res, next) {
     const sortDirection = String(order).toLowerCase() === "asc" ? 1 : -1;
 
     const query = {};
+    const andConditions = [];
 
     if (category) {
       const ids = String(category)
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
-      query.category_id = ids.length > 1 ? { $in: ids } : ids[0];
+      andConditions.push({ category_id: ids.length > 1 ? { $in: ids } : ids[0] });
     }
 
-    if (collection) query.collection_id = collection;
+    if (collection) andConditions.push({ collection_id: collection });
 
     if (status) {
       const statuses = String(status)
         .split(",")
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean);
-      if (statuses.length === 1) query.status = statuses[0];
-      else if (statuses.length > 1) query.status = { $in: statuses };
+      if (statuses.length === 1) andConditions.push({ status: statuses[0] });
+      else if (statuses.length > 1) andConditions.push({ status: { $in: statuses } });
     }
 
     if (q) {
       const kw = String(q).trim();
       if (kw) {
-        query.$or = [
+        const [matchedCategories, matchedCollections] = await Promise.all([
+          Category.find({ name: { $regex: kw, $options: "i" } }).select({ _id: 1 }).lean(),
+          Collection.find({ name: { $regex: kw, $options: "i" } }).select({ _id: 1 }).lean(),
+        ]);
+
+        const categoryIds = matchedCategories.map((item) => item._id);
+        const collectionIds = matchedCollections.map((item) => item._id);
+
+        andConditions.push({
+          $or: [
           { name: { $regex: kw, $options: "i" } },
           { sku: { $regex: kw, $options: "i" } },
-          { slug: { $regex: kw, $options: "i" } },
-          { brand: { $regex: kw, $options: "i" } },
-        ];
+            ...(categoryIds.length ? [{ category_id: { $in: categoryIds } }] : []),
+            ...(collectionIds.length ? [{ collection_id: { $in: collectionIds } }] : []),
+          ],
+        });
       }
     }
 
-    const sortKey = ["createdAt", "updatedAt", "sold", "min_price"].includes(String(sortBy))
+    if (andConditions.length === 1) {
+      Object.assign(query, andConditions[0]);
+    } else if (andConditions.length > 1) {
+      query.$and = andConditions;
+    }
+
+    const sortKey = ["createdAt", "updatedAt", "sold", "min_price", "name", "sku", "status"].includes(String(sortBy))
       ? String(sortBy)
       : "updatedAt";
 
@@ -272,6 +292,10 @@ async function patchProduct(req, res, next) {
     if (req.body.name !== undefined) {
       update.name = String(req.body.name || "").trim();
       update.slug = await ensureUniqueSlug(req.body.slug || update.name, id);
+    }
+
+    if (req.body.description !== undefined) {
+      update.description = normalizeRichHtml(req.body.description || "");
     }
 
     const doc = await Product.findByIdAndUpdate(id, { $set: update }, { new: true, runValidators: true }).lean();

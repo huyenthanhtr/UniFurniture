@@ -1,9 +1,12 @@
-﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AdminProductsService } from '../../services/admin-products';
+
+type ProductStatus = 'active' | 'inactive';
+type SortDirection = 'asc' | 'desc';
 
 @Component({
   selector: 'app-admin-products',
@@ -12,7 +15,7 @@ import { AdminProductsService } from '../../services/admin-products';
   templateUrl: './admin-products.html',
   styleUrls: ['./admin-products.css'],
 })
-export class AdminProducts implements OnInit {
+export class AdminProducts implements OnInit, OnDestroy {
   private api = inject(AdminProductsService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
@@ -20,35 +23,55 @@ export class AdminProducts implements OnInit {
   isLoading = false;
 
   products: any[] = [];
-  filtered: any[] = [];
-
   categoryMap = new Map<string, string>();
   collectionMap = new Map<string, string>();
 
-  q = '';
-  status = 'active';
-  sortBy: 'updatedAt' | 'sold' = 'updatedAt';
-  sortDir: 'asc' | 'desc' = 'desc';
+  filter = {
+    search: '',
+    status: '',
+  };
+
+  sortConfig: { column: string; direction: SortDirection } = {
+    column: '',
+    direction: 'asc',
+  };
 
   page = 1;
   limit = 20;
   total = 0;
   totalPages = 1;
 
-  showConfirm = false;
-  confirmTitle = '';
+  showConfirmPopup = false;
+  showResultPopup = false;
   confirmMessage = '';
-  confirmAction: null | (() => void) = null;
+  resultMessage = { title: '', message: '', type: 'success' as 'success' | 'error' };
 
-  pendingProductId: string | null = null;
-  pendingNextStatus: 'active' | 'inactive' | null = null;
-  pendingPrevStatus: 'active' | 'inactive' | null = null;
+  pendingStatusChange: { product: any; nextStatus: ProductStatus; prevStatus: ProductStatus } | null = null;
+  private searchDebounceId: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
-    this.loadAll();
+    this.loadLookupsAndProducts();
   }
 
-  loadAll() {
+  ngOnDestroy(): void {
+    if (this.searchDebounceId) {
+      clearTimeout(this.searchDebounceId);
+      this.searchDebounceId = null;
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target || !this.sortConfig.column) return;
+
+    const clickedSortableHeader = target.closest('th.sortable');
+    if (clickedSortableHeader) return;
+
+    this.resetSortToDefault();
+  }
+
+  loadLookupsAndProducts(): void {
     this.isLoading = true;
 
     forkJoin({
@@ -60,12 +83,11 @@ export class AdminProducts implements OnInit {
         const collectionItems = res.collections?.items ?? res.collections ?? [];
 
         this.categoryMap.clear();
-        categoryItems.forEach((c: any) => this.categoryMap.set(String(c._id), c.name));
+        categoryItems.forEach((item: any) => this.categoryMap.set(String(item._id), item.name));
 
         this.collectionMap.clear();
-        collectionItems.forEach((c: any) => this.collectionMap.set(String(c._id), c.name));
+        collectionItems.forEach((item: any) => this.collectionMap.set(String(item._id), item.name));
 
-        this.page = 1;
         this.loadProductsPage(1);
       },
       error: () => {
@@ -75,7 +97,7 @@ export class AdminProducts implements OnInit {
     });
   }
 
-  loadProductsPage(page: number) {
+  loadProductsPage(page: number): void {
     this.isLoading = true;
     this.page = Math.max(1, page);
 
@@ -83,21 +105,27 @@ export class AdminProducts implements OnInit {
       page: this.page,
       limit: this.limit,
       exclude: 'description,short_description,material,size',
-      sortBy: this.sortBy,
-      order: this.sortDir,
     };
 
-    if (this.status) params.status = this.status;
+    const { sortBy, order } = this.getSortParams();
+    if (sortBy) {
+      params.sortBy = sortBy;
+      params.order = order;
+    }
+
+    if (this.filter.status) params.status = this.filter.status;
+    if (this.filter.search.trim()) params.q = this.filter.search.trim();
 
     this.api.getProducts(params).subscribe({
       next: (res: any) => {
         const items = res?.items ?? res ?? [];
         this.total = Number(res?.total ?? items.length ?? 0);
         this.totalPages = Math.max(1, Math.ceil(this.total / this.limit));
-
-        this.products = items;
-        this.applyFilterSort();
-
+        this.products = items.map((product: any) => ({
+          ...product,
+          _selectedStatus: this.normalizeStatus(product.status),
+        }));
+        this.applyLocalSortIfNeeded();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -108,155 +136,140 @@ export class AdminProducts implements OnInit {
     });
   }
 
-  applyFilterSort() {
-    const q = this.q.trim().toLowerCase();
-    let arr = [...this.products];
+  onSearchChange(): void {
+    if (this.searchDebounceId) clearTimeout(this.searchDebounceId);
+    this.searchDebounceId = setTimeout(() => {
+      this.page = 1;
+      this.loadProductsPage(1);
+    }, 300);
+  }
 
-    if (q) {
-      arr = arr.filter(
-        (p) =>
-          String(p.name || '').toLowerCase().includes(q) ||
-          String(p.sku || '').toLowerCase().includes(q) ||
-          String(p.slug || '').toLowerCase().includes(q) ||
-          String(p.brand || '').toLowerCase().includes(q)
-      );
+  applyFilters(): void {
+    this.page = 1;
+    this.loadProductsPage(1);
+  }
+
+  resetFilters(): void {
+    this.filter = {
+      search: '',
+      status: '',
+    };
+    this.sortConfig = { column: '', direction: 'asc' };
+    this.page = 1;
+    this.loadProductsPage(1);
+  }
+
+  toggleSort(column: string): void {
+    if (this.sortConfig.column === column) {
+      this.sortConfig.direction = this.sortConfig.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortConfig = { column, direction: 'asc' };
     }
 
-    arr.sort((a, b) => {
-      const av = this.sortBy === 'sold' ? Number(a.sold || 0) : new Date(a.updatedAt || 0).getTime();
-      const bv = this.sortBy === 'sold' ? Number(b.sold || 0) : new Date(b.updatedAt || 0).getTime();
+    this.page = 1;
+    this.loadProductsPage(1);
+  }
 
-      if (av < bv) return this.sortDir === 'asc' ? -1 : 1;
-      if (av > bv) return this.sortDir === 'asc' ? 1 : -1;
-      return 0;
+  resetSortToDefault(): void {
+    this.sortConfig = { column: '', direction: 'asc' };
+    this.page = 1;
+    this.loadProductsPage(1);
+  }
+
+  askStatusChange(product: any, nextStatus: string): void {
+    const prevStatus = this.normalizeStatus(product.status);
+    const normalizedNext = this.normalizeStatus(nextStatus);
+
+    if (!product?._id || normalizedNext === prevStatus) {
+      product._selectedStatus = prevStatus;
+      return;
+    }
+
+    product._selectedStatus = normalizedNext;
+    this.pendingStatusChange = { product, nextStatus: normalizedNext, prevStatus };
+    this.confirmMessage = `Bạn có chắc muốn chuyển "${product.name}" sang "${this.statusLabel(normalizedNext)}" không?`;
+    this.showConfirmPopup = true;
+  }
+
+  executeStatusChange(): void {
+    if (!this.pendingStatusChange) return;
+
+    const { product, nextStatus } = this.pendingStatusChange;
+    this.showConfirmPopup = false;
+    this.isLoading = true;
+
+    this.api.patchProduct(String(product._id), { status: nextStatus }).subscribe({
+      next: (updated: any) => {
+        product.status = this.normalizeStatus(updated?.status || nextStatus);
+        product._selectedStatus = product.status;
+        this.pendingStatusChange = null;
+        this.isLoading = false;
+        this.showResult('Thành công', 'Đã cập nhật trạng thái sản phẩm.', 'success');
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        product._selectedStatus = this.normalizeStatus(product.status);
+        this.pendingStatusChange = null;
+        this.isLoading = false;
+        this.showResult('Thất bại', err?.error?.error || 'Không đổi được trạng thái sản phẩm.', 'error');
+        this.cdr.detectChanges();
+      },
     });
-
-    this.filtered = arr;
   }
 
-  onChangeStatus() {
-    this.page = 1;
-    this.loadProductsPage(1);
+  cancelConfirm(): void {
+    if (this.pendingStatusChange) {
+      const { product, prevStatus } = this.pendingStatusChange;
+      product._selectedStatus = prevStatus;
+    }
+    this.pendingStatusChange = null;
+    this.showConfirmPopup = false;
   }
 
-  onChangeSort() {
-    this.page = 1;
-    this.loadProductsPage(1);
+  showResult(title: string, message: string, type: 'success' | 'error'): void {
+    this.resultMessage = { title, message, type };
+    this.showResultPopup = true;
   }
 
-  viewDetail(p: any) {
-    this.router.navigate(['/admin/products', p._id]);
+  viewDetail(product: any): void {
+    this.router.navigate(['/admin/products', product._id]);
   }
 
-  goNew() {
+  goNew(): void {
     this.router.navigate(['/admin/products/new']);
   }
 
-  goEdit(p: any) {
-    this.router.navigate(['/admin/products', p._id, 'edit']);
+  goEdit(product: any): void {
+    this.router.navigate(['/admin/products', product._id, 'edit']);
   }
 
-  askToggleStatus(p: any) {
-    const cur = String(p.status || '').toLowerCase() === 'inactive' ? 'inactive' : 'active';
-    const next: 'active' | 'inactive' = cur === 'active' ? 'inactive' : 'active';
-
-    this.pendingProductId = String(p._id);
-    this.pendingPrevStatus = cur;
-    this.pendingNextStatus = next;
-
-    this.confirmTitle = 'Xác nhận';
-    this.confirmMessage = `Bạn có chắc muốn chuyển "${p.name}" sang "${this.statusLabel(next)}" không?`;
-    this.confirmAction = () => this.toggleStatus();
-    this.showConfirm = true;
-    this.cdr.detectChanges();
-  }
-
-  toggleStatus() {
-    if (!this.pendingProductId || !this.pendingNextStatus || !this.pendingPrevStatus) return;
-
-    const id = this.pendingProductId;
-    const next = this.pendingNextStatus;
-    const prev = this.pendingPrevStatus;
-
-    this.showConfirm = false;
-
-    const row = this.products.find((x) => String(x._id) === id);
-    if (row) row.status = next;
-    this.applyFilterSort();
-
-    this.isLoading = true;
-    this.cdr.detectChanges();
-
-    this.api.patchProduct(id, { status: next }).subscribe({
-      next: (updated: any) => {
-        if (updated && typeof updated === 'object' && updated._id) {
-          const uStatus = String(updated.status || '').toLowerCase();
-          if (row) row.status = uStatus === 'inactive' ? 'inactive' : 'active';
-          this.applyFilterSort();
-        }
-
-        this.pendingProductId = null;
-        this.pendingNextStatus = null;
-        this.pendingPrevStatus = null;
-
-        this.isLoading = false;
-        this.cdr.detectChanges();
-
-        this.loadProductsPage(this.page);
-      },
-      error: () => {
-        if (row) row.status = prev;
-        this.applyFilterSort();
-
-        this.pendingProductId = null;
-        this.pendingNextStatus = null;
-        this.pendingPrevStatus = null;
-
-        this.isLoading = false;
-        this.cdr.detectChanges();
-
-        alert('Không đổi được trạng thái sản phẩm. Kiểm tra API /products PATCH trên server.');
-      },
-    });
-  }
-
-  closeConfirm() {
-    this.showConfirm = false;
-    this.confirmAction = null;
-    this.pendingProductId = null;
-    this.pendingNextStatus = null;
-    this.pendingPrevStatus = null;
-    this.cdr.detectChanges();
-  }
-
-  runConfirm() {
-    if (this.confirmAction) this.confirmAction();
-  }
-
-  categoryName(id: any) {
+  categoryName(id: any): string {
     return this.categoryMap.get(String(id)) || '-';
   }
 
-  collectionName(id: any) {
+  collectionName(id: any): string {
     return this.collectionMap.get(String(id)) || '-';
   }
 
   statusLabel(status: any): string {
-    const s = String(status || '').toLowerCase();
-    if (s === 'active') return 'Đang bán';
-    if (s === 'inactive') return 'Ngừng bán';
-    return status || '-';
+    const s = this.normalizeStatus(status);
+    return s === 'inactive' ? 'Ngừng bán' : 'Đang bán';
   }
 
-  goPrev() {
+  getSortIconClass(column: string): string {
+    if (this.sortConfig.column !== column) return 'fa-sort';
+    return this.sortConfig.direction === 'asc' ? 'fa-sort-up active' : 'fa-sort-down active';
+  }
+
+  goPrev(): void {
     if (this.page > 1) this.loadProductsPage(this.page - 1);
   }
 
-  goNext() {
+  goNext(): void {
     if (this.page < this.totalPages) this.loadProductsPage(this.page + 1);
   }
 
-  goPage(p: any) {
+  goPage(p: any): void {
     const n = Number(p);
     if (!Number.isFinite(n)) return;
     if (n >= 1 && n <= this.totalPages) this.loadProductsPage(n);
@@ -275,12 +288,45 @@ export class AdminProducts implements OnInit {
     const right = Math.min(total - 1, cur + 1);
 
     if (left > 2) out.push('...');
-
     for (let i = left; i <= right; i++) out.push(i);
-
     if (right < total - 1) out.push('...');
 
     out.push(total);
     return out;
+  }
+
+  private applyLocalSortIfNeeded(): void {
+    if (!['category', 'collection'].includes(this.sortConfig.column)) return;
+
+    const dir = this.sortConfig.direction === 'asc' ? 1 : -1;
+    this.products = [...this.products].sort((left: any, right: any) => {
+      const leftValue = this.sortConfig.column === 'category'
+        ? this.categoryName(left.category_id)
+        : this.collectionName(left.collection_id);
+      const rightValue = this.sortConfig.column === 'category'
+        ? this.categoryName(right.category_id)
+        : this.collectionName(right.collection_id);
+
+      return leftValue.localeCompare(rightValue, 'vi', { sensitivity: 'base' }) * dir;
+    });
+  }
+
+  private getSortParams(): { sortBy?: string; order?: SortDirection } {
+    const sortMap: Record<string, string> = {
+      name: 'name',
+      sku: 'sku',
+      min_price: 'min_price',
+      sold: 'sold',
+      status: 'status',
+    };
+
+    const sortBy = sortMap[this.sortConfig.column];
+    if (!sortBy) return {};
+
+    return { sortBy, order: this.sortConfig.direction };
+  }
+
+  private normalizeStatus(status: any): ProductStatus {
+    return String(status || '').toLowerCase() === 'inactive' ? 'inactive' : 'active';
   }
 }

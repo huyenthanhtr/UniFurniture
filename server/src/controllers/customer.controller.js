@@ -47,6 +47,27 @@ function buildQMatch(q) {
   };
 }
 
+function buildUpdatedAtMatch(startDate, endDate) {
+  const updatedAt = {};
+
+  if (startDate) {
+    const from = new Date(String(startDate));
+    if (!Number.isNaN(from.getTime())) {
+      from.setHours(0, 0, 0, 0);
+      updatedAt.$gte = from;
+    }
+  }
+
+  if (endDate) {
+    const to = new Date(String(endDate));
+    if (!Number.isNaN(to.getTime())) {
+      to.setHours(23, 59, 59, 999);
+      updatedAt.$lte = to;
+    }
+  }
+
+  return Object.keys(updatedAt).length ? { updatedAt } : null;
+}
 function formatCustomerItem(doc) {
   const profile = doc.profile || null;
   const customerType = String(doc.customer_type || "guest").toLowerCase() === "member" ? "member" : "guest";
@@ -81,6 +102,9 @@ async function getAdminCustomers(req, res, next) {
     const baseMatch = {};
     if (["active", "inactive"].includes(status)) baseMatch.status = status;
     if (["guest", "member"].includes(customerType)) baseMatch.customer_type = customerType;
+
+    const updatedAtMatch = buildUpdatedAtMatch(req.query.startDate, req.query.endDate);
+    if (updatedAtMatch) Object.assign(baseMatch, updatedAtMatch);
 
     const pipeline = [
       { $match: baseMatch },

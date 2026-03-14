@@ -1,9 +1,10 @@
-﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule, ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom, forkJoin } from 'rxjs';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { AdminProductsService } from '../../services/admin-products';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-admin-product-detail',
@@ -17,6 +18,7 @@ export class AdminProductDetail implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private sanitizer = inject(DomSanitizer);
 
   isLoading = false;
   product: any = null;
@@ -25,25 +27,21 @@ export class AdminProductDetail implements OnInit {
   variants: any[] = [];
   selectedImageUrl = '';
   selectedImage: any = null;
-
-  showAddImageForm = false;
-
-  newImage = {
-    sort_order: 0,
-    is_primary: false,
-    variant_id: '',
-    file: null as File | null,
-  };
-
-  showConfirm = false;
-  confirmMessage = '';
-  confirmAction: null | (() => void) = null;
+  selectedVariant: any = null;
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((pm) => {
       const id = pm.get('id');
       if (id) this.load(id);
     });
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+    if (target.closest('.thumbs') || target.closest('.image-panel') || target.closest('.main-image')) return;
+    this.selectedImage = null;
   }
 
   sortImages(arr: any[]) {
@@ -78,6 +76,7 @@ export class AdminProductDetail implements OnInit {
     this.variants = [];
     this.selectedImageUrl = '';
     this.selectedImage = null;
+    this.selectedVariant = null;
 
     forkJoin({
       product: this.api.getProductById(id),
@@ -97,8 +96,7 @@ export class AdminProductDetail implements OnInit {
           this.product?.thumbnail_url ||
           '';
 
-        this.selectedImage =
-          this.galleryImages.find((x: any) => x.image_url === this.selectedImageUrl) || this.galleryImages[0] || null;
+        this.selectedImage = null;
 
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -113,12 +111,6 @@ export class AdminProductDetail implements OnInit {
   selectImage(img: any) {
     this.selectedImage = { ...img };
     this.selectedImageUrl = img.image_url;
-    this.showAddImageForm = false;
-  }
-
-  toggleAddImageForm() {
-    this.showAddImageForm = !this.showAddImageForm;
-    if (this.showAddImageForm) this.selectedImage = null;
   }
 
   goEdit() {
@@ -126,7 +118,13 @@ export class AdminProductDetail implements OnInit {
   }
 
   getVariantLabel(v: any): string {
-    return v.variant_name || v.name || 'Biến thể';
+    return v?.variant_name || v?.name || 'Biến thể';
+  }
+
+  getImageVariantLabel(variantId: any): string {
+    if (!variantId) return 'Ảnh chung của sản phẩm';
+    const found = this.variants.find((item) => String(item?._id) === String(variantId));
+    return this.getVariantLabel(found);
   }
 
   getVariantThumbnail(v: any): string {
@@ -139,172 +137,39 @@ export class AdminProductDetail implements OnInit {
     const raw = String(value || '').trim();
     if (!raw) return '';
     if (/^https?:\/\//i.test(raw) || raw.startsWith('data:')) return raw;
+    if (raw.startsWith('//')) return `https:${raw}`;
     if (raw.startsWith('/assets/upload/') || raw.startsWith('/uploads/')) return `http://localhost:3000${raw}`;
     return raw;
   }
 
-  onNewImageSelected(event: Event) {
-    const input = event.target as HTMLInputElement | null;
-    this.newImage.file = input?.files?.[0] ?? null;
-  }
+  renderDescription(html: string): SafeHtml {
+    const container = document.createElement('div');
+    container.innerHTML = String(html || '');
 
-  private readFileAsDataUrl(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') resolve(reader.result);
-        else reject(new Error('Invalid file data'));
-      };
-      reader.onerror = () => reject(new Error('Read file failed'));
-      reader.readAsDataURL(file);
+    container.querySelectorAll<HTMLElement>('*').forEach((element) => {
+      element.style.maxWidth = '100%';
+      element.style.boxSizing = 'border-box';
     });
-  }
 
-  async addImage() {
-    if (!this.product?._id || !this.newImage.file) return;
-
-    this.isLoading = true;
-    this.cdr.detectChanges();
-
-    try {
-      const dataUrl = await this.readFileAsDataUrl(this.newImage.file);
-      const uploaded = await firstValueFrom(this.api.uploadImage(dataUrl, this.product?.name || 'san-pham'));
-      const imageUrl = String(uploaded?.image_url || '').trim();
-      if (!imageUrl) throw new Error('Upload url missing');
-
-      const payload = {
-        product_id: this.product._id,
-        variant_id: this.newImage.variant_id || null,
-        image_url: imageUrl,
-        alt_text: '',
-        sort_order: Number(this.newImage.sort_order || 0),
-        is_primary: !!this.newImage.is_primary,
-      };
-
-      await firstValueFrom(this.api.createImage(payload));
-      this.newImage = {
-        sort_order: 0,
-        is_primary: false,
-        variant_id: '',
-        file: null,
-      };
-      this.showAddImageForm = false;
-      this.load(String(this.product._id));
-    } catch {
-      this.isLoading = false;
-      this.cdr.detectChanges();
-      alert('Không thể tải ảnh lên. Vui lòng thử lại.');
-    }
-  }
-
-  saveSelectedImage() {
-    if (!this.selectedImage?._id) return;
-
-    this.isLoading = true;
-    this.api
-      .updateImage(String(this.selectedImage._id), {
-        product_id: this.product._id,
-        variant_id: this.selectedImage.variant_id || null,
-        image_url: this.selectedImage.image_url,
-        alt_text: String(this.selectedImage.alt_text || ''),
-        sort_order: Number(this.selectedImage.sort_order || 0),
-        is_primary: !!this.selectedImage.is_primary,
-      })
-      .subscribe({
-        next: () => this.load(String(this.product._id)),
-        error: () => {
-          this.isLoading = false;
-          this.cdr.detectChanges();
-        },
-      });
-  }
-
-  setPrimaryImage(img: any) {
-    this.isLoading = true;
-    this.api.patchImage(String(img._id), { is_primary: true }).subscribe({
-      next: () => this.load(String(this.product._id)),
-      error: () => {
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      },
+    container.querySelectorAll<HTMLElement>('img, video, iframe').forEach((element) => {
+      const rawSrc = element.getAttribute('src') || '';
+      if (rawSrc.startsWith('//')) element.setAttribute('src', `https:${rawSrc}`);
+      if (rawSrc.startsWith('/uploads/')) element.setAttribute('src', `http://localhost:3000${rawSrc}`);
+      element.style.display = 'block';
+      element.style.width = '70%';
+      element.style.maxWidth = '70%';
+      element.style.height = 'auto';
+      element.style.margin = '14px auto';
+      if (element.tagName === 'IFRAME' || element.tagName === 'VIDEO') {
+        element.style.aspectRatio = '16 / 9';
+      }
     });
-  }
 
-  askDeleteImage(img: any) {
-    this.confirmMessage = 'Xóa ảnh này khỏi sản phẩm?';
-    this.confirmAction = () => this.deleteImage(img);
-    this.showConfirm = true;
-    this.cdr.detectChanges();
-  }
-
-  deleteImage(img: any) {
-    this.showConfirm = false;
-    this.isLoading = true;
-    this.api.deleteImage(String(img._id)).subscribe({
-      next: () => this.load(String(this.product._id)),
-      error: () => {
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  askToggleStatus() {
-    const cur = String(this.product?.status || '').toLowerCase() === 'inactive' ? 'inactive' : 'active';
-    const next = cur === 'active' ? 'inactive' : 'active';
-    this.confirmMessage = `Chuyển sản phẩm sang "${this.activeStatusLabel(next)}"?`;
-    this.confirmAction = () => this.toggleStatus(next as 'active' | 'inactive');
-    this.showConfirm = true;
-    this.cdr.detectChanges();
-  }
-
-  toggleStatus(next: 'active' | 'inactive') {
-    this.showConfirm = false;
-    this.isLoading = true;
-
-    this.api.patchProduct(String(this.product._id), { status: next }).subscribe({
-      next: () => this.load(String(this.product._id)),
-      error: () => {
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  askToggleVariant(v: any) {
-    const cur = String(v.variant_status || 'active').toLowerCase() === 'inactive' ? 'inactive' : 'active';
-    const next = cur === 'active' ? 'inactive' : 'active';
-    this.confirmMessage = `Chuyển biến thể "${this.getVariantLabel(v)}" sang "${this.activeStatusLabel(next)}"?`;
-    this.confirmAction = () => this.toggleVariant(v, next as 'active' | 'inactive');
-    this.showConfirm = true;
-    this.cdr.detectChanges();
-  }
-
-  toggleVariant(v: any, next: 'active' | 'inactive') {
-    this.showConfirm = false;
-    this.isLoading = true;
-
-    this.api.patchVariant(String(v._id), { variant_status: next }).subscribe({
-      next: () => this.load(String(this.product._id)),
-      error: () => {
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      },
-    });
+    return this.sanitizer.bypassSecurityTrustHtml(container.innerHTML);
   }
 
   viewVariant(v: any) {
-    this.router.navigate(['/admin/variants', v._id]);
-  }
-
-  closeConfirm() {
-    this.showConfirm = false;
-    this.confirmAction = null;
-    this.cdr.detectChanges();
-  }
-
-  runConfirm() {
-    if (this.confirmAction) this.confirmAction();
+    this.selectedVariant = { ...v };
   }
 
   activeStatusLabel(status: string): string {

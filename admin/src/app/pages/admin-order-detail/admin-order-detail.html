@@ -8,7 +8,7 @@
     <div class="actions">
       <button class="btn btn-ghost" (click)="back()">← Quay lại</button>
       <button class="btn btn-primary" (click)="askSaveStatus()" [disabled]="!order || editableStatus===order.status">
-        Lưu trạng thái
+        Lưu
       </button>
     </div>
   </div>
@@ -46,10 +46,58 @@
 
         <div class="field">
           <label>Trạng thái đơn hàng</label>
-          <select [(ngModel)]="editableStatus" class="status-select">
+          <select [(ngModel)]="editableStatus" class="status-select status-highlight">
             <option *ngFor="let s of statuses" [value]="s">{{ orderStatusLabel(s) }}</option>
           </select>
         </div>
+      </div>
+    </section>
+
+    <section class="card" *ngIf="hasOrderItems">
+      <h3>Sản phẩm trong đơn</h3>
+
+      <div class="order-items-wrap">
+        <table class="order-items-table">
+          <thead>
+            <tr>
+              <th>Ảnh</th>
+              <th>SKU</th>
+              <th>Tên sản phẩm</th>
+              <th>Tên biến thể</th>
+              <th>SL</th>
+              <th class="money-col">Đơn giá</th>
+              <th class="money-col">Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let item of items"
+              class="order-item-row"
+              [class.clickable]="canViewProduct(item)"
+              (click)="viewProductDetail(item)"
+            >
+              <td class="image-col">
+                <img class="item-thumb" [src]="normalizeImageUrl(item.image_url)" [alt]="item.product_name || item.variant_name || 'Sản phẩm'" />
+              </td>
+              <td>{{ item.sku || '-' }}</td>
+              <td>{{ item.product_name || '-' }}</td>
+              <td>{{ item.variant_name || '-' }}</td>
+              <td>{{ item.quantity || 0 }}</td>
+              <td class="money-cell">{{ item.unit_price | number }}</td>
+              <td class="money-cell">{{ item.total | number }}</td>
+            </tr>
+
+            <tr class="summary-row discount-row" *ngIf="showDiscountRow">
+              <td colspan="6">{{ discountLabel }}</td>
+              <td class="money-cell">-{{ discountAmount | number }}</td>
+            </tr>
+
+            <tr class="summary-row total-row">
+              <td colspan="6">Tổng thanh toán</td>
+              <td class="money-cell">{{ grandTotal | number }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
@@ -175,14 +223,14 @@
     </section>
   </div>
 
-  <div class="overlay" *ngIf="showConfirm"></div>
-
-  <div class="confirm" *ngIf="showConfirm">
-    <h3>Xác nhận</h3>
-    <p>{{ confirmMessage }}</p>
-    <div class="confirm-actions">
-      <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
-      <button class="btn btn-primary" (click)="runConfirm()">OK</button>
+  <div class="confirm-overlay" *ngIf="showConfirm">
+    <div class="confirm-box">
+      <h4>Xác nhận</h4>
+      <p>{{ confirmMessage }}</p>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
+        <button class="btn btn-primary" (click)="runConfirm()">Đồng ý lưu</button>
+      </div>
     </div>
   </div>
 </div>

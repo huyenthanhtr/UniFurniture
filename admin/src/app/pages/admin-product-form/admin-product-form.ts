@@ -1,9 +1,38 @@
-﻿import { AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { firstValueFrom, forkJoin } from 'rxjs';
 import { AdminProductsService } from '../../services/admin-products';
+
+type VariantStatus = 'active' | 'inactive';
+type StockStatus = 'available' | 'unavailable';
+
+type DraftImage = {
+  _id?: string;
+  localId: string;
+  variant_id: string | null;
+  image_url: string;
+  preview_url: string;
+  sort_order: number;
+  is_primary: boolean;
+  alt_text: string;
+  file: File | null;
+};
+
+type DraftVariant = {
+  _id?: string;
+  localId: string;
+  variant_name: string;
+  sku: string;
+  color: string;
+  price: number;
+  compare_at_price: number;
+  stock_quantity: number;
+  status: StockStatus;
+  variant_status: VariantStatus;
+  sold: number;
+};
 
 @Component({
   selector: 'app-admin-product-form',
@@ -20,6 +49,7 @@ export class AdminProductForm implements OnInit, AfterViewInit {
 
   @ViewChild('descriptionEditor') descriptionEditor?: ElementRef<HTMLDivElement>;
   private savedRange: Range | null = null;
+  private localCounter = 0;
 
   isEdit = false;
   id: string | null = null;
@@ -30,9 +60,21 @@ export class AdminProductForm implements OnInit, AfterViewInit {
   selectedImagePercent = 100;
   isEditingImagePercent = false;
   draftImagePercent = '';
+  showNewImageForm = false;
 
   categories: any[] = [];
   collections: any[] = [];
+
+  images: DraftImage[] = [];
+  removedImageIds = new Set<string>();
+  selectedFormImageId: string | null = null;
+
+  variants: DraftVariant[] = [];
+  removedVariantIds = new Set<string>();
+  showVariantModal = false;
+  editingVariantIndex = -1;
+  variantDraft: DraftVariant = this.createEmptyVariant();
+  variantError = '';
 
   showConfirm = false;
   confirmMessage = '';
@@ -67,7 +109,11 @@ export class AdminProductForm implements OnInit, AfterViewInit {
       collections: this.api.getCollections({ limit: 500 }),
     };
 
-    if (this.isEdit) reqs.product = this.api.getProductById(this.id!);
+    if (this.isEdit) {
+      reqs.product = this.api.getProductById(this.id!);
+      reqs.images = this.api.getImages({ product_id: this.id!, limit: 500 });
+      reqs.variants = this.api.getVariants({ product_id: this.id!, limit: 200 });
+    }
 
     forkJoin(reqs).subscribe({
       next: (res: any) => {
@@ -87,6 +133,23 @@ export class AdminProductForm implements OnInit, AfterViewInit {
             short_description: res.product.short_description ?? '',
             description: res.product.description ?? '',
           });
+
+          const rawImages = res.images?.items ?? res.images ?? [];
+          this.images = this.sortImages(rawImages).map((img: any) => ({
+            _id: String(img._id),
+            localId: this.nextLocalId('img'),
+            variant_id: img.variant_id ? String(img.variant_id) : null,
+            image_url: String(img.image_url || ''),
+            preview_url: this.normalizeImageUrl(img.image_url),
+            sort_order: Number(img.sort_order || 0),
+            is_primary: !!img.is_primary,
+            alt_text: String(img.alt_text || ''),
+            file: null,
+          }));
+          this.selectedFormImageId = this.images[0]?.localId || null;
+
+          const rawVariants = res.variants?.items ?? res.variants ?? [];
+          this.variants = rawVariants.map((variant: any) => this.mapVariantToDraft(variant));
         }
 
         this.syncEditorFromForm();
@@ -94,6 +157,54 @@ export class AdminProductForm implements OnInit, AfterViewInit {
         this.isLoading = false;
       },
       error: () => (this.isLoading = false),
+    });
+  }
+
+  private nextLocalId(prefix: string): string {
+    this.localCounter += 1;
+    return `${prefix}-${Date.now()}-${this.localCounter}`;
+  }
+
+  private createEmptyVariant(): DraftVariant {
+    return {
+      localId: this.nextLocalId('variant'),
+      variant_name: '',
+      sku: '',
+      color: '',
+      price: 0,
+      compare_at_price: 0,
+      stock_quantity: 0,
+      status: 'available',
+      variant_status: 'active',
+      sold: 0,
+    };
+  }
+
+  private mapVariantToDraft(variant: any): DraftVariant {
+    return {
+      _id: String(variant._id),
+      localId: this.nextLocalId('variant'),
+      variant_name: String(variant.variant_name || variant.name || ''),
+      sku: String(variant.sku || ''),
+      color: String(variant.color || ''),
+      price: Number(variant.price || 0),
+      compare_at_price: Number(variant.compare_at_price || 0),
+      stock_quantity: Number(variant.stock_quantity || 0),
+      status: String(variant.status || 'available').toLowerCase() === 'unavailable' ? 'unavailable' : 'available',
+      variant_status: String(variant.variant_status || 'active').toLowerCase() === 'inactive' ? 'inactive' : 'active',
+      sold: Number(variant.sold || 0),
+    };
+  }
+
+  private sortImages(arr: any[]) {
+    return [...arr].sort((a, b) => {
+      if (!!a.is_primary !== !!b.is_primary) return a.is_primary ? -1 : 1;
+      const ao = Number(a.sort_order || 0);
+      const bo = Number(b.sort_order || 0);
+      if (ao !== bo) return ao - bo;
+      const at = new Date(a.createdAt || 0).getTime();
+      const bt = new Date(b.createdAt || 0).getTime();
+      return at - bt;
     });
   }
 
@@ -152,6 +263,7 @@ export class AdminProductForm implements OnInit, AfterViewInit {
   private runEditorCommand(command: string, value?: string): void {
     this.focusEditor();
     this.restoreSelection();
+    document.execCommand('styleWithCSS', false, 'true');
     document.execCommand(command, false, value);
     this.onDescriptionInput();
     this.captureSelection();
@@ -163,6 +275,24 @@ export class AdminProductForm implements OnInit, AfterViewInit {
 
   alignDescription(command: 'justifyLeft' | 'justifyCenter' | 'justifyRight'): void {
     this.runEditorCommand(command);
+  }
+
+  formatBlock(tag: 'p' | 'h2' | 'h3' | 'blockquote'): void {
+    this.runEditorCommand('formatBlock', tag);
+  }
+
+  toggleList(command: 'insertUnorderedList' | 'insertOrderedList'): void {
+    this.runEditorCommand(command);
+  }
+
+  insertLink(): void {
+    const url = window.prompt('Nhập liên kết');
+    if (!url) return;
+    this.runEditorCommand('createLink', url.trim());
+  }
+
+  clearFormatting(): void {
+    this.runEditorCommand('removeFormat');
   }
 
   insertImageFromUrl(): void {
@@ -237,7 +367,7 @@ export class AdminProductForm implements OnInit, AfterViewInit {
     if (!this.selectedEditorImage) return;
     const percent = Math.max(10, Math.min(100, nextPercent));
     this.selectedEditorImage.style.width = `${percent}%`;
-    this.selectedEditorImage.style.maxWidth = '100%';
+    this.selectedEditorImage.style.maxWidth = '560px';
     this.selectedEditorImage.style.height = 'auto';
     this.selectedImagePercent = percent;
     this.onDescriptionInput();
@@ -282,7 +412,7 @@ export class AdminProductForm implements OnInit, AfterViewInit {
   }
 
   onDescriptionInput(): void {
-    const html = this.descriptionEditor?.nativeElement.innerHTML ?? '';
+    const html = this.normalizeDescriptionHtml(this.descriptionEditor?.nativeElement.innerHTML ?? '');
     this.form.controls.description.setValue(html);
   }
 
@@ -302,6 +432,163 @@ export class AdminProductForm implements OnInit, AfterViewInit {
       .replace(/-{2,}/g, '-');
   }
 
+  normalizeImageUrl(value: any): string {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (/^https?:\/\//i.test(raw) || raw.startsWith('data:')) return raw;
+    if (raw.startsWith('/assets/upload/') || raw.startsWith('/uploads/')) return `http://localhost:3000${raw}`;
+    return raw;
+  }
+
+  addImageRow(): void {
+    this.showNewImageForm = true;
+    const image = {
+      localId: this.nextLocalId('img'),
+      variant_id: null,
+      image_url: '',
+      preview_url: '',
+      sort_order: this.images.length,
+      is_primary: this.images.length === 0,
+      alt_text: '',
+      file: null,
+    };
+    this.images.push(image);
+    this.selectedFormImageId = image.localId;
+    this.form.markAsDirty();
+  }
+
+  selectFormImage(image: DraftImage): void {
+    this.selectedFormImageId = image.localId;
+  }
+
+  onProductImageSelected(event: Event, image: DraftImage): void {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0] ?? null;
+    if (!file) return;
+
+    image.file = file;
+    const reader = new FileReader();
+    reader.onload = () => {
+      image.preview_url = typeof reader.result === 'string' ? reader.result : '';
+      if (!image.image_url) image.image_url = image.preview_url;
+      this.form.markAsDirty();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  onImagePrimaryChange(image: DraftImage): void {
+    if (image.is_primary) {
+      this.images.forEach((item) => {
+        if (item.localId !== image.localId) item.is_primary = false;
+      });
+    }
+    this.form.markAsDirty();
+  }
+
+  removeImageRow(image: DraftImage): void {
+    if (image._id) this.removedImageIds.add(image._id);
+    this.images = this.images.filter((item) => item.localId !== image.localId);
+    if (this.selectedFormImageId === image.localId) {
+      this.selectedFormImageId = this.images[0]?.localId || null;
+    }
+    if (!this.images.some((item) => !item._id)) {
+      this.showNewImageForm = false;
+    }
+    if (this.images.length && !this.images.some((item) => item.is_primary)) {
+      this.images[0].is_primary = true;
+    }
+    this.form.markAsDirty();
+  }
+
+  get selectedFormImage(): DraftImage | null {
+    return this.images.find((item) => item.localId === this.selectedFormImageId) || null;
+  }
+
+  openCreateVariant(): void {
+    this.editingVariantIndex = -1;
+    this.variantDraft = this.createEmptyVariant();
+    this.variantError = '';
+    this.showVariantModal = true;
+  }
+
+  openEditVariant(index: number): void {
+    this.editingVariantIndex = index;
+    this.variantDraft = { ...this.variants[index], localId: this.variants[index].localId };
+    this.variantError = '';
+    this.showVariantModal = true;
+  }
+
+  closeVariantModal(): void {
+    this.showVariantModal = false;
+    this.variantError = '';
+  }
+
+  saveVariantDraft(): void {
+    const duplicateSku = this.variants.some((item, idx) =>
+      idx !== this.editingVariantIndex &&
+      String(item.sku || '').trim().toLowerCase() === String(this.variantDraft.sku || '').trim().toLowerCase()
+    );
+
+    if (!this.variantDraft.variant_name.trim()) {
+      this.variantError = 'Tên biến thể là bắt buộc.';
+      return;
+    }
+    if (!this.variantDraft.sku.trim()) {
+      this.variantError = 'SKU biến thể là bắt buộc.';
+      return;
+    }
+    if (duplicateSku) {
+      this.variantError = 'SKU biến thể đang bị trùng.';
+      return;
+    }
+
+    const draft = {
+      ...this.variantDraft,
+      variant_name: this.variantDraft.variant_name.trim(),
+      sku: this.variantDraft.sku.trim(),
+      color: this.variantDraft.color.trim(),
+      price: Number(this.variantDraft.price || 0),
+      compare_at_price: Number(this.variantDraft.compare_at_price || 0),
+      stock_quantity: Number(this.variantDraft.stock_quantity || 0),
+      sold: Number(this.variantDraft.sold || 0),
+    };
+
+    if (this.editingVariantIndex >= 0) {
+      this.variants[this.editingVariantIndex] = draft;
+    } else {
+      this.variants = [...this.variants, draft];
+    }
+
+    this.form.markAsDirty();
+    this.closeVariantModal();
+  }
+
+  removeVariant(index: number): void {
+    const variant = this.variants[index];
+    if (variant?._id) this.removedVariantIds.add(variant._id);
+    this.variants = this.variants.filter((_, idx) => idx !== index);
+    this.images = this.images.map((image) =>
+      image.variant_id === variant.localId || image.variant_id === variant._id
+        ? { ...image, variant_id: null }
+        : image
+    );
+    this.form.markAsDirty();
+  }
+
+  variantDisplayName(variantId: string | null): string {
+    if (!variantId) return 'Ảnh chung của sản phẩm';
+    const found = this.variants.find((item) => item.localId === variantId || item._id === variantId);
+    return found?.variant_name || 'Biến thể';
+  }
+
+  activeStatusLabel(status: string): string {
+    return String(status || '').toLowerCase() === 'inactive' ? 'Ngừng bán' : 'Đang bán';
+  }
+
+  stockStatusLabel(status: string): string {
+    return String(status || '').toLowerCase() === 'unavailable' ? 'Hết hàng' : 'Còn hàng';
+  }
+
   back() {
     if (this.isEdit) this.router.navigate(['/admin/products', this.id]);
     else this.router.navigate(['/admin/products']);
@@ -318,29 +605,166 @@ export class AdminProductForm implements OnInit, AfterViewInit {
     this.showConfirm = true;
   }
 
-  save() {
+  async save() {
     this.showConfirm = false;
     this.isLoading = true;
 
-    const raw = this.form.getRawValue();
-    const payload = {
-      ...raw,
-      category_id: raw.category_id || null,
-      collection_id: raw.collection_id || null,
-    };
+    try {
+      const raw = this.form.getRawValue();
+      const payload = {
+        ...raw,
+        category_id: raw.category_id || null,
+        collection_id: raw.collection_id || null,
+        description: this.normalizeDescriptionHtml(raw.description || ''),
+      };
 
-    const req = this.isEdit ? this.api.updateProduct(this.id!, payload) : this.api.createProduct(payload);
+      const doc = this.isEdit
+        ? await firstValueFrom(this.api.updateProduct(this.id!, payload))
+        : await firstValueFrom(this.api.createProduct(payload));
 
-    req.subscribe({
-      next: (doc: any) => {
-        this.form.markAsPristine();
-        this.isLoading = false;
-        const newId = doc?._id || this.id;
-        if (newId) this.router.navigate(['/admin/products', newId]);
-        else this.router.navigate(['/admin/products']);
-      },
-      error: () => (this.isLoading = false),
+      const productId = String(doc?._id || this.id || '');
+      if (!productId) throw new Error('Missing product id');
+
+      const variantIdMap = await this.syncVariants(productId);
+      await this.syncImages(productId, variantIdMap);
+
+      this.form.markAsPristine();
+      this.isLoading = false;
+      this.router.navigate(['/admin/products', productId]);
+    } catch {
+      this.isLoading = false;
+      alert('Không thể lưu sản phẩm. Vui lòng kiểm tra lại dữ liệu.');
+    }
+  }
+
+  private async syncVariants(productId: string): Promise<Map<string, string>> {
+    const variantIdMap = new Map<string, string>();
+
+    for (const removedId of this.removedVariantIds) {
+      await firstValueFrom(this.api.deleteVariant(removedId));
+    }
+    this.removedVariantIds.clear();
+
+    for (const variant of this.variants) {
+      const payload = {
+        product_id: productId,
+        name: variant.variant_name,
+        variant_name: variant.variant_name,
+        sku: variant.sku,
+        color: variant.color,
+        price: Number(variant.price || 0),
+        compare_at_price: Number(variant.compare_at_price || 0),
+        stock_quantity: Number(variant.stock_quantity || 0),
+        status: variant.status,
+        variant_status: variant.variant_status,
+        sold: Number(variant.sold || 0),
+      };
+
+      const doc = variant._id
+        ? await firstValueFrom(this.api.updateVariant(variant._id, payload))
+        : await firstValueFrom(this.api.createVariant(payload));
+
+      const finalId = String(doc?._id || variant._id || '');
+      variant._id = finalId;
+      variantIdMap.set(variant.localId, finalId);
+    }
+
+    return variantIdMap;
+  }
+
+  private async syncImages(productId: string, variantIdMap: Map<string, string>): Promise<void> {
+    for (const removedId of this.removedImageIds) {
+      await firstValueFrom(this.api.deleteImage(removedId));
+    }
+    this.removedImageIds.clear();
+
+    for (const image of this.images) {
+      let imageUrl = String(image.image_url || '').trim();
+
+      if (image.file) {
+        const dataUrl = await this.readFileAsDataUrl(image.file);
+        const uploaded = await firstValueFrom(this.api.uploadImage(dataUrl, this.form.controls.name.value || 'san-pham'));
+        imageUrl = String(uploaded?.image_url || '').trim();
+      }
+
+      if (!imageUrl) continue;
+
+      const resolvedVariantId = image.variant_id
+        ? variantIdMap.get(image.variant_id) || image.variant_id
+        : null;
+
+      const payload = {
+        product_id: productId,
+        variant_id: resolvedVariantId || null,
+        image_url: imageUrl,
+        alt_text: String(image.alt_text || ''),
+        sort_order: Number(image.sort_order || 0),
+        is_primary: !!image.is_primary,
+      };
+
+      const doc = image._id
+        ? await firstValueFrom(this.api.updateImage(image._id, payload))
+        : await firstValueFrom(this.api.createImage(payload));
+
+      image._id = String(doc?._id || image._id || '');
+      image.image_url = imageUrl;
+      image.preview_url = this.normalizeImageUrl(imageUrl);
+      image.file = null;
+    }
+  }
+
+  private readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') resolve(reader.result);
+        else reject(new Error('Invalid file data'));
+      };
+      reader.onerror = () => reject(new Error('Read file failed'));
+      reader.readAsDataURL(file);
     });
+  }
+
+  private normalizeDescriptionHtml(html: string): string {
+    if (!html) return '';
+
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    container.querySelectorAll<HTMLElement>('*').forEach((element) => {
+      element.style.maxWidth = '100%';
+      element.style.boxSizing = 'border-box';
+    });
+
+    container.querySelectorAll('img').forEach((img) => {
+      const rawSrc = img.getAttribute('src') || '';
+      if (rawSrc.startsWith('//')) img.setAttribute('src', `https:${rawSrc}`);
+      if (rawSrc.startsWith('/uploads/')) img.setAttribute('src', `http://localhost:3000${rawSrc}`);
+      img.removeAttribute('width');
+      img.removeAttribute('height');
+      img.style.width = '70%';
+      img.style.maxWidth = '70%';
+      img.style.height = 'auto';
+      img.style.display = 'block';
+      img.style.margin = '14px auto';
+    });
+
+    container.querySelectorAll('video, iframe').forEach((media) => {
+      const element = media as HTMLElement;
+      const rawSrc = element.getAttribute('src') || '';
+      if (rawSrc.startsWith('//')) element.setAttribute('src', `https:${rawSrc}`);
+      if (rawSrc.startsWith('/uploads/')) element.setAttribute('src', `http://localhost:3000${rawSrc}`);
+      element.removeAttribute('width');
+      element.removeAttribute('height');
+      element.style.maxWidth = '70%';
+      element.style.width = '70%';
+      element.style.aspectRatio = '16 / 9';
+      element.style.height = 'auto';
+      element.style.display = 'block';
+      element.style.margin = '14px auto';
+    });
+
+    return container.innerHTML;
   }
 
   closeConfirm() {

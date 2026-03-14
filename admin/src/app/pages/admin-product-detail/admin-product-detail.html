@@ -6,17 +6,8 @@
     </div>
 
     <div class="actions">
-      <button class="btn btn-ghost" routerLink="/admin/products">← Quay lại</button>
-      <button class="btn btn-ghost" [disabled]="!product" (click)="goEdit()">Sửa</button>
-      <button
-        class="btn"
-        [class.btn-danger]="product?.status==='active'"
-        [class.btn-success]="product?.status==='inactive'"
-        [disabled]="!product"
-        (click)="askToggleStatus()"
-      >
-        {{ product?.status==='active' ? 'Ngừng bán' : 'Đang bán' }}
-      </button>
+      <button class="btn btn-ghost btn-back" routerLink="/admin/products">← Quay lại</button>
+      <button class="btn btn-primary" [disabled]="!product" (click)="goEdit()">Sửa</button>
     </div>
   </div>
 
@@ -45,14 +36,13 @@
         <p class="text">{{ product.short_description || '-' }}</p>
 
         <h3>Mô tả chi tiết</h3>
-        <div class="html" [innerHTML]="product.description"></div>
+        <div class="html" [innerHTML]="renderDescription(product.description)"></div>
       </section>
     </div>
 
     <section class="card gallery">
       <div class="gallery-head">
         <h3>Hình ảnh sản phẩm</h3>
-        <button class="icon-add" type="button" (click)="toggleAddImageForm()">+</button>
       </div>
 
       <div class="gallery-grid">
@@ -76,40 +66,7 @@
         </div>
       </div>
 
-      <div class="image-panel" *ngIf="showAddImageForm">
-        <h4>Thêm ảnh</h4>
-
-        <div class="image-form">
-          <div class="field full">
-            <label>Tải ảnh từ máy</label>
-            <input type="file" accept="image/*" (change)="onNewImageSelected($event)" />
-          </div>
-
-          <div class="field">
-            <label>Biến thể</label>
-            <select [(ngModel)]="newImage.variant_id">
-              <option value="">Ảnh chung của sản phẩm</option>
-              <option *ngFor="let v of variants" [value]="v._id">{{ getVariantLabel(v) }}</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>Thứ tự hiển thị</label>
-            <input type="number" [(ngModel)]="newImage.sort_order" />
-          </div>
-
-          <label class="check">
-            <input type="checkbox" [(ngModel)]="newImage.is_primary" />
-            <span>Đặt làm ảnh chính</span>
-          </label>
-
-          <div class="form-actions">
-            <button class="btn btn-primary" (click)="addImage()" [disabled]="!newImage.file">Thêm ảnh</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="image-panel" *ngIf="selectedImage">
+      <div class="image-panel image-panel-readonly" *ngIf="selectedImage">
         <h4>Chi tiết ảnh</h4>
 
         <div class="image-row">
@@ -120,28 +77,22 @@
           <div class="image-fields">
             <div class="field">
               <label>Biến thể</label>
-              <select [(ngModel)]="selectedImage.variant_id">
-                <option [ngValue]="null">Ảnh chung của sản phẩm</option>
-                <option *ngFor="let v of variants" [ngValue]="v._id">{{ getVariantLabel(v) }}</option>
-              </select>
+              <div class="readonly-box">{{ getImageVariantLabel(selectedImage.variant_id) }}</div>
             </div>
 
             <div class="field">
               <label>Thứ tự hiển thị</label>
-              <input type="number" [(ngModel)]="selectedImage.sort_order" />
+              <div class="readonly-box">{{ selectedImage.sort_order || 0 }}</div>
             </div>
 
             <div class="field full">
               <label>URL ảnh</label>
-              <input [(ngModel)]="selectedImage.image_url" />
+              <div class="readonly-box url-box">{{ selectedImage.image_url || '-' }}</div>
             </div>
 
-            <div class="image-actions">
-              <button class="btn btn-ghost" (click)="saveSelectedImage()">Lưu</button>
-              <button class="btn btn-primary" (click)="setPrimaryImage(selectedImage)">
-                {{ selectedImage.is_primary ? 'Ảnh chính' : 'Đặt làm ảnh chính' }}
-              </button>
-              <button class="btn btn-danger" (click)="askDeleteImage(selectedImage)">Xóa</button>
+            <div class="field full">
+              <label>Vai trò</label>
+              <div class="readonly-box">{{ selectedImage.is_primary ? 'Ảnh chính' : 'Ảnh phụ' }}</div>
             </div>
           </div>
         </div>
@@ -183,15 +134,7 @@
             <td>{{ v.stock_quantity ?? '-' }}</td>
             <td>{{ activeStatusLabel(v.variant_status || v.status) }}</td>
             <td class="actions">
-              <button class="btn btn-ghost" (click)="viewVariant(v); $event.stopPropagation()">Sửa</button>
-              <button
-                class="btn"
-                [class.btn-danger]="(v.variant_status||'active')==='active'"
-                [class.btn-success]="(v.variant_status||'active')!=='active'"
-                (click)="askToggleVariant(v); $event.stopPropagation()"
-              >
-                {{ (v.variant_status||'active')==='active' ? 'Ngừng bán' : 'Đang bán' }}
-              </button>
+              <button class="btn btn-ghost" (click)="viewVariant(v); $event.stopPropagation()">Chi tiết</button>
             </td>
           </tr>
         </tbody>
@@ -199,14 +142,47 @@
     </section>
   </div>
 
-  <div class="overlay" *ngIf="showConfirm"></div>
-
-  <div class="confirm" *ngIf="showConfirm">
-    <h3>Xác nhận</h3>
-    <p>{{ confirmMessage }}</p>
-    <div class="confirm-actions">
-      <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
-      <button class="btn btn-primary" (click)="runConfirm()">OK</button>
+  <div class="confirm-overlay" *ngIf="selectedVariant">
+    <div class="confirm-box variant-box">
+      <h3>Chi tiết biến thể</h3>
+      <div class="variant-detail-grid">
+        <div class="readonly-field">
+          <label>Tên biến thể</label>
+          <div>{{ getVariantLabel(selectedVariant) }}</div>
+        </div>
+        <div class="readonly-field">
+          <label>SKU</label>
+          <div>{{ selectedVariant.sku || '-' }}</div>
+        </div>
+        <div class="readonly-field">
+          <label>Màu</label>
+          <div>{{ selectedVariant.color || '-' }}</div>
+        </div>
+        <div class="readonly-field">
+          <label>Giá</label>
+          <div>{{ selectedVariant.price | number }}</div>
+        </div>
+        <div class="readonly-field">
+          <label>Giá so sánh</label>
+          <div>{{ selectedVariant.compare_at_price | number }}</div>
+        </div>
+        <div class="readonly-field">
+          <label>Tồn kho</label>
+          <div>{{ selectedVariant.stock_quantity ?? 0 }}</div>
+        </div>
+        <div class="readonly-field">
+          <label>Trạng thái bán</label>
+          <div>{{ activeStatusLabel(selectedVariant.variant_status || selectedVariant.status) }}</div>
+        </div>
+        <div class="readonly-field">
+          <label>Đã bán</label>
+          <div>{{ selectedVariant.sold ?? 0 }}</div>
+        </div>
+      </div>
+      <div class="confirm-actions">
+        <button class="btn btn-primary" (click)="selectedVariant = null">Đóng</button>
+      </div>
     </div>
   </div>
+
 </div>

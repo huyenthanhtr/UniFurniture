@@ -1,8 +1,10 @@
-﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AdminOrdersService } from '../../services/admin-orders';
+
+type SortDirection = 'asc' | 'desc';
 
 @Component({
   selector: 'app-admin-orders',
@@ -11,7 +13,7 @@ import { AdminOrdersService } from '../../services/admin-orders';
   templateUrl: './admin-orders.html',
   styleUrls: ['./admin-orders.css'],
 })
-export class AdminOrders implements OnInit {
+export class AdminOrders implements OnInit, OnDestroy {
   private api = inject(AdminOrdersService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
@@ -19,41 +21,83 @@ export class AdminOrders implements OnInit {
   isLoading = false;
 
   orders: any[] = [];
-  filtered: any[] = [];
+  pendingStatusChange: { order: any; newStatus: string; oldStatus: string } | null = null;
 
-  q = '';
-  status = '';
-  sortBy: 'ordered_at' | 'total_amount' = 'ordered_at';
-  sortDir: 'asc' | 'desc' = 'desc';
+  filter = {
+    search: '',
+    status: '',
+    customerType: '',
+    startDate: '',
+    endDate: '',
+  };
+
+  sortConfig: { column: string; direction: SortDirection } = {
+    column: '',
+    direction: 'asc',
+  };
 
   page = 1;
   limit = 20;
   total = 0;
   totalPages = 1;
 
+  showConfirmPopup = false;
+  showResultPopup = false;
+  confirmMessage = '';
+  resultMessage = { title: '', message: '', type: 'success' as 'success' | 'error' };
+
+  private searchDebounceId: ReturnType<typeof setTimeout> | null = null;
+
   ngOnInit(): void {
     this.loadOrders(1);
   }
 
-  loadOrders(page: number) {
+  ngOnDestroy(): void {
+    if (this.searchDebounceId) {
+      clearTimeout(this.searchDebounceId);
+      this.searchDebounceId = null;
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target || !this.sortConfig.column) return;
+
+    const clickedSortableHeader = target.closest('th.sortable');
+    if (clickedSortableHeader) return;
+
+    this.resetSortToDefault();
+  }
+
+  loadOrders(page: number): void {
     this.isLoading = true;
     this.page = Math.max(1, page);
 
     const params: any = {
       page: this.page,
       limit: this.limit,
-      sortBy: this.sortBy,
-      order: this.sortDir,
     };
 
-    if (this.status) params.status = this.status;
-    if (this.q.trim()) params.q = this.q.trim();
+    const { sortBy, order } = this.getSortParams();
+    if (sortBy) {
+      params.sortBy = sortBy;
+      params.order = order;
+    }
+
+    if (this.filter.status) params.status = this.filter.status;
+    if (this.filter.customerType) params.customerType = this.filter.customerType;
+    if (this.filter.startDate) params.startDate = this.filter.startDate;
+    if (this.filter.endDate) params.endDate = this.filter.endDate;
+    if (this.filter.search.trim()) params.q = this.filter.search.trim();
 
     this.api.getOrders(params).subscribe({
       next: (res: any) => {
-        const items = res?.items ?? [];
-        this.orders = items;
-        this.filtered = items;
+        const items = Array.isArray(res?.items) ? res.items : [];
+        this.orders = items.map((order: any) => ({
+          ...order,
+          _selectedStatus: order.status,
+        }));
         this.total = Number(res?.total ?? items.length ?? 0);
         this.totalPages = Math.max(1, Math.ceil(this.total / this.limit));
         this.isLoading = false;
@@ -66,29 +110,119 @@ export class AdminOrders implements OnInit {
     });
   }
 
-  applySearch() {
+  onSearchChange(): void {
+    if (this.searchDebounceId) clearTimeout(this.searchDebounceId);
+    this.searchDebounceId = setTimeout(() => {
+      this.page = 1;
+      this.loadOrders(1);
+    }, 300);
+  }
+
+  applyFilters(): void {
     this.page = 1;
     this.loadOrders(1);
   }
 
-  onChangeFilters() {
+  resetFilters(): void {
+    this.filter = {
+      search: '',
+      status: '',
+      customerType: '',
+      startDate: '',
+      endDate: '',
+    };
+    this.sortConfig = { column: '', direction: 'asc' };
     this.page = 1;
     this.loadOrders(1);
   }
 
-  viewDetail(order: any) {
+  toggleSort(column: string): void {
+    if (this.sortConfig.column === column) {
+      this.sortConfig.direction = this.sortConfig.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortConfig = {
+        column,
+        direction: 'asc',
+      };
+    }
+
+    this.page = 1;
+    this.loadOrders(1);
+  }
+
+  resetSortToDefault(): void {
+    this.sortConfig = { column: '', direction: 'asc' };
+    this.page = 1;
+    this.loadOrders(1);
+  }
+
+  askStatusChange(order: any, nextStatus: string): void {
+    const oldStatus = String(order?.status || '');
+
+    if (!order?._id || !nextStatus || nextStatus === oldStatus) {
+      order._selectedStatus = oldStatus;
+      return;
+    }
+
+    order._selectedStatus = nextStatus;
+    this.pendingStatusChange = { order, newStatus: nextStatus, oldStatus };
+    this.confirmMessage = `Đổi trạng thái đơn hàng sang ${this.orderStatusLabel(nextStatus)}?`;
+    this.showConfirmPopup = true;
+  }
+
+  executeStatusChange(): void {
+    if (!this.pendingStatusChange) return;
+
+    const { order, newStatus } = this.pendingStatusChange;
+    this.showConfirmPopup = false;
+    this.isLoading = true;
+
+    this.api.patchOrderStatus(String(order._id), newStatus).subscribe({
+      next: (doc: any) => {
+        order.status = doc?.status || newStatus;
+        order._selectedStatus = order.status;
+        this.pendingStatusChange = null;
+        this.isLoading = false;
+        this.showResult('Thành công', 'Đã cập nhật trạng thái đơn hàng.', 'success');
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        order._selectedStatus = order.status;
+        this.pendingStatusChange = null;
+        this.isLoading = false;
+        this.showResult('Thất bại', err?.error?.error || 'Cập nhật trạng thái thất bại.', 'error');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  cancelConfirm(): void {
+    if (this.pendingStatusChange) {
+      const { order, oldStatus } = this.pendingStatusChange;
+      order._selectedStatus = oldStatus;
+    }
+    this.pendingStatusChange = null;
+    this.showConfirmPopup = false;
+  }
+
+  showResult(title: string, message: string, type: 'success' | 'error'): void {
+    this.resultMessage = { title, message, type };
+    this.showResultPopup = true;
+  }
+
+  viewDetail(order: any): void {
     this.router.navigate(['/admin/orders', order._id]);
   }
 
-  goPrev() {
+  goPrev(): void {
     if (this.page > 1) this.loadOrders(this.page - 1);
   }
 
-  goNext() {
+  goNext(): void {
     if (this.page < this.totalPages) this.loadOrders(this.page + 1);
   }
 
-  goPage(p: any) {
+  goPage(p: any): void {
     const n = Number(p);
     if (!Number.isFinite(n)) return;
     if (n >= 1 && n <= this.totalPages) this.loadOrders(n);
@@ -107,13 +241,16 @@ export class AdminOrders implements OnInit {
     const right = Math.min(total - 1, cur + 1);
 
     if (left > 2) out.push('...');
-
     for (let i = left; i <= right; i++) out.push(i);
-
     if (right < total - 1) out.push('...');
 
     out.push(total);
     return out;
+  }
+
+  getSortIconClass(column: string): string {
+    if (this.sortConfig.column !== column) return 'fa-sort';
+    return this.sortConfig.direction === 'asc' ? 'fa-sort-up active' : 'fa-sort-down active';
   }
 
   getPaymentBadge(order: any): { text: string; cls: string } {
@@ -147,19 +284,6 @@ export class AdminOrders implements OnInit {
     return { text: 'Chưa thanh toán', cls: 'payment-unpaid' };
   }
 
-  getStatusClass(status: string): string {
-    const s = String(status || '').toLowerCase();
-
-    if (s === 'completed') return 'status-completed';
-    if (s === 'cancelled') return 'status-cancelled';
-    if (s === 'refunded') return 'status-refunded';
-    if (s === 'delivered') return 'status-delivered';
-    if (s === 'shipping') return 'status-shipping';
-    if (s === 'processing') return 'status-processing';
-    if (s === 'confirmed') return 'status-confirmed';
-    return 'status-pending';
-  }
-
   orderStatusLabel(status: string): string {
     const s = String(status || '').toLowerCase();
     if (s === 'pending') return 'Chờ xác nhận';
@@ -171,5 +295,28 @@ export class AdminOrders implements OnInit {
     if (s === 'cancelled') return 'Đã hủy';
     if (s === 'refunded') return 'Đã hoàn tiền';
     return status || '-';
+  }
+
+  customerTypeLabel(type: string): string {
+    const key = String(type || '').toLowerCase();
+    if (key === 'member') return 'Thành viên';
+    if (key === 'guest') return 'Khách vãng lai';
+    return type || '-';
+  }
+
+  private getSortParams(): { sortBy?: string; order?: SortDirection } {
+    const sortMap: Record<string, string> = {
+      order_code: 'order_code',
+      shipping_name: 'shipping_name',
+      shipping_phone: 'shipping_phone',
+      total_amount: 'total_amount',
+      ordered_at: 'ordered_at',
+      status: 'status',
+    };
+
+    const sortBy = sortMap[this.sortConfig.column];
+    if (!sortBy) return {};
+
+    return { sortBy, order: this.sortConfig.direction };
   }
 }
