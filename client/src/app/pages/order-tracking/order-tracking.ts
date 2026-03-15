@@ -18,6 +18,7 @@ interface ProductReview {
 
 interface TrackingProduct {
   id: string;
+  orderDetailId: string;
   imageUrl: string;
   name: string;
   classification: string;
@@ -50,6 +51,8 @@ interface TimelineStep {
 }
 
 const API_BASE_URL = 'http://localhost:3000/api';
+const MAX_REVIEW_IMAGES = 5;
+const MAX_REVIEW_VIDEOS = 5;
 
 @Component({
   selector: 'app-order-tracking',
@@ -64,6 +67,7 @@ export class OrderTrackingComponent implements OnInit {
   errorMessage = '';
   infoMessage = '';
   orders: TrackingOrder[] = [];
+  reviewSubmittingOrderId: string | null = null;
   readonly timelineSteps: TimelineStep[] = [
     { label: 'Đã đặt hàng' },
     { label: 'Đã xác nhận' },
@@ -178,39 +182,163 @@ export class OrderTrackingComponent implements OnInit {
   onImageSelected(event: Event, product: TrackingProduct): void {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files || []);
-    product.review.imageFiles = files;
-    product.review.imagePreviews = [];
+    const remaining = MAX_REVIEW_IMAGES - product.review.imageFiles.length;
 
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => product.review.imagePreviews.push(String(reader.result));
-      reader.readAsDataURL(file);
+    if (remaining <= 0) {
+      this.infoMessage = `Mỗi sản phẩm chỉ tải tối đa ${MAX_REVIEW_IMAGES} ảnh.`;
+      input.value = '';
+      return;
+    }
+
+    const acceptedFiles = files.slice(0, remaining);
+    acceptedFiles.forEach((file) => {
+      product.review.imageFiles.push(file);
+      product.review.imagePreviews.push(URL.createObjectURL(file));
     });
+
+    if (acceptedFiles.length < files.length) {
+      this.infoMessage = `Mỗi sản phẩm chỉ tải tối đa ${MAX_REVIEW_IMAGES} ảnh.`;
+    }
+
+    input.value = '';
   }
 
   onVideoSelected(event: Event, product: TrackingProduct): void {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files || []);
-    product.review.videoFiles = files;
-    product.review.videoPreviews = [];
+    const remaining = MAX_REVIEW_VIDEOS - product.review.videoFiles.length;
 
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => product.review.videoPreviews.push(String(reader.result));
-      reader.readAsDataURL(file);
+    if (remaining <= 0) {
+      this.infoMessage = `Mỗi sản phẩm chỉ tải tối đa ${MAX_REVIEW_VIDEOS} video.`;
+      input.value = '';
+      return;
+    }
+
+    const acceptedFiles = files.slice(0, remaining);
+    acceptedFiles.forEach((file) => {
+      product.review.videoFiles.push(file);
+      product.review.videoPreviews.push(URL.createObjectURL(file));
     });
+
+    if (acceptedFiles.length < files.length) {
+      this.infoMessage = `Mỗi sản phẩm chỉ tải tối đa ${MAX_REVIEW_VIDEOS} video.`;
+    }
+
+    input.value = '';
   }
 
-  submitReview(order: TrackingOrder): void {
+  removeImageAt(product: TrackingProduct, index: number): void {
+    if (index < 0 || index >= product.review.imagePreviews.length) {
+      return;
+    }
+
+    const previewUrl = product.review.imagePreviews[index];
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    product.review.imagePreviews.splice(index, 1);
+    product.review.imageFiles.splice(index, 1);
+  }
+
+  removeVideoAt(product: TrackingProduct, index: number): void {
+    if (index < 0 || index >= product.review.videoPreviews.length) {
+      return;
+    }
+
+    const previewUrl = product.review.videoPreviews[index];
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    product.review.videoPreviews.splice(index, 1);
+    product.review.videoFiles.splice(index, 1);
+  }
+
+  imageCountLabel(product: TrackingProduct): string {
+    return `${product.review.imageFiles.length}/${MAX_REVIEW_IMAGES} ảnh`;
+  }
+
+  videoCountLabel(product: TrackingProduct): string {
+    return `${product.review.videoFiles.length}/${MAX_REVIEW_VIDEOS} video`;
+  }
+
+  isImageLimitReached(product: TrackingProduct): boolean {
+    return product.review.imageFiles.length >= MAX_REVIEW_IMAGES;
+  }
+
+  isVideoLimitReached(product: TrackingProduct): boolean {
+    return product.review.videoFiles.length >= MAX_REVIEW_VIDEOS;
+  }
+
+  async submitReview(order: TrackingOrder): Promise<void> {
     const missing = order.products.some((item) => item.review.rating < 1);
     if (missing) {
       this.errorMessage = `Vui lòng chọn số sao cho tất cả sản phẩm của đơn ${order.orderCode}.`;
       return;
     }
 
+    const reviewProducts = order.products.filter((item) => !!item.orderDetailId);
+
+    if (!reviewProducts.length) {
+      this.errorMessage = `Không tìm thấy chi tiết sản phẩm để lưu đánh giá cho đơn ${order.orderCode}.`;
+      return;
+    }
+
     this.errorMessage = '';
-    order.reviewSubmitted = true;
-    this.infoMessage = `Cảm ơn bạn đã gửi đánh giá cho đơn ${order.orderCode}.`;
+    this.infoMessage = '';
+    this.reviewSubmittingOrderId = order.id;
+
+    try {
+      const payloadReviews = [];
+
+      for (const item of reviewProducts) {
+        const [uploadedImages, uploadedVideos] = await Promise.all([
+          this.uploadReviewMedia(item.review.imageFiles),
+          this.uploadReviewMedia(item.review.videoFiles),
+        ]);
+
+        payloadReviews.push({
+          order_detail_id: item.orderDetailId,
+          rating: item.review.rating,
+          content: String(item.review.comment || '').trim(),
+          images: uploadedImages.images,
+          videos: uploadedVideos.videos,
+        });
+      }
+
+      await firstValueFrom(
+        this.http.post(`${API_BASE_URL}/reviews`, {
+          orderId: order.id,
+          reviews: payloadReviews,
+        }),
+      );
+
+      order.reviewSubmitted = true;
+      this.infoMessage = `Cảm ơn bạn đã gửi đánh giá cho đơn ${order.orderCode}. Admin sẽ duyệt trong thời gian sớm nhất.`;
+    } catch {
+      this.errorMessage = `Không thể gửi đánh giá cho đơn ${order.orderCode}. Vui lòng thử lại.`;
+    } finally {
+      this.reviewSubmittingOrderId = null;
+    }
+  }
+
+  private async uploadReviewMedia(files: File[]): Promise<{ images: string[]; videos: string[] }> {
+    if (!files.length) {
+      return { images: [], videos: [] };
+    }
+
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+
+    const response = await firstValueFrom(
+      this.http.post<{ images?: string[]; videos?: string[] }>(`${API_BASE_URL}/reviews/media`, formData),
+    );
+
+    return {
+      images: Array.isArray(response?.images) ? response.images : [],
+      videos: Array.isArray(response?.videos) ? response.videos : [],
+    };
   }
 
   formatCurrency(value: number): string {
@@ -273,6 +401,7 @@ export class OrderTrackingComponent implements OnInit {
 
     const products: TrackingProduct[] = items.map((item: any, index: number) => ({
       id: String(item?._id || item?.variant_id || `item-${index}`),
+      orderDetailId: String(item?._id || ''),
       imageUrl: String(item?.image_url || 'assets/images/banner5.jpg'),
       name: String(item?.product_name || '-'),
       classification: String(item?.variant_name || item?.sku || '-'),

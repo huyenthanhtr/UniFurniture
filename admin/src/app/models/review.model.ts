@@ -21,6 +21,7 @@ export interface Review {
   content: string;
   status: 'pending' | 'approved' | 'rejected';
   images?: string[];
+  videos?: string[];
   reply?: {
     content: string;
     repliedAt: Date;

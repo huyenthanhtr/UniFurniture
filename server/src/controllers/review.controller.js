@@ -1,4 +1,7 @@
+const mongoose = require('mongoose');
 const Review = require('../models/Review');
+const Order = require('../models/Order');
+const OrderDetail = require('../models/OrderDetail');
 
 function toPublicAssetUrl(req, value) {
   const raw = String(value || '').trim();
@@ -16,6 +19,130 @@ function toPublicAssetUrl(req, value) {
 
   return raw;
 }
+
+
+exports.uploadReviewMedia = async (req, res) => {
+  try {
+    const files = Array.isArray(req.files) ? req.files : [];
+
+    const urls = files.map((file) => `/uploads/reviews/${file.filename}`);
+    const images = files
+      .filter((file) => String(file.mimetype || '').startsWith('image/'))
+      .map((file) => `/uploads/reviews/${file.filename}`);
+    const videos = files
+      .filter((file) => String(file.mimetype || '').startsWith('video/'))
+      .map((file) => `/uploads/reviews/${file.filename}`);
+
+    return res.status(200).json({
+      urls,
+      images,
+      videos,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+exports.createOrderReviews = async (req, res) => {
+  try {
+    const { orderId, reviews } = req.body || {};
+
+    if (!mongoose.Types.ObjectId.isValid(String(orderId || ''))) {
+      return res.status(400).json({ message: 'orderId is invalid' });
+    }
+
+    if (!Array.isArray(reviews) || reviews.length === 0) {
+      return res.status(400).json({ message: 'reviews is required' });
+    }
+
+    const order = await Order.findById(orderId).lean();
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Only allow review on delivered/completed orders.
+    if (!['delivered', 'completed'].includes(String(order.status || '').toLowerCase())) {
+      return res.status(400).json({ message: 'Order status does not allow review' });
+    }
+
+    const orderDetails = await OrderDetail.find({ order_id: orderId }).lean();
+    const detailMap = new Map(orderDetails.map((item) => [String(item._id), item]));
+
+    const incomingDetailIds = reviews
+      .map((item) => String(item?.order_detail_id || ''))
+      .filter((id) => mongoose.Types.ObjectId.isValid(id));
+
+    if (!incomingDetailIds.length) {
+      return res.status(400).json({ message: 'No valid order_detail_id found' });
+    }
+
+    const now = new Date();
+    const created = [];
+    const updated = [];
+
+    for (const item of reviews) {
+      const detailId = String(item?.order_detail_id || '');
+      const rating = Number(item?.rating || 0);
+      const content = String(item?.content || '').trim();
+      const images = Array.isArray(item?.images)
+        ? item.images.map((x) => String(x || '').trim()).filter(Boolean)
+        : [];
+      const videos = Array.isArray(item?.videos)
+        ? item.videos.map((x) => String(x || '').trim()).filter(Boolean)
+        : [];
+
+      if (!mongoose.Types.ObjectId.isValid(detailId)) {
+        continue;
+      }
+
+      const detailDoc = detailMap.get(detailId);
+      if (!detailDoc) {
+        continue;
+      }
+
+      if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+        continue;
+      }
+
+      const payload = {
+        order_detail_id: detailId,
+        customer_id: order.customer_id || null,
+        rating,
+        content: content || 'Khach hang da de lai danh gia.',
+        images,
+        videos,
+        status: 'pending',
+      };
+
+      const existed = await Review.findOne({ order_detail_id: detailId, customer_id: order.customer_id || null });
+
+      if (existed) {
+        existed.rating = payload.rating;
+        existed.content = payload.content;
+        existed.images = payload.images;
+        existed.videos = payload.videos;
+        existed.status = 'pending';
+        existed.reply = undefined;
+        existed.createdAt = now;
+        await existed.save();
+        updated.push(existed._id);
+      } else {
+        const doc = await Review.create(payload);
+        created.push(doc._id);
+      }
+    }
+
+    return res.status(201).json({
+      message: 'Reviews submitted',
+      createdCount: created.length,
+      updatedCount: updated.length,
+      createdIds: created,
+      updatedIds: updated,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
 
 exports.getApprovedReviewsByProduct = async (req, res) => {
   try {
@@ -46,6 +173,7 @@ exports.getApprovedReviewsByProduct = async (req, res) => {
         rating: review.rating,
         content: review.content,
         images: Array.isArray(review.images) ? review.images.map((image) => toPublicAssetUrl(req, image)).filter(Boolean) : [],
+        videos: Array.isArray(review.videos) ? review.videos.map((video) => toPublicAssetUrl(req, video)).filter(Boolean) : [],
         reply: review.reply?.content
           ? {
               content: review.reply.content,
@@ -91,7 +219,17 @@ exports.getAllReviews = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    res.status(200).json(reviews);
+    const normalized = reviews.map((review) => ({
+      ...review.toObject(),
+      images: Array.isArray(review.images)
+        ? review.images.map((image) => toPublicAssetUrl(req, image)).filter(Boolean)
+        : [],
+      videos: Array.isArray(review.videos)
+        ? review.videos.map((video) => toPublicAssetUrl(req, video)).filter(Boolean)
+        : [],
+    }));
+
+    res.status(200).json(normalized);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

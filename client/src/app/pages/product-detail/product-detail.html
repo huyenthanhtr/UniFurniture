@@ -1,4 +1,4 @@
-<div class="detail-page">
+﻿<div class="detail-page">
   <p *ngIf="isLoading()" class="status-message">&#272;ang t&#7843;i chi ti&#7871;t s&#7843;n ph&#7849;m...</p>
   <div *ngIf="!isLoading() && errorMessage()" class="status-block">
     <p class="status-message status-error">{{ errorMessage() }}</p>
@@ -33,7 +33,7 @@
             *ngIf="shouldCollapseDescription()"
             (click)="toggleDescription()"
           >
-            {{ isDescriptionExpanded() ? 'Thu gọn mô tả' : 'Xem thêm mô tả' }}
+            {{ isDescriptionExpanded() ? 'Thu gá»n mÃ´ táº£' : 'Xem thÃªm mÃ´ táº£' }}
           </button>
         </div>
       </div>
@@ -58,7 +58,7 @@
 
             <article class="review-card" *ngFor="let review of reviews()">
               <div class="review-card__head">
-                <div>
+                <div class="review-card__meta-line">
                   <h3>{{ review.customerName }}</h3>
                   <p>{{ review.createdAt | date:'dd/MM/yyyy' }}</p>
                 </div>
@@ -69,8 +69,18 @@
 
               <p class="review-card__content">{{ review.content }}</p>
 
-              <div class="review-card__images" *ngIf="review.images.length > 0">
-                <img *ngFor="let image of review.images" [src]="image" alt="Anh danh gia" />
+              <div class="review-card__media" *ngIf="getReviewMediaItems(review).length > 0">
+                <button
+                  type="button"
+                  class="review-card__media-item"
+                  *ngFor="let media of getReviewVisibleMedia(review); let i = index"
+                  (click)="openReviewMediaViewer(review, i)"
+                >
+                  <img *ngIf="media.type === 'image'" [src]="media.url" alt="Ảnh đánh giá" />
+                  <video *ngIf="media.type === 'video'" [src]="media.url" muted preload="metadata"></video>
+                  <span class="review-card__media-kind">{{ media.type === 'image' ? 'Ảnh' : 'Video' }}</span>
+                  <span class="review-card__media-more" *ngIf="i === reviewMediaLimit - 1 && getReviewHiddenMediaCount(review) > 0">+{{ getReviewHiddenMediaCount(review) }}</span>
+                </button>
               </div>
 
               <div class="review-reply" *ngIf="review.reply?.content">
@@ -79,6 +89,24 @@
               </div>
             </article>
           </div>
+
+
+          <div class="review-media-viewer" *ngIf="reviewViewerOpen()">
+            <div class="review-media-viewer__backdrop" (click)="closeReviewMediaViewer()"></div>
+            <div class="review-media-viewer__dialog">
+              <button type="button" class="review-media-viewer__close" (click)="closeReviewMediaViewer()">&times;</button>
+
+              <div class="review-media-viewer__toolbar">
+                <button type="button" (click)="reviewViewerPrev()" [disabled]="reviewViewerIndex() === 0">&#8249; Trước</button>
+                <span>{{ reviewViewerIndex() + 1 }} / {{ reviewViewerItems().length }} (←/→)</span>
+                <button type="button" (click)="reviewViewerNext()" [disabled]="reviewViewerIndex() >= reviewViewerItems().length - 1">Sau &#8250;</button>
+              </div>
+
+              <img *ngIf="!isReviewViewerMediaVideo()" [src]="reviewViewerCurrentUrl" alt="Review media" />
+              <video *ngIf="isReviewViewerMediaVideo()" [src]="reviewViewerCurrentUrl" controls autoplay preload="metadata"></video>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -97,3 +125,6 @@
 
   </ng-container>
 </div>
+
+
+
