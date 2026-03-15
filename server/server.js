@@ -24,7 +24,7 @@ const productsRoutes = require("./src/routes/products.routes");
 const profilesRoutes = require("./src/routes/profiles.routes");
 const authRoutes = require("./src/routes/auth.routes");
 const productModels3dRoutes = require("./src/routes/product-model-3d.routes");
-
+const reviewRoutes = require('./src/routes/review.routes');
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "20mb" }));
@@ -55,7 +55,7 @@ app.use("/api/products", productsRoutes);
 app.use("/api/profiles", profilesRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/product-models-3d", productModels3dRoutes);
-
+app.use('/api/reviews', reviewRoutes);
 connectDB().then(() => {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
