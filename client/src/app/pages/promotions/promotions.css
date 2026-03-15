@@ -235,14 +235,18 @@
 
 .deal-badge {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  background: #a02121;
+  top: 12px;
+  left: 12px;
+  background: linear-gradient(135deg, #c62828 0%, #ef683a 100%);
   color: #fff;
-  padding: 4px 8px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  box-shadow: 0 10px 22px rgba(166, 33, 33, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.22);
 }
 
 .deal-body {

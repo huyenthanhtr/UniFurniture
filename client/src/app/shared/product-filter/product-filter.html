@@ -10,7 +10,7 @@
     <div class="filter-field" [class.is-open]="openDropdown === 'category'">
       <span class="filter-label">DANH MỤC</span>
       <button type="button" class="filter-trigger" (click)="toggleDropdown('category')">
-        <span class="filter-value">{{ getCategoryLabel() }}</span>
+        <span class="filter-value">{{ getDisplayedCategoryLabel() }}</span>
       </button>
 
       <div class="filter-menu filter-menu--category" *ngIf="openDropdown === 'category'">

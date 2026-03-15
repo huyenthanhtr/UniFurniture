@@ -2,9 +2,9 @@
   <nav class="breadcrumb">
     <a routerLink="/">Trang chủ</a>
     <span class="sep">/</span>
-    <a routerLink="/danh-muc">Danh m&#7909;c</a>
+    <a routerLink="/danh-muc">Danh mục</a>
     <span class="sep">/</span>
-    <span class="current">{{ category?.name || groupTitle || 'S&#7843;n ph&#7849;m' }}</span>
+    <span class="current">{{ category?.name || groupTitle || 'Sản phẩm' }}</span>
   </nav>
 
   <div class="category-banner" *ngIf="slideshowImages.length > 0">
@@ -33,8 +33,8 @@
   </div>
 
   <div class="page-header">
-    <h1 class="page-title">{{ category?.name || groupTitle || 'S&#7843;n ph&#7849;m' }}</h1>
-    <span class="total-count" *ngIf="!loading">({{ totalItems }} s&#7843;n ph&#7849;m)</span>
+    <h1 class="page-title">{{ category?.name || groupTitle || 'Sản phẩm' }}</h1>
+    <span class="total-count" *ngIf="!loading">({{ totalItems }} sản phẩm)</span>
   </div>
 
   <div class="loading-state" *ngIf="loading">
@@ -47,7 +47,7 @@
     </div>
 
     <ng-template #emptyState>
-      <div class="empty-state">Kh&#244;ng t&#236;m th&#7845;y s&#7843;n ph&#7849;m n&#224;o.</div>
+      <div class="empty-state">Không tìm thấy sản phẩm nào.</div>
     </ng-template>
 
     <div class="pagination" *ngIf="totalPages > 1">

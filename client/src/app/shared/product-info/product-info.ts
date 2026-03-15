@@ -12,6 +12,8 @@ import { UiStateService } from '../ui-state.service';
 })
 export class ProductInfoComponent implements OnChanges {
   @Input({ required: true }) product!: ProductDetailData;
+  @Input() averageRating = 0;
+  @Input() reviewsCount = 0;
   @Output() colorChange = new EventEmitter<ColorSwatch>();
   @Output() variantChange = new EventEmitter<ProductVariantDocument>();
 
@@ -20,6 +22,7 @@ export class ProductInfoComponent implements OnChanges {
   addMessage = '';
   selectedColor: ColorSwatch | null = null;
   selectedVariant: ProductVariantDocument | null = null;
+  readonly starValues = [1, 2, 3, 4, 5];
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['product']) {
@@ -108,5 +111,9 @@ export class ProductInfoComponent implements OnChanges {
     }
 
     return Math.max(1, Math.floor(value));
+  }
+
+  get roundedAverageRating(): number {
+    return Math.round(this.averageRating);
   }
 }

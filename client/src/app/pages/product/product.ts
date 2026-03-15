@@ -155,11 +155,30 @@ export class ProductComponent implements OnInit {
   });
 
   readonly categoryFilterLabel = computed(() => {
-    return 'Tat ca danh muc';
+    if (this.selectedCollectionName()) {
+      return this.selectedCollectionName();
+    }
+    if (this.selectedCategoryName()) {
+      return this.selectedCategoryName();
+    }
+    if (this.selectedGroupLabel()) {
+      return this.selectedGroupLabel();
+    }
+    return 'Tat ca san pham';
   });
 
   readonly selectedFilterCategoryId = computed(() => {
     return this.selectedCollectionId() || this.selectedCategoryId();
+  });
+
+  readonly selectedFilterCategoryIds = computed(() => {
+    const selectedCategoryIds = this.selectedCategoryIds();
+    if (selectedCategoryIds.length > 0) {
+      return selectedCategoryIds;
+    }
+
+    const selectedCollectionId = this.selectedCollectionId();
+    return selectedCollectionId ? [selectedCollectionId] : [];
   });
 
   readonly categoryGroups = computed<FilterCategoryTreeGroup[]>(() => {

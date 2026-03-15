@@ -8,7 +8,7 @@
   <ng-container *ngIf="!isLoading() && product() as productData">
     <div class="detail-container">
       <app-product-gallery [images]="displayImages()"></app-product-gallery>
-      <app-product-info [product]="productData" (colorChange)="onColorChanged($event)"
+      <app-product-info [product]="productData" [averageRating]="averageRating()" [reviewsCount]="reviewCount()" (colorChange)="onColorChanged($event)"
         (variantChange)="onVariantChanged($event)"></app-product-info>
     </div>
 
@@ -39,7 +39,47 @@
       </div>
 
       <div class="tab-content" *ngIf="activeTab() === 'review'">
-        <p>Ch&#432;a c&#243; &#273;&#225;nh gi&#225;.</p>
+        <div class="review-panel">
+          <div class="review-summary" *ngIf="reviewCount() > 0">
+            <div class="review-summary__score">{{ averageRating() | number:'1.1-1' }}</div>
+            <div class="review-summary__meta">
+              <div class="review-summary__stars">
+                <span *ngFor="let star of reviewStars" [class.filled]="star <= averageRating()">&#9733;</span>
+              </div>
+              <p>{{ reviewCount() }} &#273;&#225;nh gi&#225; &#273;&#227; &#273;&#432;&#7907;c duy&#7879;t</p>
+            </div>
+          </div>
+
+          <p *ngIf="isReviewsLoading()" class="status-message">&#272;ang t&#7843;i &#273;&#225;nh gi&#225;...</p>
+          <p *ngIf="!isReviewsLoading() && reviewsError()" class="status-message status-error">{{ reviewsError() }}</p>
+
+          <div class="review-list" *ngIf="!isReviewsLoading() && !reviewsError()">
+            <div class="review-empty" *ngIf="reviews().length === 0">Ch&#432;a c&#243; &#273;&#225;nh gi&#225; n&#224;o &#273;&#432;&#7907;c duy&#7879;t.</div>
+
+            <article class="review-card" *ngFor="let review of reviews()">
+              <div class="review-card__head">
+                <div>
+                  <h3>{{ review.customerName }}</h3>
+                  <p>{{ review.createdAt | date:'dd/MM/yyyy' }}</p>
+                </div>
+                <div class="review-card__stars">
+                  <span *ngFor="let star of reviewStars" [class.filled]="star <= review.rating">&#9733;</span>
+                </div>
+              </div>
+
+              <p class="review-card__content">{{ review.content }}</p>
+
+              <div class="review-card__images" *ngIf="review.images.length > 0">
+                <img *ngFor="let image of review.images" [src]="image" alt="Anh danh gia" />
+              </div>
+
+              <div class="review-reply" *ngIf="review.reply?.content">
+                <p class="review-reply__label">Ph&#7843;n h&#7891;i t&#7915; U-HOME FURNI</p>
+                <p class="review-reply__content">{{ review.reply?.content }}</p>
+              </div>
+            </article>
+          </div>
+        </div>
       </div>
 
       <div class="tab-content" *ngIf="activeTab() === 'policy'">

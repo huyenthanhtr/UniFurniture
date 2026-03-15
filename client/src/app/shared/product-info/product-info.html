@@ -1,7 +1,13 @@
 <div class="info-wrapper">
   <h1>{{ product.name }}</h1>
 
-  <div class="rating">&#9733;&#9733;&#9733;&#9733;&#9733; <span>(0)</span></div>
+  <div class="rating" [class.rating--empty]="reviewsCount === 0">
+    <span class="rating-value" *ngIf="reviewsCount > 0">{{ averageRating | number:'1.1-1' }}</span>
+    <span class="rating-stars">
+      <span class="rating-star" *ngFor="let star of starValues" [class.filled]="star <= roundedAverageRating">&#9733;</span>
+    </span>
+    <span class="rating-count">({{ reviewsCount }})</span>
+  </div>
 
   <div class="price">
     <span class="sale">
