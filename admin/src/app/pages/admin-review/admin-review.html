@@ -1,0 +1,186 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Quản lý Đánh giá</h1>
+    </div>
+  </div>
+
+  <div class="filter-bar card mb-4">
+    <div class="filter-wrapper d-flex flex-wrap align-items-center gap-3">
+      <div class="filter-item">
+        <input type="text" class="search-input" placeholder="Tìm tên khách, nội dung..." [(ngModel)]="searchTerm" (input)="applyFilters()">
+      </div>
+      <div class="filter-item">
+        <select class="toolbar-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+          <option value="all">-- Trạng thái --</option>
+          <option value="pending">Chờ duyệt</option>
+          <option value="approved">Đã duyệt</option>
+          <option value="rejected">Đã ẩn</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <select class="toolbar-select" [(ngModel)]="ratingFilter" (change)="applyFilters()">
+          <option value="all">-- Số sao --</option>
+          <option *ngFor="let s of [5,4,3,2,1]" [value]="s">{{ s }} Sao</option>
+        </select>
+      </div>
+      <button class="btn btn-ghost btn-icon d-flex align-items-center justify-content-center" 
+              (click)="resetFilters()" title="Đặt lại bộ lọc">
+        <i class="fas fa-undo"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrap card">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%;" class="cell-title sortable" (click)="sortBy('product_name')">
+            Sản phẩm <i class="fas" [ngClass]="getSortIcon('product_name')"></i>
+          </th>
+          <th style="width: 15%;" class="cell-title sortable" (click)="sortBy('order_code')">
+            Đơn hàng <i class="fas" [ngClass]="getSortIcon('order_code')"></i>
+          </th>
+          <th style="width: 15%;" class="cell-title sortable" (click)="sortBy('customer_name')">
+            Khách hàng <i class="fas" [ngClass]="getSortIcon('customer_name')"></i>
+          </th>
+          <th style="width: 10%;" class="cell-title sortable text-center" (click)="sortBy('rating')">
+            Đánh giá <i class="fas" [ngClass]="getSortIcon('rating')"></i>
+          </th>
+          <th style="width: 20%;" class="cell-title sortable" (click)="sortBy('content')">
+            Nội dung <i class="fas" [ngClass]="getSortIcon('content')"></i>
+          </th>
+          <th style="width: 15%;" class="cell-title sortable text-center" (click)="sortBy('status')">
+            Trạng thái <i class="fas" [ngClass]="getSortIcon('status')"></i>
+          </th>
+          <th style="width: 100px;" class="th-actions text-center">Hành động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="filteredReviews.length === 0">
+          <td colspan="7" class="state">Không tìm thấy đánh giá nào.</td>
+        </tr>
+        <tr *ngFor="let item of paginatedReviews">
+          <td>
+            <div style="font-weight: 600; color: #444; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" [title]="item.order_detail_id?.product_name">
+              {{ item.order_detail_id?.product_name || 'N/A' }}
+            </div>
+          </td>
+          <td>
+            <span style="background: #f2ede8; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: monospace;">
+              {{ item.order_detail_id?.order_id?.order_code || 'N/A' }}
+            </span>
+          </td>
+          <td>
+            <div style="font-size: 11px; color: #888; margin-bottom: 2px;">
+              {{ item.customer_id?.customer_code || 'Khách vãng lai' }}
+            </div>
+            <div style="font-weight: 600;">
+              {{ item.order_detail_id?.order_id?.shipping_name || item.customer_id?.full_name || 'Khách hàng' }}
+            </div>
+            <small style="color: #666;">
+              <i class="fas fa-phone-alt" style="font-size: 10px; margin-right: 4px;"></i>
+              {{ item.customer_id?.phone || 'Chưa cập nhật' }}
+            </small>
+          </td>
+          <td class="text-center">
+            <span class="badge-rating">{{ item.rating }} ⭐</span>
+          </td>
+          <td>
+            <div class="text-truncate" style="max-width: 150px;" [title]="item.content">
+              {{ item.content }}
+            </div>
+          </td>
+          <td class="text-center">
+            <select [(ngModel)]="item.status" (change)="updateStatus(item)" [className]="'status-dropdown ' + item.status">
+              <option value="pending">Chờ duyệt</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="rejected">Đã ẩn</option>
+            </select>
+          </td>
+          <td class="actions-cell">
+            <div class="actions justify-content-center">
+              <button class="btn btn-ghost btn-sm btn-icon-only" (click)="goToOrderDetail(item)" title="Xem đơn hàng">
+                <i class="fas fa-file-invoice text-primary"></i>
+              </button>
+              <button class="btn btn-ghost btn-sm btn-icon-only" (click)="openReviewDetail(item)" title="Chi tiết đánh giá">
+                <i class="fas fa-eye text-success"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination" *ngIf="filteredReviews.length > itemsPerPage">
+    <button class="pg pg-arrow" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">&#8249;</button>
+    <button class="pg active">{{ currentPage }}</button>
+    <button class="pg pg-arrow" (click)="changePage(currentPage + 1)" [disabled]="currentPage >= Math.ceil(filteredReviews.length / itemsPerPage)">&#8250;</button>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showReviewModal">
+    <div class="modal-card">
+      <div class="modal-card-header">
+        <h3>Chi tiết đánh giá</h3>
+        <button class="close-modal" (click)="closeReviewModal()"><i class="fas fa-times"></i></button>
+      </div>
+      
+      <div class="modal-card-body">
+        <div class="modal-form-grid">
+          <div class="form-group full-width" style="background: #faf7f3; padding: 16px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <strong>Khách hàng: {{ selectedReview?.order_detail_id?.order_id?.shipping_name || selectedReview?.customer_id?.full_name || 'Khách hàng' }}</strong>
+              <span class="badge-rating">{{ selectedReview?.rating }} ⭐</span>
+            </div>
+            <div style="margin-bottom: 8px; font-size: 13px; color: #666;">
+              Mã ĐH: {{ selectedReview?.order_detail_id?.order_id?.order_code }} | Sản phẩm: {{ selectedReview?.order_detail_id?.product_name }}
+            </div>
+            <p class="review-quote" style="margin: 0; margin-bottom: 12px;">"{{ selectedReview?.content }}"</p>
+            
+            <div *ngIf="selectedReview?.images?.length > 0" class="review-images-container mt-2">
+              <strong style="font-size: 13px; color: #444; display: block; margin-bottom: 8px;">Ảnh đính kèm:</strong>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a *ngFor="let img of selectedReview.images" [href]="img" target="_blank" title="Bấm để xem ảnh lớn">
+                  <img [src]="img" alt="Review Image" class="review-uploaded-img">
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group full-width mt-3">
+            <label class="form-label">Phản hồi từ Cửa hàng:</label>
+            <textarea class="search-input" rows="4" style="height: auto; padding: 10px;" [(ngModel)]="replyContent" placeholder="Nhập lời cảm ơn hoặc giải đáp đến khách hàng..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-card-footer">
+        <button class="btn btn-ghost" (click)="closeReviewModal()">Hủy bỏ</button>
+        <button class="btn btn-primary" (click)="submitReply()" [disabled]="!replyContent">Lưu phản hồi</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" *ngIf="showConfirmPopup">
+    <div class="confirm-box">
+      <h4>Xác nhận</h4>
+      <p>Bạn có chắc chắn muốn thay đổi trạng thái của đánh giá này?</p>
+      <div class="actions justify-content-center">
+        <button class="btn btn-ghost" (click)="cancelConfirm()">Hủy</button>
+        <button class="btn btn-primary" (click)="executeStatusChange()">Đồng ý</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" *ngIf="showResultPopup">
+    <div class="result-box" [class]="resultMessage.type">
+      <div class="icon-result">
+        <i class="fas" [ngClass]="resultMessage.type === 'success' ? 'fa-check' : 'fa-times'"></i>
+      </div>
+      <h4>{{ resultMessage.title }}</h4>
+      <p>{{ resultMessage.message }}</p>
+      <button class="btn btn-primary w-100" style="width: 100%;" (click)="showResultPopup = false">Đóng</button>
+    </div>
+  </div>
+</div>
