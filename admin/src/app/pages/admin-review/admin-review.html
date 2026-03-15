@@ -1,7 +1,7 @@
-<div class="page">
+﻿<div class="page">
   <div class="page-header">
     <div>
-      <h1>Quản lý Đánh giá</h1>
+      <h1>Quản lý đánh giá</h1>
     </div>
   </div>
 
@@ -24,8 +24,7 @@
           <option *ngFor="let s of [5,4,3,2,1]" [value]="s">{{ s }} Sao</option>
         </select>
       </div>
-      <button class="btn btn-ghost btn-icon d-flex align-items-center justify-content-center" 
-              (click)="resetFilters()" title="Đặt lại bộ lọc">
+      <button class="btn btn-ghost btn-icon d-flex align-items-center justify-content-center" (click)="resetFilters()" title="Đặt lại bộ lọc">
         <i class="fas fa-undo"></i>
       </button>
     </div>
@@ -35,24 +34,12 @@
     <table>
       <thead>
         <tr>
-          <th style="width: 25%;" class="cell-title sortable" (click)="sortBy('product_name')">
-            Sản phẩm <i class="fas" [ngClass]="getSortIcon('product_name')"></i>
-          </th>
-          <th style="width: 15%;" class="cell-title sortable" (click)="sortBy('order_code')">
-            Đơn hàng <i class="fas" [ngClass]="getSortIcon('order_code')"></i>
-          </th>
-          <th style="width: 15%;" class="cell-title sortable" (click)="sortBy('customer_name')">
-            Khách hàng <i class="fas" [ngClass]="getSortIcon('customer_name')"></i>
-          </th>
-          <th style="width: 10%;" class="cell-title sortable text-center" (click)="sortBy('rating')">
-            Đánh giá <i class="fas" [ngClass]="getSortIcon('rating')"></i>
-          </th>
-          <th style="width: 20%;" class="cell-title sortable" (click)="sortBy('content')">
-            Nội dung <i class="fas" [ngClass]="getSortIcon('content')"></i>
-          </th>
-          <th style="width: 15%;" class="cell-title sortable text-center" (click)="sortBy('status')">
-            Trạng thái <i class="fas" [ngClass]="getSortIcon('status')"></i>
-          </th>
+          <th style="width: 25%;" class="cell-title sortable" (click)="sortBy('product_name')">Sản phẩm <i class="fas" [ngClass]="getSortIcon('product_name')"></i></th>
+          <th style="width: 15%;" class="cell-title sortable" (click)="sortBy('order_code')">Đơn hàng <i class="fas" [ngClass]="getSortIcon('order_code')"></i></th>
+          <th style="width: 15%;" class="cell-title sortable" (click)="sortBy('customer_name')">Khách hàng <i class="fas" [ngClass]="getSortIcon('customer_name')"></i></th>
+          <th style="width: 10%;" class="cell-title sortable text-center" (click)="sortBy('rating')">Đánh giá <i class="fas" [ngClass]="getSortIcon('rating')"></i></th>
+          <th style="width: 20%;" class="cell-title sortable" (click)="sortBy('content')">Nội dung <i class="fas" [ngClass]="getSortIcon('content')"></i></th>
+          <th style="width: 15%;" class="cell-title sortable text-center" (click)="sortBy('status')">Trạng thái <i class="fas" [ngClass]="getSortIcon('status')"></i></th>
           <th style="width: 100px;" class="th-actions text-center">Hành động</th>
         </tr>
       </thead>
@@ -72,12 +59,8 @@
             </span>
           </td>
           <td>
-            <div style="font-size: 11px; color: #888; margin-bottom: 2px;">
-              {{ item.customer_id?.customer_code || 'Khách vãng lai' }}
-            </div>
-            <div style="font-weight: 600;">
-              {{ item.order_detail_id?.order_id?.shipping_name || item.customer_id?.full_name || 'Khách hàng' }}
-            </div>
+            <div style="font-size: 11px; color: #888; margin-bottom: 2px;">{{ item.customer_id?.customer_code || 'Khách vãng lai' }}</div>
+            <div style="font-weight: 600;">{{ item.order_detail_id?.order_id?.shipping_name || item.customer_id?.full_name || 'Khách hàng' }}</div>
             <small style="color: #666;">
               <i class="fas fa-phone-alt" style="font-size: 10px; margin-right: 4px;"></i>
               {{ item.customer_id?.phone || 'Chưa cập nhật' }}
@@ -87,9 +70,7 @@
             <span class="badge-rating">{{ item.rating }} ⭐</span>
           </td>
           <td>
-            <div class="text-truncate" style="max-width: 150px;" [title]="item.content">
-              {{ item.content }}
-            </div>
+            <div class="text-truncate" style="max-width: 150px;" [title]="item.content">{{ item.content }}</div>
           </td>
           <td class="text-center">
             <select [(ngModel)]="item.status" (change)="updateStatus(item)" [className]="'status-dropdown ' + item.status">
@@ -120,30 +101,60 @@
   </div>
 
   <div class="modal-overlay" *ngIf="showReviewModal">
-    <div class="modal-card">
+    <div class="modal-card review-modal-lg">
       <div class="modal-card-header">
         <h3>Chi tiết đánh giá</h3>
         <button class="close-modal" (click)="closeReviewModal()"><i class="fas fa-times"></i></button>
       </div>
-      
+
       <div class="modal-card-body">
         <div class="modal-form-grid">
-          <div class="form-group full-width" style="background: #faf7f3; padding: 16px; border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <div class="form-group full-width review-detail-box">
+            <div class="review-detail-head">
               <strong>Khách hàng: {{ selectedReview?.order_detail_id?.order_id?.shipping_name || selectedReview?.customer_id?.full_name || 'Khách hàng' }}</strong>
               <span class="badge-rating">{{ selectedReview?.rating }} ⭐</span>
             </div>
-            <div style="margin-bottom: 8px; font-size: 13px; color: #666;">
-              Mã ĐH: {{ selectedReview?.order_detail_id?.order_id?.order_code }} | Sản phẩm: {{ selectedReview?.order_detail_id?.product_name }}
-            </div>
-            <p class="review-quote" style="margin: 0; margin-bottom: 12px;">"{{ selectedReview?.content }}"</p>
-            
-            <div *ngIf="selectedReview?.images?.length > 0" class="review-images-container mt-2">
-              <strong style="font-size: 13px; color: #444; display: block; margin-bottom: 8px;">Ảnh đính kèm:</strong>
-              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <a *ngFor="let img of selectedReview.images" [href]="img" target="_blank" title="Bấm để xem ảnh lớn">
-                  <img [src]="img" alt="Review Image" class="review-uploaded-img">
-                </a>
+            <div class="review-detail-sub">Mã ĐH: {{ selectedReview?.order_detail_id?.order_id?.order_code }} | Sản phẩm: {{ selectedReview?.order_detail_id?.product_name }}</div>
+            <p class="review-quote">"{{ selectedReview?.content }}"</p>
+
+            <div class="media-section" *ngIf="selectedMedia.length > 0">
+              <div class="media-section__head">
+                <strong>Ảnh/Video đính kèm</strong>
+                <div class="media-nav">
+                  <span class="media-page-indicator">Trang {{ currentMediaPage }}/{{ totalMediaPages }} (←/→)</span>
+                  <button class="media-nav-btn media-nav-btn--prev" type="button" (click)="slideMedia(-1)" [disabled]="!canSlideMediaPrev">&#8592; Trước</button>
+                  <button class="media-nav-btn media-nav-btn--next" type="button" (click)="slideMedia(1)" [disabled]="!canSlideMediaNext">Sau &#8594;</button>
+                </div>
+              </div>
+
+              <div class="media-tiles">
+                <button
+                  type="button"
+                  class="media-tile"
+                  *ngFor="let media of mediaWindow; let i = index"
+                  [class.active]="isMediaActive(i)"
+                  (click)="openOverflowFromFirstPage(i)"
+                >
+                  <img *ngIf="media.type === 'image'" [src]="media.url" alt="review image">
+                  <video *ngIf="media.type === 'video'" [src]="media.url" muted preload="metadata"></video>
+
+                  <span class="media-kind">{{ media.type === 'image' ? 'Ảnh' : 'Video' }}</span>
+
+                  <span class="media-overflow" *ngIf="i === 4 && mediaOffset === 0 && overflowCount > 0">
+                    Xem thêm +{{ overflowCount }}
+                  </span>
+                </button>
+              </div>
+
+              <div class="media-preview" *ngIf="activeMedia as active">
+                <div class="media-preview__toolbar">
+                  <button class="media-nav-btn media-nav-btn--prev" type="button" (click)="previewPrev()" [disabled]="activeMediaAbsoluteIndex === 0">&#8592; Trước</button>
+                  <span>{{ activeMediaAbsoluteIndex + 1 }} / {{ selectedMedia.length }}</span>
+                  <button class="media-nav-btn media-nav-btn--next" type="button" (click)="previewNext()" [disabled]="activeMediaAbsoluteIndex === selectedMedia.length - 1">Sau &#8594;</button>
+                </div>
+
+                <img *ngIf="active.type === 'image'" [src]="active.url" alt="review preview">
+                <video *ngIf="active.type === 'video'" [src]="active.url" controls preload="metadata"></video>
               </div>
             </div>
           </div>
@@ -157,7 +168,7 @@
 
       <div class="modal-card-footer">
         <button class="btn btn-ghost" (click)="closeReviewModal()">Hủy bỏ</button>
-        <button class="btn btn-primary" (click)="submitReply()" [disabled]="!replyContent">Lưu phản hồi</button>
+        <button class="btn btn-primary" (click)="submitReply()" [disabled]="!replyContent.trim()">Lưu phản hồi</button>
       </div>
     </div>
   </div>

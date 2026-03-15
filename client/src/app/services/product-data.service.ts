@@ -118,6 +118,7 @@ export interface ProductReviewItem {
   rating: number;
   content: string;
   images: string[];
+  videos: string[];
   createdAt: string;
   customerName: string;
   productName?: string;

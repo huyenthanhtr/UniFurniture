@@ -100,7 +100,7 @@
         <h3>Đánh giá sản phẩm</h3>
         <p class="review-note">Đánh giá từng sản phẩm riêng (1-5 sao), thêm nhận xét, ảnh và video.</p>
 
-        <div class="review-item" *ngFor="let product of order.products">
+        <div class="review-item" *ngFor="let product of order.products; let idx = index" [class.review-item--alt]="idx % 2 === 1">
           <div class="review-item__head">
             <img [src]="product.imageUrl" [alt]="product.name" />
             <div>
@@ -126,26 +126,50 @@
 
           <div class="upload-grid">
             <label>
-              Thêm ảnh
-              <input type="file" accept="image/*" multiple (change)="onImageSelected($event, product)" />
+              <span class="upload-label">Thêm ảnh <small>{{ imageCountLabel(product) }}</small></span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                (change)="onImageSelected($event, product)"
+                [disabled]="isImageLimitReached(product)"
+              />
             </label>
             <label>
-              Thêm video
-              <input type="file" accept="video/*" multiple (change)="onVideoSelected($event, product)" />
+              <span class="upload-label">Thêm video <small>{{ videoCountLabel(product) }}</small></span>
+              <input
+                type="file"
+                accept="video/*"
+                multiple
+                (change)="onVideoSelected($event, product)"
+                [disabled]="isVideoLimitReached(product)"
+              />
             </label>
           </div>
 
           <div class="preview-list" *ngIf="product.review.imagePreviews.length > 0">
-            <img *ngFor="let preview of product.review.imagePreviews" [src]="preview" alt="Ảnh đánh giá" />
+            <div class="preview-item" *ngFor="let preview of product.review.imagePreviews; let imageIndex = index">
+              <img [src]="preview" alt="Ảnh đánh giá" />
+              <button type="button" class="preview-remove" (click)="removeImageAt(product, imageIndex)">&times;</button>
+            </div>
           </div>
 
           <div class="preview-list video" *ngIf="product.review.videoPreviews.length > 0">
-            <video *ngFor="let preview of product.review.videoPreviews" [src]="preview" controls></video>
+            <div class="preview-item" *ngFor="let preview of product.review.videoPreviews; let videoIndex = index">
+              <video [src]="preview" controls></video>
+              <button type="button" class="preview-remove" (click)="removeVideoAt(product, videoIndex)">&times;</button>
+            </div>
           </div>
         </div>
 
         <div class="review-action">
-          <button type="button" (click)="submitReview(order)">Gửi đánh giá</button>
+          <button
+            type="button"
+            (click)="submitReview(order)"
+            [disabled]="reviewSubmittingOrderId === order.id"
+          >
+            {{ reviewSubmittingOrderId === order.id ? 'Đang gửi...' : 'Gửi đánh giá' }}
+          </button>
         </div>
       </div>
 

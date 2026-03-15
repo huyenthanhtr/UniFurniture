@@ -1,4 +1,4 @@
-import { Component, DestroyRef, effect, inject, signal, computed } from '@angular/core';
+import { Component, DestroyRef, HostListener, effect, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -14,6 +14,11 @@ import {
 } from '../../services/product-data.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, catchError, finalize, map } from 'rxjs';
+
+interface ReviewMediaItem {
+  type: 'image' | 'video';
+  url: string;
+}
 
 @Component({
   selector: 'app-product-detail',
@@ -45,6 +50,10 @@ export class ProductDetailComponent {
   readonly averageRating = signal(0);
   readonly reviewCount = signal(0);
   readonly reviewStars = [1, 2, 3, 4, 5];
+  readonly reviewMediaLimit = 8;
+  readonly reviewViewerOpen = signal(false);
+  readonly reviewViewerItems = signal<ReviewMediaItem[]>([]);
+  readonly reviewViewerIndex = signal(0);
 
   readonly displayImages = computed(() => {
     const current = this.product();
@@ -145,6 +154,93 @@ export class ProductDetailComponent {
     this.isDescriptionExpanded.update((expanded) => !expanded);
   }
 
+  getReviewMediaItems(review: ProductReviewItem): ReviewMediaItem[] {
+    const images = Array.isArray(review.images)
+      ? review.images.filter(Boolean).map((url) => ({ type: 'image' as const, url }))
+      : [];
+    const videos = Array.isArray(review.videos)
+      ? review.videos.filter(Boolean).map((url) => ({ type: 'video' as const, url }))
+      : [];
+
+    return [...images, ...videos];
+  }
+
+  getReviewVisibleMedia(review: ProductReviewItem): ReviewMediaItem[] {
+    return this.getReviewMediaItems(review).slice(0, this.reviewMediaLimit);
+  }
+
+  getReviewHiddenMediaCount(review: ProductReviewItem): number {
+    const remain = this.getReviewMediaItems(review).length - this.reviewMediaLimit;
+    return remain > 0 ? remain : 0;
+  }
+
+  openReviewMediaViewer(review: ProductReviewItem, index: number): void {
+    const items = this.getReviewMediaItems(review);
+    if (!items.length) {
+      return;
+    }
+
+    const safeIndex = Math.max(0, Math.min(index, items.length - 1));
+    this.reviewViewerItems.set(items);
+    this.reviewViewerIndex.set(safeIndex);
+    this.reviewViewerOpen.set(true);
+  }
+
+  closeReviewMediaViewer(): void {
+    this.reviewViewerOpen.set(false);
+    this.reviewViewerItems.set([]);
+    this.reviewViewerIndex.set(0);
+  }
+
+  reviewViewerPrev(): void {
+    const current = this.reviewViewerIndex();
+    if (current > 0) {
+      this.reviewViewerIndex.set(current - 1);
+    }
+  }
+
+  reviewViewerNext(): void {
+    const current = this.reviewViewerIndex();
+    const max = this.reviewViewerItems().length - 1;
+    if (current < max) {
+      this.reviewViewerIndex.set(current + 1);
+    }
+  }
+
+  isReviewViewerMediaVideo(): boolean {
+    const current = this.reviewViewerItems()[this.reviewViewerIndex()];
+    return current?.type === 'video';
+  }
+
+  get reviewViewerCurrentUrl(): string {
+    const current = this.reviewViewerItems()[this.reviewViewerIndex()];
+    return current?.url || '';
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onReviewViewerKeyboard(event: KeyboardEvent): void {
+    if (!this.reviewViewerOpen()) {
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      this.reviewViewerPrev();
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      this.reviewViewerNext();
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeReviewMediaViewer();
+    }
+  }
+
   private loadProduct(productId: string): void {
     this.isLoading.set(true);
     this.errorMessage.set('');
@@ -199,7 +295,7 @@ export class ProductDetailComponent {
           this.reviews.set([]);
           this.averageRating.set(0);
           this.reviewCount.set(0);
-          this.reviewsError.set('Khong the tai danh gia san pham.');
+          this.reviewsError.set('Không thể tải đánh giá sản phẩm');
         },
       });
   }
