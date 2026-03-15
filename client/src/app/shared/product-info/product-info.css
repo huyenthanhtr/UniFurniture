@@ -4,8 +4,40 @@
 }
 
 .rating {
-    color: #f5a623;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 10px;
+    color: #f5a623;
+}
+
+.rating--empty {
+    color: #c7c7c7;
+}
+
+.rating-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f1f1f;
+}
+
+.rating-stars {
+    display: inline-flex;
+    gap: 2px;
+}
+
+.rating-star {
+    color: #d7d7d7;
+    font-size: 15px;
+}
+
+.rating-star.filled {
+    color: #f5a623;
+}
+
+.rating-count {
+    color: #666;
+    font-size: 14px;
 }
 
 .price {

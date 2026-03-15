@@ -113,6 +113,27 @@ export interface ProductDetailData {
   images: ImageWithVariant[];
 }
 
+export interface ProductReviewItem {
+  _id: string;
+  rating: number;
+  content: string;
+  images: string[];
+  createdAt: string;
+  customerName: string;
+  productName?: string;
+  reply: {
+    content: string;
+    repliedAt: string | null;
+  } | null;
+}
+
+export interface ProductReviewSummary {
+  productId: string;
+  totalReviews: number;
+  averageRating: number;
+  items: ProductReviewItem[];
+}
+
 /** Client-side mirror of server color-map.utils.js */
 const COLOR_MAP: Record<string, string> = {
   'beige': '#f0e6d3',
@@ -500,6 +521,22 @@ export class ProductDataService {
       timeout(10000),
       catchError(() => of([]))
     );
+  }
+
+  getProductReviews(productId: string): Observable<ProductReviewSummary> {
+    return this.http
+      .get<ProductReviewSummary>(`${this.apiBaseUrl}/reviews/product/${productId}`)
+      .pipe(
+        timeout(10000),
+        catchError(() =>
+          of({
+            productId,
+            totalReviews: 0,
+            averageRating: 0,
+            items: [],
+          }),
+        ),
+      );
   }
 
   getAllProductModels(): Observable<any[]> {

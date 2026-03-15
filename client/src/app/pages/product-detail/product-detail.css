@@ -84,6 +84,11 @@
 .tab-content {
     padding: 20px 0;
     line-height: 1.7;
+    text-align: left;
+}
+
+.tab-content :where(h1, h2, h3, h4, h5, h6) {
+    text-align: left !important;
 }
 
 .description-wrap {
@@ -98,6 +103,8 @@
     color: #3c3229;
     font-size: 15px;
     line-height: 1.75;
+    text-align: justify;
+    text-justify: inter-word;
 }
 
 .description-rich.is-collapsed {
@@ -119,6 +126,7 @@
 .description-rich :where(h1, h2, h3, h4) {
     line-height: 1.3;
     margin: 20px 0 10px;
+    text-align: left !important;
 }
 
 .description-rich :where(p, ul, ol, table, blockquote) {
@@ -126,13 +134,36 @@
     margin-bottom: 10px;
 }
 
+.description-rich :where(li) {
+    text-align: justify;
+}
+
+.description-media-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin: 18px 0;
+    align-items: start;
+}
+
+.description-media-grid > * {
+    margin: 0 !important;
+}
+
+.description-media-grid :where(img, iframe, video) {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 260px;
+    margin: 0 auto !important;
+}
+
 .description-rich :where(img) {
     display: block;
     margin: 14px auto;
     width: auto !important;
-    max-width: min(100%, 560px) !important;
+    max-width: min(100%, 420px) !important;
     height: auto !important;
-    max-height: 360px;
+    max-height: 280px;
     object-fit: contain;
     border-radius: 12px;
     border: 1px solid #eadfd2;
@@ -141,9 +172,9 @@
 }
 
 .description-rich :where(iframe, video) {
-    width: min(100%, 560px);
+    width: min(100%, 420px);
     max-width: 100%;
-    max-height: 360px;
+    max-height: 280px;
     border-radius: 12px;
     display: block;
     margin: 14px auto;
@@ -166,6 +197,135 @@
     border-color: #b8865f;
     color: #5f3a1d;
     box-shadow: 0 8px 18px rgba(122, 78, 43, 0.14);
+}
+
+.review-panel {
+    display: grid;
+    gap: 18px;
+}
+
+.review-summary {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 20px;
+    border: 1px solid #eee4d8;
+    border-radius: 16px;
+    background: #fcf9f5;
+}
+
+.review-summary__score {
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1;
+    color: #1f1f1f;
+}
+
+.review-summary__meta {
+    display: grid;
+    gap: 6px;
+}
+
+.review-summary__meta p {
+    margin: 0;
+    color: #6a5a4d;
+    font-size: 14px;
+}
+
+.review-summary__stars,
+.review-card__stars {
+    display: inline-flex;
+    gap: 3px;
+}
+
+.review-summary__stars span,
+.review-card__stars span {
+    color: #d4d4d4;
+    font-size: 16px;
+}
+
+.review-summary__stars span.filled,
+.review-card__stars span.filled {
+    color: #f5a623;
+}
+
+.review-list {
+    display: grid;
+    gap: 16px;
+}
+
+.review-empty {
+    color: #666;
+    font-size: 14px;
+}
+
+.review-card {
+    border: 1px solid #eee;
+    border-radius: 14px;
+    padding: 18px;
+    background: #fff;
+}
+
+.review-card__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.review-card__head h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #1f1f1f;
+}
+
+.review-card__head p {
+    margin: 4px 0 0;
+    color: #777;
+    font-size: 13px;
+}
+
+.review-card__content {
+    margin: 0;
+    color: #333;
+}
+
+.review-card__images {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.review-card__images img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid #eadfd2;
+}
+
+.review-reply {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #f6f7f8;
+    border-left: 3px solid #ef683a;
+}
+
+.review-reply__label {
+    margin: 0 0 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #7a4e2b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.review-reply__content {
+    margin: 0;
+    color: #444;
 }
 
 .status-message {
@@ -217,11 +377,27 @@
         border-radius: 12px;
     }
 
+    .review-summary,
+    .review-card__head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
     .description-rich.is-collapsed {
         max-height: 560px;
     }
 
+    .description-media-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .description-media-grid :where(img, iframe, video) {
+        max-height: 220px;
+    }
+
     .description-rich :where(img) {
-        max-height: 300px;
+        max-width: min(100%, 340px) !important;
+        max-height: 220px;
     }
 }

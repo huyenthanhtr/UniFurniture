@@ -25,31 +25,31 @@ interface CategoryGroup {
 
 const CATEGORY_GROUPS: Record<string, CategoryGroup> = {
   'bo-suu-tap': {
-    title: 'B\u1ed9 s\u01b0u t\u1eadp',
+    title: 'Bộ sưu tập',
     categorySlugs: [],
   },
   'phong-ngu': {
-    title: 'Ph\u00f2ng ng\u1ee7',
+    title: 'Phòng ngủ',
     categorySlugs: ['combo-phong-ngu', 'tu-quan-ao', 'giuong-ngu', 'tu-dau-giuong', 'ban-trang-diem'],
   },
   'phong-khach': {
-    title: 'Ph\u00f2ng kh\u00e1ch',
+    title: 'Phòng khách',
     categorySlugs: ['ghe-sofa', 'ban-sofa-ban-cafe-ban-tra', 'tu-ke-tivi', 'tu-giay-tu-trang-tri', 'tu-ke'],
   },
   'phong-an': {
-    title: 'Ph\u00f2ng \u0103n',
+    title: 'Phòng ăn',
     categorySlugs: ['ban-an', 'ghe-an', 'bo-ban-an'],
   },
   'phong-lam-viec': {
-    title: 'Ph\u00f2ng l\u00e0m vi\u1ec7c',
+    title: 'Phòng làm việc',
     categorySlugs: ['ban-lam-viec', 'ghe-van-phong'],
   },
   'tu-bep': {
-    title: 'T\u1ee7 b\u1ebfp',
+    title: 'Tủ bếp',
     categorySlugs: ['tu-ke'],
   },
   nem: {
-    title: 'N\u1ec7m',
+    title: 'Nệm',
     categorySlugs: ['combo-phong-ngu', 'giuong-ngu'],
   },
 };

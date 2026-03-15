@@ -57,6 +57,7 @@ export class ProductFilterComponent {
   @Input() selectedPriceRanges: string[] = [];
   @Input() selectedColors: string[] = [];
   @Input() selectedSizes: string[] = [];
+  @Input() categoryTriggerLabel = '';
 
   @Output() filtersChange = new EventEmitter<ProductFilterState>();
 
@@ -373,6 +374,23 @@ export class ProductFilterComponent {
   selectedSizeChips(): FilterSelectOption[] {
     const selectedSet = new Set(this.selectedSizes);
     return this.sizeOptions.filter((option) => selectedSet.has(option.value));
+  }
+
+  getDisplayedCategoryLabel(): string {
+    const selectedIds = this.getResolvedSelectedCategoryIds();
+    if (selectedIds.length === 0) {
+      return this.categoryTriggerLabel || this.categoryDefaultLabel;
+    }
+
+    const sourceOptions =
+      this.categoryOptions.length > 0 ? this.categoryOptions : this.categoryTree.flatMap((group) => group.children);
+    const selectedOptions = sourceOptions.filter((option) => selectedIds.includes(option.value));
+
+    if (selectedOptions.length === 1) {
+      return selectedOptions[0].label;
+    }
+
+    return this.getCategoryLabel();
   }
 
   isCategoryMultiSelect(): boolean {
