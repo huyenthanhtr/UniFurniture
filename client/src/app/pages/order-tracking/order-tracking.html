@@ -1,0 +1,157 @@
+﻿<div class="tracking-page">
+  <section class="tracking-hero">
+    <div class="tracking-hero__content">
+      <h1>Tra c&#7913;u <span>m&#227; v&#7853;n &#273;&#417;n</span></h1>
+      <p>Không cần đăng nhập. Bạn có thể nhập 1 hoặc nhiều mã (phân tách bằng dấu phẩy hoặc xuống dòng).</p>
+
+      <div class="tracking-search">
+        <textarea
+          rows="2"
+          placeholder="Ví dụ: UF-20260315-AB12, UF-20260310-CN88"
+          [(ngModel)]="searchCode"
+          [disabled]="loading"
+        ></textarea>
+        <button type="button" (click)="searchOrder()" [disabled]="loading">
+          {{ loading ? 'Đang tra cứu...' : 'Tra cứu' }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="tracking-content" id="tracking-feedback" *ngIf="errorMessage && !orders.length">
+    <div class="alert error">{{ errorMessage }}</div>
+  </section>
+
+  <section class="tracking-content" id="tracking-results" *ngIf="orders.length">
+    <div class="alert info" *ngIf="infoMessage">{{ infoMessage }}</div>
+    <div class="alert error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+    <div class="order-wrap" *ngFor="let order of orders">
+      <div class="order-head card">
+        <div>
+          <h2>Đơn hàng {{ order.orderCode }}</h2>
+          <p>Ngày đặt: {{ order.orderedAt }}</p>
+        </div>
+        <div class="status-pill">{{ order.statusLabel }}</div>
+      </div>
+
+      <div class="alert warning" *ngIf="order.backendStatus === 'cancelled'">
+        Đơn hàng đã bị hủy. Vui lòng liên hệ hỗ trợ nếu cần thêm thông tin.
+      </div>
+
+      <div class="alert info" *ngIf="order.backendStatus === 'refunded'">
+        Đơn hàng đã được hoàn tiền. Vui lòng kiểm tra lại giao dịch tại phương thức thanh toán.
+      </div>
+
+      <div class="timeline card" *ngIf="!isCancelledOrRefunded(order)">
+        <div
+          class="timeline-step"
+          *ngFor="let step of timelineSteps; let i = index"
+          [class.active]="i === currentStepIndex(order)"
+          [class.done]="i < currentStepIndex(order)"
+        >
+          <div class="timeline-dot"></div>
+          <div class="timeline-label">{{ step.label }}</div>
+        </div>
+      </div>
+
+      <div class="complete-box" *ngIf="order.backendStatus === 'delivered'">
+        <button type="button" (click)="completeOrder(order)">Hoàn tất đơn hàng</button>
+      </div>
+
+      <div class="detail-grid">
+        <div class="card">
+          <h3>Thông tin giao hàng</h3>
+          <p><strong>Tên:</strong> {{ order.customerName }}</p>
+          <p><strong>SĐT:</strong> {{ order.phone }}</p>
+          <p><strong>Địa chỉ:</strong> {{ order.shippingAddress }}</p>
+        </div>
+
+        <div class="card">
+          <h3>Thanh toán</h3>
+          <p><strong>Phương thức:</strong> {{ order.paymentMethod }}</p>
+          <p><strong>Tạm tính:</strong> {{ formatCurrency(order.subtotal) }}</p>
+          <p><strong>Khuyến mãi: </strong>
+            <span *ngIf="order.discountPercent > 0">
+              {{ order.promotionCode || 'Mã giảm giá' }} - {{ order.discountPercent }}% ({{ formatCurrency(order.discountAmount) }})
+            </span>
+            <span *ngIf="order.discountPercent === 0">Không có</span>
+          </p>
+          <p class="total"><strong>Tổng tiền (đã gồm phí giao):</strong> {{ formatCurrency(order.total) }}</p>
+        </div>
+      </div>
+
+      <div class="card product-card">
+        <h3>Danh sách sản phẩm</h3>
+        <div class="product-row" *ngFor="let product of order.products">
+          <img [src]="product.imageUrl" [alt]="product.name" />
+          <div class="product-info">
+            <h4>{{ product.name }}</h4>
+            <p>{{ product.classification }}</p>
+          </div>
+          <div class="product-meta">
+            <span>x{{ product.quantity }}</span>
+            <strong>{{ formatCurrency(product.unitPrice) }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="card review-card" *ngIf="showReviewSection(order)">
+        <h3>Đánh giá sản phẩm</h3>
+        <p class="review-note">Đánh giá từng sản phẩm riêng (1-5 sao), thêm nhận xét, ảnh và video.</p>
+
+        <div class="review-item" *ngFor="let product of order.products">
+          <div class="review-item__head">
+            <img [src]="product.imageUrl" [alt]="product.name" />
+            <div>
+              <h4>{{ product.name }}</h4>
+              <p>{{ product.classification }}</p>
+            </div>
+          </div>
+
+          <div class="stars">
+            <button
+              type="button"
+              *ngFor="let star of [1,2,3,4,5]"
+              (click)="setRating(product, star)"
+              [class.filled]="star <= product.review.rating"
+            >★</button>
+          </div>
+
+          <textarea
+            rows="3"
+            placeholder="Nhập nhận xét của bạn..."
+            [(ngModel)]="product.review.comment"
+          ></textarea>
+
+          <div class="upload-grid">
+            <label>
+              Thêm ảnh
+              <input type="file" accept="image/*" multiple (change)="onImageSelected($event, product)" />
+            </label>
+            <label>
+              Thêm video
+              <input type="file" accept="video/*" multiple (change)="onVideoSelected($event, product)" />
+            </label>
+          </div>
+
+          <div class="preview-list" *ngIf="product.review.imagePreviews.length > 0">
+            <img *ngFor="let preview of product.review.imagePreviews" [src]="preview" alt="Ảnh đánh giá" />
+          </div>
+
+          <div class="preview-list video" *ngIf="product.review.videoPreviews.length > 0">
+            <video *ngFor="let preview of product.review.videoPreviews" [src]="preview" controls></video>
+          </div>
+        </div>
+
+        <div class="review-action">
+          <button type="button" (click)="submitReview(order)">Gửi đánh giá</button>
+        </div>
+      </div>
+
+      <div class="alert success" *ngIf="order.reviewSubmitted">
+        Cảm ơn bạn đã gửi đánh giá cho đơn {{ order.orderCode }}.
+      </div>
+    </div>
+  </section>
+</div>
