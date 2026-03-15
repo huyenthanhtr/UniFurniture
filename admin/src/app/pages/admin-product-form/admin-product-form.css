@@ -1,5 +1,6 @@
 .page { padding: 16px; }
 .page-header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; }
+.page-header h1 { margin: 0; font-size: calc(1.2rem + 1vw); }
 .page-header .sub { opacity:.72; font-size:13px; margin-top:4px; }
 .actions { display:flex; gap:8px; flex-wrap:wrap; }
 .btn-back { white-space:nowrap; }
@@ -115,8 +116,8 @@
 .editor-content img.editor-selected-image { outline:2px solid #908372; outline-offset:2px; }
 .editor-content:empty::before { content:"Nhập mô tả chi tiết sản phẩm tại đây..."; color:#9e9488; }
 
-.table-wrap { overflow-x:auto; }
-table { width:100%; border-collapse:collapse; }
+.table-wrap { overflow-x:auto; -webkit-overflow-scrolling: touch; }
+table { width:100%; border-collapse:collapse; min-width: 760px; }
 th, td { padding:12px; border-bottom:1px solid #f2ede8; vertical-align:middle; text-align:left; }
 th { background:#faf7f3; }
 .th-actions, .actions-cell { width:150px; white-space:nowrap; }
@@ -165,4 +166,29 @@ th { background:#faf7f3; }
   .grid, .variant-grid, .image-fields, .gallery-grid { grid-template-columns: 1fr; }
   .section-header, .page-header { flex-direction:column; align-items:stretch; }
   .actions { flex-wrap:wrap; }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 12px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .editor-toolbar {
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .editor-content {
+    padding: 12px;
+  }
+
+  .editor-content img,
+  .editor-content video,
+  .editor-content iframe {
+    max-width: 100% !important;
+  }
 }

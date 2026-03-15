@@ -53,7 +53,9 @@ export class AdminCustomerAddressDetail implements OnInit {
   }
 
   back() {
-    this.router.navigate(['/admin/customers', this.customerId]);
+    this.router.navigate(['/admin/customers', this.customerId], {
+      queryParams: this.route.snapshot.queryParams,
+    });
   }
 
   addressStatusLabel(status: any): string {

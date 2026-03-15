@@ -67,15 +67,12 @@
             Mã đơn
             <i class="fas" [ngClass]="getSortIconClass('order_code')"></i>
           </th>
-          <th class="cell-title sortable" (click)="toggleSort('shipping_name')">
-            Khách hàng
-            <i class="fas" [ngClass]="getSortIconClass('shipping_name')"></i>
+          <th class="cell-title">Khách hàng</th>
+          <th class="cell-title">Số điện thoại</th>
+          <th class="cell-title sortable" (click)="toggleSort('customer_type')">
+            Loại khách
+            <i class="fas" [ngClass]="getSortIconClass('customer_type')"></i>
           </th>
-          <th class="cell-title sortable" (click)="toggleSort('shipping_phone')">
-            Số điện thoại
-            <i class="fas" [ngClass]="getSortIconClass('shipping_phone')"></i>
-          </th>
-          <th>Loại khách</th>
           <th class="cell-title sortable" (click)="toggleSort('total_amount')">
             Tổng tiền
             <i class="fas" [ngClass]="getSortIconClass('total_amount')"></i>
@@ -84,7 +81,10 @@
             Ngày đặt
             <i class="fas" [ngClass]="getSortIconClass('ordered_at')"></i>
           </th>
-          <th class="payment-col">Thanh toán</th>
+          <th class="payment-col sortable" (click)="toggleSort('payment')">
+            Thanh toán
+            <i class="fas" [ngClass]="getSortIconClass('payment')"></i>
+          </th>
           <th class="cell-title sortable" (click)="toggleSort('status')">
             Trạng thái
             <i class="fas" [ngClass]="getSortIconClass('status')"></i>

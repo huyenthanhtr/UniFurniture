@@ -6,7 +6,7 @@
     </div>
 
     <div class="actions">
-      <button class="btn btn-ghost btn-back" routerLink="/admin/products">← Quay lại</button>
+      <button class="btn btn-ghost btn-back" (click)="back()">← Quay lại</button>
       <button class="btn btn-primary" [disabled]="!product" (click)="goEdit()">Sửa</button>
     </div>
   </div>

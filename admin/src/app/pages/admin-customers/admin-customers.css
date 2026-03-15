@@ -10,6 +10,11 @@
   margin-bottom: 12px;
 }
 
+.page-header h1 {
+  margin: 0;
+  font-size: calc(1.375rem + 1.5vw);
+}
+
 .card {
   background: #fff;
   border: 1px solid #ece6e0;
@@ -133,6 +138,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  min-width: 960px;
 }
 
 th,
@@ -178,18 +184,39 @@ td:nth-child(3) {
 }
 
 th:nth-child(4),
-td:nth-child(4),
 th:nth-child(5),
+th:nth-child(6),
+th:nth-child(7) {
+  text-align: center;
+}
+
+td:nth-child(4),
 td:nth-child(5),
+td:nth-child(6),
+td:nth-child(7) {
+  text-align: center;
+}
+
+th:nth-child(4),
+td:nth-child(4) {
+  width: 150px;
+}
+
+th:nth-child(5),
+td:nth-child(5) {
+  width: 150px;
+}
+
 th:nth-child(6),
 td:nth-child(6) {
-  text-align: center;
+  width: 110px;
 }
 
 th:nth-child(7),
 td:nth-child(7) {
   width: 170px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .sortable {
@@ -218,6 +245,7 @@ td:nth-child(7) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-width: 118px;
   min-height: 24px;
   padding: 4px 10px;
   border-radius: 999px;
@@ -257,6 +285,10 @@ td:nth-child(7) {
   width: 120px;
   white-space: nowrap;
   text-align: center;
+}
+
+td:nth-child(6) {
+  white-space: nowrap;
 }
 
 .actions {
@@ -331,7 +363,22 @@ td:nth-child(7) {
     flex: 1 1 100%;
   }
 
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .date-range-wrap {
     flex-wrap: wrap;
+  }
+
+  .card {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 12px;
   }
 }

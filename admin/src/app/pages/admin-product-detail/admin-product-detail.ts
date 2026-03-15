@@ -114,7 +114,15 @@ export class AdminProductDetail implements OnInit {
   }
 
   goEdit() {
-    this.router.navigate(['/admin/products', this.product._id, 'edit']);
+    this.router.navigate(['/admin/products', this.product._id, 'edit'], {
+      queryParams: this.route.snapshot.queryParams,
+    });
+  }
+
+  back(): void {
+    this.router.navigate(['/admin/products'], {
+      queryParams: this.route.snapshot.queryParams,
+    });
   }
 
   getVariantLabel(v: any): string {
