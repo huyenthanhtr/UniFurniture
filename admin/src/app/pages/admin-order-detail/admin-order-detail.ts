@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -81,7 +81,9 @@ export class AdminOrderDetail implements OnInit {
   }
 
   back() {
-    this.router.navigate(['/admin/orders']);
+    this.router.navigate(['/admin/orders'], {
+      queryParams: this.route.snapshot.queryParams,
+    });
   }
 
   viewProductDetail(item: any): void {

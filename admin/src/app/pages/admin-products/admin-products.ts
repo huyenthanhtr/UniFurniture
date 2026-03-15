@@ -1,7 +1,7 @@
-import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AdminProductsService } from '../../services/admin-products';
 
@@ -18,6 +18,7 @@ type SortDirection = 'asc' | 'desc';
 export class AdminProducts implements OnInit, OnDestroy {
   private api = inject(AdminProductsService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
 
   isLoading = false;
@@ -48,9 +49,12 @@ export class AdminProducts implements OnInit, OnDestroy {
 
   pendingStatusChange: { product: any; nextStatus: ProductStatus; prevStatus: ProductStatus } | null = null;
   private searchDebounceId: ReturnType<typeof setTimeout> | null = null;
+  private lookupsLoaded = false;
+  private routeStateReady = false;
 
   ngOnInit(): void {
-    this.loadLookupsAndProducts();
+    this.bindRouteState();
+    this.loadLookups();
   }
 
   ngOnDestroy(): void {
@@ -60,18 +64,7 @@ export class AdminProducts implements OnInit, OnDestroy {
     }
   }
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement | null;
-    if (!target || !this.sortConfig.column) return;
-
-    const clickedSortableHeader = target.closest('th.sortable');
-    if (clickedSortableHeader) return;
-
-    this.resetSortToDefault();
-  }
-
-  loadLookupsAndProducts(): void {
+  loadLookups(): void {
     this.isLoading = true;
 
     forkJoin({
@@ -88,7 +81,10 @@ export class AdminProducts implements OnInit, OnDestroy {
         this.collectionMap.clear();
         collectionItems.forEach((item: any) => this.collectionMap.set(String(item._id), item.name));
 
-        this.loadProductsPage(1);
+        this.lookupsLoaded = true;
+        if (this.routeStateReady) {
+          this.loadProductsPage(this.page);
+        }
       },
       error: () => {
         this.isLoading = false;
@@ -98,6 +94,8 @@ export class AdminProducts implements OnInit, OnDestroy {
   }
 
   loadProductsPage(page: number): void {
+    if (!this.lookupsLoaded) return;
+
     this.isLoading = true;
     this.page = Math.max(1, page);
 
@@ -125,7 +123,6 @@ export class AdminProducts implements OnInit, OnDestroy {
           ...product,
           _selectedStatus: this.normalizeStatus(product.status),
         }));
-        this.applyLocalSortIfNeeded();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -139,14 +136,12 @@ export class AdminProducts implements OnInit, OnDestroy {
   onSearchChange(): void {
     if (this.searchDebounceId) clearTimeout(this.searchDebounceId);
     this.searchDebounceId = setTimeout(() => {
-      this.page = 1;
-      this.loadProductsPage(1);
+      this.updateRouteState({ page: 1 });
     }, 300);
   }
 
   applyFilters(): void {
-    this.page = 1;
-    this.loadProductsPage(1);
+    this.updateRouteState({ page: 1 });
   }
 
   resetFilters(): void {
@@ -155,25 +150,24 @@ export class AdminProducts implements OnInit, OnDestroy {
       status: '',
     };
     this.sortConfig = { column: '', direction: 'asc' };
-    this.page = 1;
-    this.loadProductsPage(1);
+    this.updateRouteState({
+      search: null,
+      status: null,
+      sortBy: null,
+      order: null,
+      page: null,
+    });
   }
 
   toggleSort(column: string): void {
-    if (this.sortConfig.column === column) {
-      this.sortConfig.direction = this.sortConfig.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortConfig = { column, direction: 'asc' };
-    }
+    const direction: SortDirection =
+      this.sortConfig.column === column && this.sortConfig.direction === 'asc' ? 'desc' : 'asc';
 
-    this.page = 1;
-    this.loadProductsPage(1);
-  }
-
-  resetSortToDefault(): void {
-    this.sortConfig = { column: '', direction: 'asc' };
-    this.page = 1;
-    this.loadProductsPage(1);
+    this.updateRouteState({
+      sortBy: column,
+      order: direction,
+      page: 1,
+    });
   }
 
   askStatusChange(product: any, nextStatus: string): void {
@@ -232,15 +226,21 @@ export class AdminProducts implements OnInit, OnDestroy {
   }
 
   viewDetail(product: any): void {
-    this.router.navigate(['/admin/products', product._id]);
+    this.router.navigate(['/admin/products', product._id], {
+      queryParams: this.route.snapshot.queryParams,
+    });
   }
 
   goNew(): void {
-    this.router.navigate(['/admin/products/new']);
+    this.router.navigate(['/admin/products/new'], {
+      queryParams: this.route.snapshot.queryParams,
+    });
   }
 
   goEdit(product: any): void {
-    this.router.navigate(['/admin/products', product._id, 'edit']);
+    this.router.navigate(['/admin/products', product._id, 'edit'], {
+      queryParams: this.route.snapshot.queryParams,
+    });
   }
 
   categoryName(id: any): string {
@@ -262,17 +262,17 @@ export class AdminProducts implements OnInit, OnDestroy {
   }
 
   goPrev(): void {
-    if (this.page > 1) this.loadProductsPage(this.page - 1);
+    if (this.page > 1) this.updateRouteState({ page: this.page - 1 });
   }
 
   goNext(): void {
-    if (this.page < this.totalPages) this.loadProductsPage(this.page + 1);
+    if (this.page < this.totalPages) this.updateRouteState({ page: this.page + 1 });
   }
 
   goPage(p: any): void {
     const n = Number(p);
     if (!Number.isFinite(n)) return;
-    if (n >= 1 && n <= this.totalPages) this.loadProductsPage(n);
+    if (n >= 1 && n <= this.totalPages) this.updateRouteState({ page: n });
   }
 
   pagesToShow(): (number | '...')[] {
@@ -295,26 +295,11 @@ export class AdminProducts implements OnInit, OnDestroy {
     return out;
   }
 
-  private applyLocalSortIfNeeded(): void {
-    if (!['category', 'collection'].includes(this.sortConfig.column)) return;
-
-    const dir = this.sortConfig.direction === 'asc' ? 1 : -1;
-    this.products = [...this.products].sort((left: any, right: any) => {
-      const leftValue = this.sortConfig.column === 'category'
-        ? this.categoryName(left.category_id)
-        : this.collectionName(left.collection_id);
-      const rightValue = this.sortConfig.column === 'category'
-        ? this.categoryName(right.category_id)
-        : this.collectionName(right.collection_id);
-
-      return leftValue.localeCompare(rightValue, 'vi', { sensitivity: 'base' }) * dir;
-    });
-  }
-
   private getSortParams(): { sortBy?: string; order?: SortDirection } {
     const sortMap: Record<string, string> = {
       name: 'name',
-      sku: 'sku',
+      category: 'category',
+      collection: 'collection',
       min_price: 'min_price',
       sold: 'sold',
       status: 'status',
@@ -328,5 +313,56 @@ export class AdminProducts implements OnInit, OnDestroy {
 
   private normalizeStatus(status: any): ProductStatus {
     return String(status || '').toLowerCase() === 'inactive' ? 'inactive' : 'active';
+  }
+
+  private bindRouteState(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      this.filter = {
+        search: String(params.get('search') || ''),
+        status: String(params.get('status') || ''),
+      };
+
+      const sortBy = String(params.get('sortBy') || '');
+      const order = String(params.get('order') || '').toLowerCase() === 'desc' ? 'desc' : 'asc';
+      this.sortConfig = sortBy ? { column: sortBy, direction: order } : { column: '', direction: 'asc' };
+
+      const page = Number(params.get('page') || 1);
+      this.page = Number.isFinite(page) && page > 0 ? page : 1;
+
+      this.routeStateReady = true;
+      if (this.lookupsLoaded) {
+        this.loadProductsPage(this.page);
+      }
+    });
+  }
+
+  private updateRouteState(changes: {
+    search?: string | null;
+    status?: string | null;
+    sortBy?: string | null;
+    order?: SortDirection | null;
+    page?: number | null;
+  }): void {
+    const queryParams: Record<string, string | number | null> = {
+      search: changes.search !== undefined ? (changes.search ? changes.search : null) : this.filter.search.trim() || null,
+      status: changes.status !== undefined ? (changes.status ? changes.status : null) : this.filter.status || null,
+      sortBy:
+        changes.sortBy !== undefined
+          ? (changes.sortBy ? changes.sortBy : null)
+          : this.sortConfig.column || null,
+      order:
+        changes.order !== undefined
+          ? (changes.order ? changes.order : null)
+          : (this.sortConfig.column ? this.sortConfig.direction : null),
+      page:
+        changes.page !== undefined
+          ? (changes.page && changes.page > 1 ? changes.page : null)
+          : (this.page > 1 ? this.page : null),
+    };
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+    });
   }
 }

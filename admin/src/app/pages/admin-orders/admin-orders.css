@@ -150,6 +150,7 @@
 table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 1080px;
 }
 
 th,
@@ -480,7 +481,27 @@ tbody tr:last-child td {
     flex: 1 1 100%;
   }
 
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .date-range-wrap {
     flex-wrap: wrap;
+  }
+
+  .card {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 12px;
+  }
+
+  th,
+  td {
+    padding: 10px;
   }
 }

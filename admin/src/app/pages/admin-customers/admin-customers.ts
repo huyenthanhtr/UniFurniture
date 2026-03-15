@@ -1,7 +1,7 @@
-import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AdminCustomersService } from '../../services/admin-customers';
 
 @Component({
@@ -14,6 +14,7 @@ import { AdminCustomersService } from '../../services/admin-customers';
 export class AdminCustomers implements OnInit, OnDestroy {
   private api = inject(AdminCustomersService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
 
   isLoading = false;
@@ -40,7 +41,7 @@ export class AdminCustomers implements OnInit, OnDestroy {
   private searchDebounceId: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
-    this.loadCustomers(1);
+    this.bindRouteState();
   }
 
   ngOnDestroy(): void {
@@ -48,17 +49,6 @@ export class AdminCustomers implements OnInit, OnDestroy {
       clearTimeout(this.searchDebounceId);
       this.searchDebounceId = null;
     }
-  }
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement | null;
-    if (!target || !this.sortConfig.column) return;
-
-    const clickedSortableHeader = target.closest('th.sortable');
-    if (clickedSortableHeader) return;
-
-    this.resetSortToDefault();
   }
 
   loadCustomers(page: number): void {
@@ -101,19 +91,16 @@ export class AdminCustomers implements OnInit, OnDestroy {
   onSearchChange(): void {
     if (this.searchDebounceId) clearTimeout(this.searchDebounceId);
     this.searchDebounceId = setTimeout(() => {
-      this.page = 1;
-      this.loadCustomers(1);
+      this.updateRouteState({ page: 1 });
     }, 300);
   }
 
   applySearch(): void {
-    this.page = 1;
-    this.loadCustomers(1);
+    this.updateRouteState({ page: 1 });
   }
 
   onChangeFilters(): void {
-    this.page = 1;
-    this.loadCustomers(1);
+    this.updateRouteState({ page: 1 });
   }
 
   resetFilters(): void {
@@ -125,43 +112,47 @@ export class AdminCustomers implements OnInit, OnDestroy {
       endDate: '',
     };
     this.sortConfig = { column: '', direction: 'asc' };
-    this.page = 1;
-    this.loadCustomers(1);
+    this.updateRouteState({
+      search: null,
+      status: null,
+      customerType: null,
+      startDate: null,
+      endDate: null,
+      sortBy: null,
+      order: null,
+      page: null,
+    });
   }
 
   toggleSort(column: string): void {
-    if (this.sortConfig.column === column) {
-      this.sortConfig.direction = this.sortConfig.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortConfig = { column, direction: 'asc' };
-    }
+    const direction: 'asc' | 'desc' =
+      this.sortConfig.column === column && this.sortConfig.direction === 'asc' ? 'desc' : 'asc';
 
-    this.page = 1;
-    this.loadCustomers(1);
-  }
-
-  resetSortToDefault(): void {
-    this.sortConfig = { column: '', direction: 'asc' };
-    this.page = 1;
-    this.loadCustomers(1);
+    this.updateRouteState({
+      sortBy: column,
+      order: direction,
+      page: 1,
+    });
   }
 
   viewDetail(customer: any): void {
-    this.router.navigate(['/admin/customers', customer._id]);
+    this.router.navigate(['/admin/customers', customer._id], {
+      queryParams: this.route.snapshot.queryParams,
+    });
   }
 
   goPrev(): void {
-    if (this.page > 1) this.loadCustomers(this.page - 1);
+    if (this.page > 1) this.updateRouteState({ page: this.page - 1 });
   }
 
   goNext(): void {
-    if (this.page < this.totalPages) this.loadCustomers(this.page + 1);
+    if (this.page < this.totalPages) this.updateRouteState({ page: this.page + 1 });
   }
 
   goPage(p: any): void {
     const n = Number(p);
     if (!Number.isFinite(n)) return;
-    if (n >= 1 && n <= this.totalPages) this.loadCustomers(n);
+    if (n >= 1 && n <= this.totalPages) this.updateRouteState({ page: n });
   }
 
   pagesToShow(): (number | '...')[] {
@@ -206,7 +197,6 @@ export class AdminCustomers implements OnInit, OnDestroy {
   private getSortParams(): { sortBy?: string; order?: 'asc' | 'desc' } {
     const sortMap: Record<string, string> = {
       customer_code: 'customer_code',
-      full_name: 'full_name',
       customer_type: 'customer_type',
       status: 'status',
       address_count: 'address_count',
@@ -217,5 +207,71 @@ export class AdminCustomers implements OnInit, OnDestroy {
     if (!sortBy) return {};
 
     return { sortBy, order: this.sortConfig.direction };
+  }
+
+  private bindRouteState(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      this.filter = {
+        search: String(params.get('search') || ''),
+        status: String(params.get('status') || ''),
+        customerType: String(params.get('customerType') || ''),
+        startDate: String(params.get('startDate') || ''),
+        endDate: String(params.get('endDate') || ''),
+      };
+
+      const sortBy = String(params.get('sortBy') || '');
+      const order = String(params.get('order') || '').toLowerCase() === 'desc' ? 'desc' : 'asc';
+      this.sortConfig = sortBy ? { column: sortBy, direction: order } : { column: '', direction: 'asc' };
+
+      const page = Number(params.get('page') || 1);
+      this.page = Number.isFinite(page) && page > 0 ? page : 1;
+
+      this.loadCustomers(this.page);
+    });
+  }
+
+  private updateRouteState(changes: {
+    search?: string | null;
+    status?: string | null;
+    customerType?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    sortBy?: string | null;
+    order?: 'asc' | 'desc' | null;
+    page?: number | null;
+  }): void {
+    const queryParams: Record<string, string | number | null> = {
+      search: changes.search !== undefined ? (changes.search ? changes.search : null) : this.filter.search.trim() || null,
+      status: changes.status !== undefined ? (changes.status ? changes.status : null) : this.filter.status || null,
+      customerType:
+        changes.customerType !== undefined
+          ? (changes.customerType ? changes.customerType : null)
+          : this.filter.customerType || null,
+      startDate:
+        changes.startDate !== undefined
+          ? (changes.startDate ? changes.startDate : null)
+          : this.filter.startDate || null,
+      endDate:
+        changes.endDate !== undefined
+          ? (changes.endDate ? changes.endDate : null)
+          : this.filter.endDate || null,
+      sortBy:
+        changes.sortBy !== undefined
+          ? (changes.sortBy ? changes.sortBy : null)
+          : this.sortConfig.column || null,
+      order:
+        changes.order !== undefined
+          ? (changes.order ? changes.order : null)
+          : (this.sortConfig.column ? this.sortConfig.direction : null),
+      page:
+        changes.page !== undefined
+          ? (changes.page && changes.page > 1 ? changes.page : null)
+          : (this.page > 1 ? this.page : null),
+    };
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+    });
   }
 }

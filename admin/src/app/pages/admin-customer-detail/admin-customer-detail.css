@@ -16,6 +16,11 @@
   margin-top: 4px;
 }
 
+.page-header h1 {
+  margin: 0;
+  font-size: calc(1.2rem + 1vw);
+}
+
 .actions {
   display: flex;
   gap: 10px;
@@ -75,12 +80,14 @@
 .table-wrap {
   border: 1px solid #ece6e0;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 720px;
 }
 
 th,
@@ -170,6 +177,19 @@ tbody tr:last-child td {
 }
 
 @media (max-width: 820px) {
+  .page {
+    padding: 12px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
   .table-wrap {
     overflow-x: auto;
   }

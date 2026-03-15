@@ -9,6 +9,22 @@ const ProductImage = require("../models/ProductImage");
 const Coupon = require("../models/Coupon");
 
 const ORDER_STATUSES = ["pending", "confirmed", "processing", "shipping", "delivered", "completed", "cancelled", "refunded"];
+const NORMAL_STATUS_ASC_WEIGHT = {
+  pending: 1,
+  confirmed: 2,
+  processing: 3,
+  shipping: 4,
+  delivered: 5,
+  completed: 6,
+};
+const NORMAL_STATUS_DESC_WEIGHT = {
+  completed: 1,
+  delivered: 2,
+  shipping: 3,
+  processing: 4,
+  confirmed: 5,
+  pending: 6,
+};
 
 function normalizeStatus(value) {
   const status = String(value || "").trim().toLowerCase();
@@ -34,7 +50,7 @@ function buildDisplay(order, customer, profile) {
     order?.shipping_name ||
     customer?.full_name ||
     profile?.full_name ||
-    "Khách không đăng nhập";
+    "KhÃ¡ch khÃ´ng Ä‘Äƒng nháº­p";
 
   const phone =
     order?.shipping_phone ||
@@ -62,6 +78,126 @@ function buildDisplay(order, customer, profile) {
   };
 }
 
+function buildPaymentSummary(orderDoc, orderPayments) {
+  const paidPayments = orderPayments.filter((x) => String(x.status || "").toLowerCase() === "paid");
+  const paidTotal = paidPayments.reduce((sum, x) => sum + Number(x.amount || 0), 0);
+  const latestPayment = orderPayments[0] || null;
+  const depositAmount = Math.max(Number(orderDoc.deposit_amount || 0), 0);
+  const totalAmount = Math.max(Number(orderDoc.total_amount || 0), 0);
+  const depositPaidTotal = paidPayments
+    .filter((x) => String(x.type || "").toLowerCase() === "deposit")
+    .reduce((sum, x) => sum + Number(x.amount || 0), 0);
+  const hasDepositPaid = depositAmount > 0 && depositPaidTotal >= depositAmount;
+  const hasFullPaid = totalAmount > 0 && paidTotal >= totalAmount;
+  const hasRemainingPaid = paidPayments.some((x) => String(x.type || "").toLowerCase() === "remaining");
+  const latestPaidType = paidPayments[0]?.type || null;
+
+  return {
+    method: latestPayment?.method || "-",
+    status: latestPayment?.status || "-",
+    count: orderPayments.length,
+    paid_total: paidTotal,
+    deposit_amount: depositAmount,
+    deposit_paid_total: depositPaidTotal,
+    has_deposit_paid: hasDepositPaid,
+    has_full_paid: hasFullPaid,
+    has_remaining_paid: hasRemainingPaid,
+    latest_paid_type: latestPaidType,
+    total_amount: totalAmount,
+  };
+}
+
+function getPaymentSortWeight(paymentSummary, direction) {
+  const total = Number(paymentSummary?.total_amount || 0);
+  const paidTotal = Number(paymentSummary?.paid_total || 0);
+  const hasDepositPaid = !!paymentSummary?.has_deposit_paid;
+  const hasFullPaid = !!paymentSummary?.has_full_paid;
+  const latestStatus = String(paymentSummary?.status || "").toLowerCase();
+  const paymentCount = Number(paymentSummary?.count || 0);
+
+  let weight = 1;
+  if (hasFullPaid || (total > 0 && paidTotal >= total)) weight = 4;
+  else if (hasDepositPaid) weight = 3;
+  else if (paymentCount > 0) weight = 2;
+
+  if (latestStatus === "failed") return 5;
+  if (latestStatus === "refunded") return 6;
+
+  return direction === "desc" ? 5 - weight : weight;
+}
+
+function getStatusSortWeight(status, direction) {
+  const key = String(status || "").toLowerCase();
+  if (key === "cancelled") return 7;
+  if (key === "refunded") return 8;
+  return direction === "desc"
+    ? (NORMAL_STATUS_DESC_WEIGHT[key] || 99)
+    : (NORMAL_STATUS_ASC_WEIGHT[key] || 99);
+}
+
+function compareValues(left, right, direction, type = "string") {
+  if (type === "number") {
+    const a = Number(left || 0);
+    const b = Number(right || 0);
+    if (a === b) return 0;
+    return a < b ? -1 * direction : 1 * direction;
+  }
+
+  if (type === "date") {
+    const a = new Date(left || 0).getTime();
+    const b = new Date(right || 0).getTime();
+    if (a === b) return 0;
+    return a < b ? -1 * direction : 1 * direction;
+  }
+
+  const a = String(left || "");
+  const b = String(right || "");
+  return a.localeCompare(b, "vi", { sensitivity: "base", numeric: true }) * direction;
+}
+
+function sortOrders(items, sortKey, sortDirection) {
+  const direction = sortDirection === "asc" ? 1 : -1;
+
+  return [...items].sort((left, right) => {
+    let result = 0;
+
+    switch (sortKey) {
+      case "order_code":
+        result = compareValues(left.order_code, right.order_code, direction);
+        break;
+      case "customer_type":
+        result = compareValues(left.display?.customer_type, right.display?.customer_type, direction);
+        break;
+      case "payment":
+        result = compareValues(
+          getPaymentSortWeight(left.payment_summary, sortDirection),
+          getPaymentSortWeight(right.payment_summary, sortDirection),
+          1,
+          "number"
+        );
+        break;
+      case "total_amount":
+        result = compareValues(left.total_amount, right.total_amount, direction, "number");
+        break;
+      case "status":
+        result = compareValues(
+          getStatusSortWeight(left.status, sortDirection),
+          getStatusSortWeight(right.status, sortDirection),
+          1,
+          "number"
+        );
+        break;
+      case "ordered_at":
+      default:
+        result = compareValues(left.ordered_at || left.createdAt, right.ordered_at || right.createdAt, direction, "date");
+        break;
+    }
+
+    if (result !== 0) return result;
+    return compareValues(left._id, right._id, -1);
+  });
+}
+
 async function getOrders(req, res, next) {
   try {
     const {
@@ -79,7 +215,7 @@ async function getOrders(req, res, next) {
     const pageNum = Math.max(parseInt(page, 10) || 1, 1);
     const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 200);
     const skip = (pageNum - 1) * limitNum;
-    const sortDirection = String(order).toLowerCase() === "asc" ? 1 : -1;
+    const sortDirection = String(order).toLowerCase() === "asc" ? "asc" : "desc";
 
     const query = {};
     const andConditions = [];
@@ -94,11 +230,11 @@ async function getOrders(req, res, next) {
       if (kw) {
         andConditions.push({
           $or: [
-          { order_code: { $regex: kw, $options: "i" } },
-          { shipping_name: { $regex: kw, $options: "i" } },
-          { shipping_phone: { $regex: kw, $options: "i" } },
-          { shipping_email: { $regex: kw, $options: "i" } },
-          { shipping_address: { $regex: kw, $options: "i" } },
+            { order_code: { $regex: kw, $options: "i" } },
+            { shipping_name: { $regex: kw, $options: "i" } },
+            { shipping_phone: { $regex: kw, $options: "i" } },
+            { shipping_email: { $regex: kw, $options: "i" } },
+            { shipping_address: { $regex: kw, $options: "i" } },
           ],
         });
       }
@@ -156,25 +292,16 @@ async function getOrders(req, res, next) {
 
     const sortKey = [
       "order_code",
-      "shipping_name",
-      "shipping_phone",
+      "customer_type",
+      "payment",
       "status",
       "ordered_at",
-      "createdAt",
-      "updatedAt",
       "total_amount",
     ].includes(String(sortBy))
       ? String(sortBy)
       : "ordered_at";
 
-    const [orders, total] = await Promise.all([
-      Order.find(query)
-        .sort({ [sortKey]: sortDirection, _id: -1 })
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
-      Order.countDocuments(query),
-    ]);
+    const orders = await Order.find(query).lean();
 
     const customerIds = [...new Set(orders.map((x) => String(x.customer_id || "")).filter(Boolean))];
     const orderIds = orders.map((x) => String(x._id));
@@ -200,37 +327,24 @@ async function getOrders(req, res, next) {
       const profile = profileMap.get(String(orderDoc.customer_id || ""));
       const display = buildDisplay(orderDoc, customer, profile);
       const orderPayments = paymentMap.get(String(orderDoc._id)) || [];
-      const paidPayments = orderPayments.filter((x) => String(x.status || "").toLowerCase() === "paid");
-      const paidTotal = paidPayments.reduce((sum, x) => sum + Number(x.amount || 0), 0);
-      const latestPayment = orderPayments[0] || null;
-      const hasDepositPaid = paidPayments.some((x) => String(x.type || "").toLowerCase() === "deposit");
-      const hasFullPaid = paidPayments.some((x) => String(x.type || "").toLowerCase() === "full");
-      const hasRemainingPaid = paidPayments.some((x) => String(x.type || "").toLowerCase() === "remaining");
-      const latestPaidType = paidPayments[0]?.type || null;
 
       return {
         ...orderDoc,
         display,
-        payment_summary: {
-          method: latestPayment?.method || "-",
-          status: latestPayment?.status || "-",
-          count: orderPayments.length,
-          paid_total: paidTotal,
-          has_deposit_paid: hasDepositPaid,
-          has_full_paid: hasFullPaid,
-          has_remaining_paid: hasRemainingPaid,
-          latest_paid_type: latestPaidType,
-          total_amount: Number(orderDoc.total_amount || 0),
-        },
+        payment_summary: buildPaymentSummary(orderDoc, orderPayments),
       };
     });
+
+    const sortedItems = sortOrders(items, sortKey, sortDirection);
+    const total = sortedItems.length;
+    const pagedItems = sortedItems.slice(skip, skip + limitNum);
 
     res.json({
       page: pageNum,
       limit: limitNum,
       total,
       totalPages: Math.ceil(total / limitNum) || 1,
-      items,
+      items: pagedItems,
     });
   } catch (err) {
     next(err);

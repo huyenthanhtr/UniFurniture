@@ -138,6 +138,7 @@
 table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 960px;
 }
 
 th,
@@ -399,5 +400,38 @@ tbody tr:last-child td {
   .page-header {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  th,
+  td {
+    padding: 10px;
+  }
+
+  .product-cell {
+    min-width: 220px;
+  }
+
+  .thumb {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 12px;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+  }
+
+  .btn-primary,
+  .btn-ghost {
+    width: 100%;
   }
 }

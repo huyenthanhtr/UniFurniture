@@ -33,6 +33,36 @@ function normalizeProductPayload(body = {}) {
   };
 }
 
+function buildProjection(fields, exclude) {
+  if (fields) {
+    const names = String(fields)
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (!names.length) return null;
+
+    const projection = { _id: 1 };
+    for (const name of names) projection[name] = 1;
+    return projection;
+  }
+
+  if (exclude) {
+    const names = String(exclude)
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (!names.length) return null;
+
+    const projection = {};
+    for (const name of names) projection[name] = 0;
+    return projection;
+  }
+
+  return null;
+}
+
 async function getProducts(req, res, next) {
   try {
     const {
@@ -103,30 +133,69 @@ async function getProducts(req, res, next) {
       query.$and = andConditions;
     }
 
-    const sortKey = ["createdAt", "updatedAt", "sold", "min_price", "name", "sku", "status"].includes(String(sortBy))
+    const sortKey = ["createdAt", "updatedAt", "sold", "min_price", "name", "status", "category", "collection"].includes(String(sortBy))
       ? String(sortBy)
       : "updatedAt";
+    const projection = buildProjection(fields, exclude);
+    const hasIncludeProjection = !!projection && Object.values(projection).some((value) => value === 1);
 
-    let projection = undefined;
-    if (fields) {
-      const f = String(fields).split(",").map((s) => s.trim()).filter(Boolean);
-      if (f.length) projection = f.join(" ");
-    } else if (exclude) {
-      const ex = String(exclude)
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((x) => `-${x}`);
-      if (ex.length) projection = ex.join(" ");
+    const pipeline = [
+      { $match: query },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category_id",
+          foreignField: "_id",
+          as: "category_doc",
+        },
+      },
+      {
+        $lookup: {
+          from: "collections",
+          localField: "collection_id",
+          foreignField: "_id",
+          as: "collection_doc",
+        },
+      },
+      {
+        $addFields: {
+          category_name: { $ifNull: [{ $arrayElemAt: ["$category_doc.name", 0] }, ""] },
+          collection_name: { $ifNull: [{ $arrayElemAt: ["$collection_doc.name", 0] }, ""] },
+        },
+      },
+      {
+        $sort: {
+          [sortKey === "category" ? "category_name" : sortKey === "collection" ? "collection_name" : sortKey]: sortDirection,
+          _id: -1,
+        },
+      },
+      { $skip: skip },
+      { $limit: limitNum },
+    ];
+
+    if (projection && hasIncludeProjection) {
+      pipeline.push({ $project: projection });
+    } else {
+      pipeline.push({
+        $project: projection
+          ? {
+            ...projection,
+            category_doc: 0,
+            collection_doc: 0,
+            category_name: 0,
+            collection_name: 0,
+          }
+          : {
+            category_doc: 0,
+            collection_doc: 0,
+            category_name: 0,
+            collection_name: 0,
+          },
+      });
     }
 
     const [items, total] = await Promise.all([
-      Product.find(query)
-        .select(projection)
-        .sort({ [sortKey]: sortDirection, _id: -1 })
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
+      Product.aggregate(pipeline).collation({ locale: "vi", strength: 1, numericOrdering: true }),
       Product.countDocuments(query),
     ]);
 

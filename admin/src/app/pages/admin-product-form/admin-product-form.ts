@@ -590,8 +590,16 @@ export class AdminProductForm implements OnInit, AfterViewInit {
   }
 
   back() {
-    if (this.isEdit) this.router.navigate(['/admin/products', this.id]);
-    else this.router.navigate(['/admin/products']);
+    if (this.isEdit) {
+      this.router.navigate(['/admin/products', this.id], {
+        queryParams: this.route.snapshot.queryParams,
+      });
+      return;
+    }
+
+    this.router.navigate(['/admin/products'], {
+      queryParams: this.route.snapshot.queryParams,
+    });
   }
 
   askSave() {
@@ -630,7 +638,9 @@ export class AdminProductForm implements OnInit, AfterViewInit {
 
       this.form.markAsPristine();
       this.isLoading = false;
-      this.router.navigate(['/admin/products', productId]);
+      this.router.navigate(['/admin/products', productId], {
+        queryParams: this.route.snapshot.queryParams,
+      });
     } catch {
       this.isLoading = false;
       alert('Không thể lưu sản phẩm. Vui lòng kiểm tra lại dữ liệu.');

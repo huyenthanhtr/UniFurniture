@@ -54,11 +54,15 @@ export class AdminCustomerDetail implements OnInit {
   }
 
   back() {
-    this.router.navigate(['/admin/customers']);
+    this.router.navigate(['/admin/customers'], {
+      queryParams: this.route.snapshot.queryParams,
+    });
   }
 
   viewAddress(address: any) {
-    this.router.navigate(['/admin/customers', this.id, 'addresses', address._id]);
+    this.router.navigate(['/admin/customers', this.id, 'addresses', address._id], {
+      queryParams: this.route.snapshot.queryParams,
+    });
   }
 
   customerTypeLabel(type: any): string {
