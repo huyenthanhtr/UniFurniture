@@ -1,7 +1,11 @@
 import { Injectable, computed, signal } from '@angular/core';
 
 export interface CartItem {
+    cartKey: string;
     productId: string;
+    variantId?: string;
+    variantLabel?: string;
+    colorName?: string;
     name: string;
     imageUrl: string;
     quantity: number;
@@ -41,7 +45,7 @@ export class UiStateService {
     addToCart(item: Omit<CartItem, 'quantity'>, quantity = 1) {
         const safeQuantity = Math.max(1, Math.floor(quantity || 1));
         this.cartItems.update((currentItems) => {
-            const existingIndex = currentItems.findIndex((cartItem) => cartItem.productId === item.productId);
+            const existingIndex = currentItems.findIndex((cartItem) => cartItem.cartKey === item.cartKey);
             if (existingIndex >= 0) {
                 const updatedItems = [...currentItems];
                 updatedItems[existingIndex] = {
@@ -49,6 +53,9 @@ export class UiStateService {
                     quantity: updatedItems[existingIndex].quantity + safeQuantity,
                     price: item.price ?? updatedItems[existingIndex].price,
                     imageUrl: item.imageUrl || updatedItems[existingIndex].imageUrl,
+                    variantId: item.variantId ?? updatedItems[existingIndex].variantId,
+                    variantLabel: item.variantLabel ?? updatedItems[existingIndex].variantLabel,
+                    colorName: item.colorName ?? updatedItems[existingIndex].colorName,
                 };
                 this.persistCart(updatedItems);
                 return updatedItems;
@@ -60,20 +67,20 @@ export class UiStateService {
         });
     }
 
-    updateCartItemQuantity(productId: string, quantity: number) {
+    updateCartItemQuantity(cartKey: string, quantity: number) {
         const safeQuantity = Math.max(1, Math.floor(quantity || 1));
         this.cartItems.update((currentItems) => {
             const nextItems = currentItems.map((item) =>
-                item.productId === productId ? { ...item, quantity: safeQuantity } : item
+                item.cartKey === cartKey ? { ...item, quantity: safeQuantity } : item
             );
             this.persistCart(nextItems);
             return nextItems;
         });
     }
 
-    removeFromCart(productId: string) {
+    removeFromCart(cartKey: string) {
         this.cartItems.update((currentItems) => {
-            const nextItems = currentItems.filter((item) => item.productId !== productId);
+            const nextItems = currentItems.filter((item) => item.cartKey !== cartKey);
             this.persistCart(nextItems);
             return nextItems;
         });
@@ -105,13 +112,17 @@ export class UiStateService {
             }
             return parsed
                 .map((item: any) => ({
+                    cartKey: String(item?.cartKey || item?.variantId || item?.productId || ''),
                     productId: String(item?.productId || ''),
+                    variantId: String(item?.variantId || ''),
+                    variantLabel: String(item?.variantLabel || ''),
+                    colorName: String(item?.colorName || ''),
                     name: String(item?.name || ''),
                     imageUrl: String(item?.imageUrl || ''),
                     quantity: Math.max(1, Number(item?.quantity) || 1),
                     price: typeof item?.price === 'number' ? item.price : null,
                 }))
-                .filter((item: CartItem) => item.productId && item.name);
+                .filter((item: CartItem) => item.cartKey && item.productId && item.name);
         } catch {
             return [];
         }

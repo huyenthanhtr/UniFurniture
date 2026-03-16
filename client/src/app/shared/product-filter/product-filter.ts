@@ -17,7 +17,9 @@ export interface FilterCategoryTreeGroup {
 export interface ProductFilterState {
   categoryId: string;
   categoryIds: string[];
-  categoryType: 'category' | 'collection' | 'none';
+  collectionIds: string[];
+  categoryGroupId: string;
+  categoryType: 'category' | 'collection' | 'mixed' | 'none';
   priceRanges: string[];
   colors: string[];
   sizes: string[];
@@ -30,10 +32,10 @@ type DropdownKey = 'category' | 'price' | 'color' | 'size';
 type FilterChipType = 'category' | 'price' | 'color' | 'size';
 
 const DEFAULT_COLOR_OPTIONS: FilterSelectOption[] = [
-  { value: 'trang', label: 'Trang', hex: '#f5f5f4' },
-  { value: 'den', label: 'Den', hex: '#111827' },
-  { value: 'xam', label: 'Xam', hex: '#9ca3af' },
-  { value: 'nau', label: 'Nau', hex: '#8b5e3c' },
+  { value: 'trang', label: 'Trắng', hex: '#f5f5f4' },
+  { value: 'den', label: 'Đen', hex: '#111827' },
+  { value: 'xam', label: 'Xám', hex: '#9ca3af' },
+  { value: 'nau', label: 'Nâu', hex: '#8b5e3c' },
   { value: 'xanh', label: 'Xanh', hex: '#6f96bf' },
   { value: 'mix', label: 'Mix', hex: '#d1d5db' },
 ];
@@ -54,6 +56,7 @@ export class ProductFilterComponent {
   @Input() categoryDefaultLabel = 'Tất cả danh mục';
   @Input() selectedCategoryId = '';
   @Input() selectedCategoryIds: string[] = [];
+  @Input() selectedCategoryGroupId = '';
   @Input() selectedPriceRanges: string[] = [];
   @Input() selectedColors: string[] = [];
   @Input() selectedSizes: string[] = [];
@@ -96,12 +99,7 @@ export class ProductFilterComponent {
   toggleDropdown(dropdown: DropdownKey): void {
     this.openDropdown = this.openDropdown === dropdown ? null : dropdown;
     if (this.openDropdown === 'category' && this.isCategoryTreeMode()) {
-      const preferred = this.preferredExpandedGroupIds.filter((id) => this.categoryTree.some((group) => group.id === id));
-      if (preferred.length > 0) {
-        preferred.forEach((id) => this.expandedGroupIds.add(id));
-      } else if (this.expandedGroupIds.size === 0) {
-        this.categoryTree.forEach((group) => this.expandedGroupIds.add(group.id));
-      }
+      this.syncExpandedGroupsToSelection();
     }
   }
 
@@ -151,7 +149,7 @@ export class ProductFilterComponent {
 
   getCategoryLabel(): string {
     if (this.isCategoryTreeMode() || this.isCategoryMultiSelect()) {
-      const selectedCount = this.getResolvedSelectedCategoryIds().length;
+      const selectedCount = this.getSelectedCategoryCount();
       return selectedCount > 0 ? `Đã chọn ${selectedCount}` : this.categoryDefaultLabel;
     }
     return this.resolveLabel(this.categoryOptions, this.selectedCategoryId, this.categoryDefaultLabel);
@@ -185,7 +183,7 @@ export class ProductFilterComponent {
     if (!value) {
       return this.getResolvedSelectedCategoryIds().length === 0;
     }
-    return this.getResolvedSelectedCategoryIds().includes(value);
+    return this.getDisplaySelectedCategoryIds().includes(value);
   }
 
   isCategoryTreeMode(): boolean {
@@ -205,6 +203,18 @@ export class ProductFilterComponent {
   }
 
   toggleCategoryGroup(group: FilterCategoryTreeGroup): void {
+    if (group.id === 'bo-suu-tap') {
+      const isChecked = this.selectedCategoryGroupId === group.id;
+      this.selectedCategoryGroupId = isChecked ? '' : group.id;
+      if (isChecked) {
+        this.selectedCategoryIds = this.getResolvedSelectedCategoryIds().filter((id) => !this.isCollectionOption(id));
+        this.selectedCategoryId = this.selectedCategoryIds.length === 1 ? this.selectedCategoryIds[0] : '';
+      }
+      this.syncExpandedGroupsToSelection();
+      this.emitFilters();
+      return;
+    }
+
     const selected = new Set(this.getResolvedSelectedCategoryIds());
     const childIds = group.children.map((item) => item.value).filter(Boolean);
     const isChecked = childIds.length > 0 && childIds.every((id) => selected.has(id));
@@ -217,10 +227,14 @@ export class ProductFilterComponent {
 
     this.selectedCategoryIds = Array.from(selected);
     this.selectedCategoryId = this.selectedCategoryIds.length === 1 ? this.selectedCategoryIds[0] : '';
+    this.syncExpandedGroupsToSelection();
     this.emitFilters();
   }
 
   isGroupChecked(group: FilterCategoryTreeGroup): boolean {
+    if (this.selectedCategoryGroupId === group.id) {
+      return true;
+    }
     if (group.children.length === 0) {
       return false;
     }
@@ -229,6 +243,9 @@ export class ProductFilterComponent {
   }
 
   isGroupIndeterminate(group: FilterCategoryTreeGroup): boolean {
+    if (this.selectedCategoryGroupId === group.id) {
+      return false;
+    }
     const selected = new Set(this.getResolvedSelectedCategoryIds());
     const childCount = group.children.length;
     if (childCount === 0) {
@@ -239,9 +256,15 @@ export class ProductFilterComponent {
   }
 
   selectedCategoryChips(): FilterSelectOption[] {
-    const selectedSet = new Set(this.getResolvedSelectedCategoryIds());
+    const selectedSet = new Set(this.getDisplaySelectedCategoryIds());
     const sourceOptions = this.categoryOptions.length > 0 ? this.categoryOptions : this.categoryTree.flatMap((group) => group.children);
-    return sourceOptions.filter((option) => selectedSet.has(option.value));
+    const selectedOptions = sourceOptions.filter((option) => selectedSet.has(option.value));
+
+    if (selectedOptions.length > 0) {
+      return selectedOptions;
+    }
+
+    return [];
   }
 
   getCategoryChipLabel(): string {
@@ -282,6 +305,7 @@ export class ProductFilterComponent {
 
   hasSelectedFilters(): boolean {
     return (
+      Boolean(this.selectedCategoryGroupId) ||
       this.getResolvedSelectedCategoryIds().length > 0 ||
       this.selectedPriceRanges.length > 0 ||
       this.selectedColors.length > 0 ||
@@ -294,10 +318,12 @@ export class ProductFilterComponent {
       if (!value) {
         this.selectedCategoryIds = [];
         this.selectedCategoryId = '';
+        this.selectedCategoryGroupId = '';
       } else {
         this.selectedCategoryIds = this.getResolvedSelectedCategoryIds().filter((id) => id !== value);
         this.selectedCategoryId = this.selectedCategoryIds.length === 1 ? this.selectedCategoryIds[0] : '';
       }
+      this.syncExpandedGroupsToSelection();
       this.emitFilters();
       return;
     }
@@ -316,9 +342,11 @@ export class ProductFilterComponent {
   clearAllFilters(): void {
     this.selectedCategoryIds = [];
     this.selectedCategoryId = '';
+    this.selectedCategoryGroupId = '';
     this.selectedPriceRanges = [];
     this.selectedColors = [];
     this.selectedSizes = [];
+    this.syncExpandedGroupsToSelection();
     this.emitFilters();
   }
 
@@ -331,26 +359,35 @@ export class ProductFilterComponent {
   }
 
   emitFilters(): void {
-    const selectedCategoryIds = this.getResolvedSelectedCategoryIds();
+    const selectedCategoryGroupId = this.selectedCategoryGroupId;
+    const displaySelectedIds = this.getDisplaySelectedCategoryIds();
     const sourceOptions =
       this.categoryOptions.length > 0 ? this.categoryOptions : this.categoryTree.flatMap((group) => group.children);
-    const selectedOptions = sourceOptions.filter((option) => selectedCategoryIds.includes(option.value));
-    const hasCollection = selectedOptions.some((option) => option.type === 'collection');
-    const hasCategory = selectedOptions.some((option) => option.type !== 'collection');
-    const categoryType: 'category' | 'collection' | 'none' = hasCategory
-      ? 'category'
-      : hasCollection
-        ? 'collection'
-        : 'none';
-    const firstCollectionId = selectedOptions.find((option) => option.type === 'collection')?.value || '';
+    const selectedOptions = sourceOptions.filter((option) => displaySelectedIds.includes(option.value));
+    const collectionIds = selectedOptions.filter((option) => option.type === 'collection').map((option) => option.value);
+    const categoryIds = selectedOptions.filter((option) => option.type !== 'collection').map((option) => option.value);
+    const hasCollection = collectionIds.length > 0;
+    const hasCategory = categoryIds.length > 0;
+    const categoryType: 'category' | 'collection' | 'mixed' | 'none' =
+      hasCollection && hasCategory
+        ? 'mixed'
+        : hasCategory
+          ? 'category'
+          : hasCollection
+            ? 'collection'
+            : 'none';
     const effectiveCategoryId =
       categoryType === 'collection'
-        ? firstCollectionId
-        : this.selectedCategoryId || (selectedCategoryIds.length === 1 ? selectedCategoryIds[0] : '');
+        ? collectionIds[0] || ''
+        : categoryType === 'category'
+          ? this.selectedCategoryId || (categoryIds.length === 1 ? categoryIds[0] : '')
+          : '';
 
     this.filtersChange.emit({
       categoryId: effectiveCategoryId,
-      categoryIds: selectedCategoryIds,
+      categoryIds,
+      collectionIds,
+      categoryGroupId: selectedCategoryGroupId,
       categoryType,
       priceRanges: this.selectedPriceRanges,
       colors: this.selectedColors,
@@ -377,7 +414,11 @@ export class ProductFilterComponent {
   }
 
   getDisplayedCategoryLabel(): string {
-    const selectedIds = this.getResolvedSelectedCategoryIds();
+    const selectedIds = this.getDisplaySelectedCategoryIds();
+    if (selectedIds.length === 0 && this.selectedCategoryGroupId) {
+      return this.getCategoryLabel();
+    }
+
     if (selectedIds.length === 0) {
       return this.categoryTriggerLabel || this.categoryDefaultLabel;
     }
@@ -409,13 +450,37 @@ export class ProductFilterComponent {
     return this.selectedCategoryId ? [this.selectedCategoryId] : [];
   }
 
+  private getSelectedCategoryCount(): number {
+    return this.getDisplaySelectedCategoryIds().length;
+  }
+
+  private getDisplaySelectedCategoryIds(): string[] {
+    const displayIds = new Set(this.getResolvedSelectedCategoryIds());
+
+    if (this.selectedCategoryGroupId) {
+      const selectedGroup = this.categoryTree.find((group) => group.id === this.selectedCategoryGroupId);
+      selectedGroup?.children.forEach((item) => {
+        if (item.value) {
+          displayIds.add(item.value);
+        }
+      });
+    }
+
+    return Array.from(displayIds);
+  }
+
   private toggleCategoryLeaf(value: string): void {
     if (!value) {
       this.selectedCategoryIds = [];
       this.selectedCategoryId = '';
+      this.selectedCategoryGroupId = '';
+      this.syncExpandedGroupsToSelection();
       return;
     }
 
+    if (this.isCollectionOption(value)) {
+      this.selectedCategoryGroupId = '';
+    }
     const nextSet = new Set(this.getResolvedSelectedCategoryIds());
     if (nextSet.has(value)) {
       nextSet.delete(value);
@@ -425,6 +490,39 @@ export class ProductFilterComponent {
 
     this.selectedCategoryIds = Array.from(nextSet);
     this.selectedCategoryId = this.selectedCategoryIds.length === 1 ? this.selectedCategoryIds[0] : '';
+    this.syncExpandedGroupsToSelection();
+  }
+
+  private isCollectionOption(value: string): boolean {
+    return this.categoryTree.some((group) =>
+      group.children.some((child) => child.value === value && child.type === 'collection')
+    );
+  }
+
+  private syncExpandedGroupsToSelection(): void {
+    const nextExpandedGroupIds = new Set<string>();
+
+    if (this.selectedCategoryGroupId) {
+      nextExpandedGroupIds.add(this.selectedCategoryGroupId);
+    }
+
+    const selectedIds = new Set(this.getResolvedSelectedCategoryIds());
+    if (selectedIds.size > 0) {
+      this.categoryTree.forEach((group) => {
+        if (group.children.some((child) => selectedIds.has(child.value))) {
+          nextExpandedGroupIds.add(group.id);
+        }
+      });
+    }
+
+    if (nextExpandedGroupIds.size === 0) {
+      this.preferredExpandedGroupIds
+        .filter((id) => this.categoryTree.some((group) => group.id === id))
+        .forEach((id) => nextExpandedGroupIds.add(id));
+    }
+
+    this.expandedGroupIds.clear();
+    nextExpandedGroupIds.forEach((id) => this.expandedGroupIds.add(id));
   }
 
   private toggleMultiValue(values: string[], value: string, assign: (next: string[]) => void): void {
@@ -443,7 +541,7 @@ export class ProductFilterComponent {
     }
 
     const visibleValues = values.slice(0, maxVisible);
-    const suffix = values.length > maxVisible ? ',Khác' : '';
+    const suffix = values.length > maxVisible ? ', Khác' : '';
     return `${visibleValues.join(',')}${suffix}`;
   }
 }

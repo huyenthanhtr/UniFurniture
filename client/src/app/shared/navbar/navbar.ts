@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 import { ProductDataService, TaxonomyItem } from '../../services/product-data.service';
 
@@ -33,6 +33,7 @@ const ROOM_ORDER = ['phong-ngu', 'phong-khach', 'phong-an', 'phong-lam-viec'];
 export class Navbar implements OnInit {
   private readonly productDataService = inject(ProductDataService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
   private closeMenuTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly productGroups = signal<NavGroupItem[]>([]);
@@ -104,6 +105,26 @@ export class Navbar implements OnInit {
     }
 
     return params;
+  }
+
+  navigateToProductGroup(event: MouseEvent, group: NavGroupItem): void {
+    event.preventDefault();
+    void this.router.navigate(['/products'], {
+      queryParams: {
+        ...this.rootQueryParams(group),
+        navScroll: String(Date.now()),
+      },
+    });
+  }
+
+  navigateToProductSubItem(event: MouseEvent, item: NavSubItem): void {
+    event.preventDefault();
+    void this.router.navigate(['/products'], {
+      queryParams: {
+        ...this.submenuQueryParams(item),
+        navScroll: String(Date.now()),
+      },
+    });
   }
 
   openProductsMenu(): void {

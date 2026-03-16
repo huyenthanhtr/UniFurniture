@@ -100,6 +100,14 @@
     gap: 1px;
 }
 
+.product-card .stars svg {
+    fill: #cfcfcf;
+}
+
+.product-card .stars svg.filled {
+    fill: #ff5722;
+}
+
 .product-card .reviews-count {
     font-size: 11px;
     color: #333;

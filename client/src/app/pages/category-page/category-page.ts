@@ -5,7 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { of, Subscription, timer } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
-import { ProductsService } from '../../services/product/product';
+import { ProductDataService, ProductListItem } from '../../services/product-data.service';
 import { ProductCardComponent } from '../../shared/product-card/product-card';
 
 const BASE_URL = 'http://localhost:3000/api';
@@ -74,7 +74,7 @@ const KEYWORDS_BY_SLUG: Record<string, string[]> = {
 export class CategoryPageComponent implements OnInit, OnDestroy {
   @ViewChild('categorySectionRef') private categorySectionRef?: ElementRef<HTMLElement>;
   category: Category | null = null;
-  products: any[] = [];
+  products: ProductListItem[] = [];
   loading = true;
 
   currentPage = 1;
@@ -86,7 +86,7 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
   categoryIds = '';
   currentSlug = '';
   keywordFilters: string[] = [];
-  localFilteredProducts: any[] | null = null;
+  localFilteredProducts: ProductListItem[] | null = null;
 
   slideshowImages: string[] = [];
   currentSlideIndex = 0;
@@ -95,7 +95,7 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private http: HttpClient,
-    private productsService: ProductsService,
+    private productDataService: ProductDataService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -243,25 +243,24 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
   private loadProducts(categoryIds: string, page: number, fallbackKeywords: string[] = []): void {
     this.loading = true;
     this.localFilteredProducts = null;
+    const parsedCategoryIds = this.parseCategoryIds(categoryIds);
 
-    this.productsService
-      .getProducts({
-        page,
-        limit: this.limit,
+    this.productDataService
+      .getProducts(page, this.limit, {
         sortBy: 'bestSelling',
         order: 'desc',
-        category: categoryIds,
+        categoryIds: parsedCategoryIds.length > 0 ? parsedCategoryIds : undefined,
       })
       .pipe(catchError(() => of({ items: [], total: 0, totalPages: 1, page: 1 })))
       .subscribe((res) => {
-        const items: any[] = Array.isArray(res?.items) ? res.items : [];
+        const items: ProductListItem[] = Array.isArray(res?.items) ? res.items : [];
 
-        if (categoryIds && page === 1 && items.length === 0 && fallbackKeywords.length > 0) {
+        if (parsedCategoryIds.length > 0 && page === 1 && items.length === 0 && fallbackKeywords.length > 0) {
           this.loadProductsByKeywords(fallbackKeywords, 1);
           return;
         }
 
-        this.products = items.map((product: any) => this.mapProduct(product));
+        this.products = items;
         this.currentPage = Number(res?.page) || 1;
         this.totalPages = Number(res?.totalPages) || 1;
         this.totalItems = Number(res?.total) || 0;
@@ -273,22 +272,20 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
   private loadProductsByKeywords(keywords: string[], page: number): void {
     this.loading = true;
 
-    this.productsService
-      .getProducts({
-        page: 1,
-        limit: 500,
+    this.productDataService
+      .getProducts(1, 500, {
         sortBy: 'bestSelling',
         order: 'desc',
       })
       .pipe(catchError(() => of({ items: [] })))
       .subscribe((res) => {
-        const allItems: any[] = Array.isArray(res?.items) ? res.items : [];
+        const allItems: ProductListItem[] = Array.isArray(res?.items) ? res.items : [];
         const filteredItems =
           keywords.length > 0
-            ? allItems.filter((item: any) => this.matchesKeywords(item?.name || '', keywords))
+            ? allItems.filter((item) => this.matchesKeywords(item?.name || '', keywords))
             : allItems;
 
-        this.localFilteredProducts = filteredItems.map((item: any) => this.mapProduct(item));
+        this.localFilteredProducts = filteredItems;
         this.applyLocalPagination(page);
       });
   }
@@ -344,19 +341,11 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
       .trim();
   }
 
-  private mapProduct(product: any): any {
-    const source = product || {};
-    return {
-      _id: source._id,
-      name: source.name || 'S\u1ea3n ph\u1ea9m',
-      imageUrl: source.thumbnail || source.thumbnail_url || 'assets/images/placeholder.png',
-      price: source.min_price || source.price || 0,
-      originalPrice: null,
-      soldCount: source.sold ?? 0,
-      discountBadge: null,
-      reviewsCount: 0,
-      colors: [],
-    };
+  private parseCategoryIds(categoryIds: string): string[] {
+    return String(categoryIds || '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
   }
 
   goToPage(page: number): void {

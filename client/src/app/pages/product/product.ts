@@ -85,6 +85,7 @@ export class ProductComponent implements OnInit {
   private readonly router = inject(Router);
   private loadingGuard: ReturnType<typeof setTimeout> | null = null;
   private bannerRotationTimer: ReturnType<typeof setInterval> | null = null;
+  private categoryScrollFrame: number | null = null;
   private hasRequestedCollectionLinks = false;
   private lastLoadSignature = '';
   private lastCategoryScrollSignature = '';
@@ -101,6 +102,7 @@ export class ProductComponent implements OnInit {
   readonly selectedGroupSlug = signal('');
   readonly selectedGroupLabel = signal('');
   readonly selectedCollectionId = signal('');
+  readonly selectedCollectionIds = signal<string[]>([]);
   readonly searchQuery = signal('');
   readonly selectedCategoryIds = signal<string[]>([]);
   readonly selectedCategoryId = signal('');
@@ -161,24 +163,23 @@ export class ProductComponent implements OnInit {
     if (this.selectedCategoryName()) {
       return this.selectedCategoryName();
     }
-    if (this.selectedGroupLabel()) {
+    if (this.selectedGroupSlug() === 'bo-suu-tap' && this.selectedGroupLabel()) {
       return this.selectedGroupLabel();
     }
-    return 'Tat ca san pham';
+    return '';
   });
 
   readonly selectedFilterCategoryId = computed(() => {
     return this.selectedCollectionId() || this.selectedCategoryId();
   });
 
-  readonly selectedFilterCategoryIds = computed(() => {
-    const selectedCategoryIds = this.selectedCategoryIds();
-    if (selectedCategoryIds.length > 0) {
-      return selectedCategoryIds;
-    }
+  readonly selectedFilterCategoryGroupId = computed(() => {
+    return this.selectedGroupSlug() === 'bo-suu-tap' && this.selectedCollectionIds().length === 0 ? 'bo-suu-tap' : '';
+  });
 
-    const selectedCollectionId = this.selectedCollectionId();
-    return selectedCollectionId ? [selectedCollectionId] : [];
+  readonly selectedFilterCategoryIds = computed(() => {
+    const ids = [...this.selectedCollectionIds(), ...this.selectedCategoryIds()];
+    return Array.from(new Set(ids));
   });
 
   readonly categoryGroups = computed<FilterCategoryTreeGroup[]>(() => {
@@ -323,6 +324,10 @@ export class ProductComponent implements OnInit {
   ngOnInit(): void {
     this.destroyRef.onDestroy(() => {
       this.stopBannerRotation();
+      if (this.categoryScrollFrame !== null && typeof cancelAnimationFrame !== 'undefined') {
+        cancelAnimationFrame(this.categoryScrollFrame);
+        this.categoryScrollFrame = null;
+      }
     });
 
     this.loadTaxonomyData();
@@ -330,22 +335,38 @@ export class ProductComponent implements OnInit {
     this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const nextGroupSlug = String(params['group'] || '').trim();
       const nextGroupLabel = String(params['groupLabel'] || '').trim();
-      const rawCollectionId = String(params['collection'] || '').trim();
+      const nextNavScrollToken = String(params['navScroll'] || '').trim();
+      const nextCollectionParam = String(params['collections'] || params['collection'] || '').trim();
       const nextCategoryParam = String(params['categories'] || params['category'] || '').trim();
+      const nextCollectionIds = nextCollectionParam
+        .split(',')
+        .map((value) => value.trim())
+        .filter((value) => Boolean(value) && this.isMongoObjectId(value));
       const nextCategoryIds = nextCategoryParam
         .split(',')
         .map((value) => value.trim())
         .filter((value) => Boolean(value) && this.isCategoryQueryValue(value));
-      const nextCollectionId = this.isMongoObjectId(rawCollectionId) ? rawCollectionId : '';
+      const nextCollectionId = nextCollectionIds.length === 1 ? nextCollectionIds[0] : '';
       const nextCategoryId = nextCategoryIds.length === 1 ? nextCategoryIds[0] : '';
       const nextSort = this.normalizeSortValue(String(params['sort'] || '').trim());
       const nextPage = this.normalizePageValue(params['page']);
       const nextSearchQuery = String(params['q'] || '').trim();
 
+      const nextCategoryScrollSignature = JSON.stringify({
+        groupSlug: nextGroupSlug,
+        collectionIds: nextCollectionIds,
+        categoryIds: nextCategoryIds,
+        navScroll: nextNavScrollToken,
+      });
+      if (nextCategoryScrollSignature !== this.lastCategoryScrollSignature) {
+        this.lastCategoryScrollSignature = nextCategoryScrollSignature;
+        this.scrollToCategorySection();
+      }
+
       const loadSignature = JSON.stringify({
         groupSlug: nextGroupSlug,
         groupLabel: nextGroupLabel,
-        collectionId: nextCollectionId,
+        collectionIds: nextCollectionIds,
         categoryIds: nextCategoryIds,
         sort: nextSort,
         page: nextPage,
@@ -360,21 +381,12 @@ export class ProductComponent implements OnInit {
       this.selectedGroupSlug.set(nextGroupSlug);
       this.selectedGroupLabel.set(nextGroupLabel);
       this.selectedCollectionId.set(nextCollectionId);
+      this.selectedCollectionIds.set(nextCollectionIds);
       this.selectedCategoryIds.set(nextCategoryIds);
       this.selectedCategoryId.set(nextCategoryId);
       this.selectedSort.set(nextSort);
       this.currentPage.set(nextPage);
       this.searchQuery.set(nextSearchQuery);
-
-      const nextCategoryScrollSignature = JSON.stringify({
-        groupSlug: nextGroupSlug,
-        collectionId: nextCollectionId,
-        categoryIds: nextCategoryIds,
-      });
-      if (nextCategoryScrollSignature !== this.lastCategoryScrollSignature) {
-        this.lastCategoryScrollSignature = nextCategoryScrollSignature;
-        this.scrollToCategorySection();
-      }
 
       this.loadCollectionCategoryLinksIfNeeded();
       this.syncSelectedCategoryWithCollection();
@@ -409,39 +421,25 @@ export class ProductComponent implements OnInit {
     this.selectedPriceRanges.set(filters.priceRanges || (filters.priceRange ? [filters.priceRange] : []));
     this.selectedColors.set(filters.colors || (filters.color ? [filters.color] : []));
     this.selectedSizes.set(filters.sizes || (filters.size ? [filters.size] : []));
+    const nextCollectionIds = Array.from(new Set(filters.collectionIds || []));
+    const nextCategoryIds = Array.from(new Set(filters.categoryIds || []));
+    const isCollectionGroupSelected = filters.categoryGroupId === 'bo-suu-tap';
+    const hasCollections = isCollectionGroupSelected || nextCollectionIds.length > 0;
+    const hasCategories = nextCategoryIds.length > 0;
 
-    if (filters.categoryType === 'collection') {
-      const selectedCollectionId = filters.categoryId || filters.categoryIds[0] || '';
-      this.selectedCollectionId.set(selectedCollectionId);
-      this.selectedCategoryIds.set([]);
-      this.selectedCategoryId.set('');
-      this.updateRouteQuery({
-        collection: selectedCollectionId || null,
-        categories: null,
-        page: 1,
-      });
-      return;
-    }
+    this.selectedCollectionIds.set(nextCollectionIds);
+    this.selectedCollectionId.set(nextCollectionIds.length === 1 ? nextCollectionIds[0] : '');
+    this.selectedCategoryIds.set(nextCategoryIds);
+    this.selectedCategoryId.set(nextCategoryIds.length === 1 ? nextCategoryIds[0] : '');
+    this.selectedGroupSlug.set(hasCollections ? 'bo-suu-tap' : '');
+    this.selectedGroupLabel.set(hasCollections ? 'Bộ sưu tập' : '');
 
-    if (filters.categoryType === 'category') {
-      const nextCategoryIds = filters.categoryIds.length > 0 ? filters.categoryIds : filters.categoryId ? [filters.categoryId] : [];
-      this.selectedCollectionId.set('');
-      this.selectedCategoryIds.set(nextCategoryIds);
-      this.selectedCategoryId.set(nextCategoryIds.length === 1 ? nextCategoryIds[0] : '');
-      this.updateRouteQuery({
-        collection: null,
-        categories: nextCategoryIds.length > 0 ? nextCategoryIds.join(',') : null,
-        page: 1,
-      });
-      return;
-    }
-
-    this.selectedCollectionId.set('');
-    this.selectedCategoryIds.set([]);
-    this.selectedCategoryId.set('');
     this.updateRouteQuery({
-      collection: null,
-      categories: null,
+      group: hasCollections ? 'bo-suu-tap' : null,
+      groupLabel: hasCollections ? 'Bộ sưu tập' : null,
+      collections: nextCollectionIds.length > 1 ? nextCollectionIds.join(',') : null,
+      collection: nextCollectionIds.length === 1 ? nextCollectionIds[0] : null,
+      categories: hasCategories ? nextCategoryIds.join(',') : null,
       page: 1,
     });
   }
@@ -471,7 +469,7 @@ export class ProductComponent implements OnInit {
   }
 
   private loadCollectionCategoryLinksIfNeeded(): void {
-    if (!this.selectedCollectionId() || this.hasRequestedCollectionLinks) {
+    if (!this.selectedCollectionId() || this.selectedCollectionIds().length !== 1 || this.hasRequestedCollectionLinks) {
       return;
     }
 
@@ -491,10 +489,20 @@ export class ProductComponent implements OnInit {
     this.clearLoadingGuard();
     this.loadingGuard = setTimeout(() => {
       this.isLoading.set(false);
-      this.errorMessage.set('Tai du lieu qua lau. Vui long thu lai.');
+      this.errorMessage.set('Tải dữ liệu quá lâu. Vui lòng thử lại.');
     }, 12000);
 
     const sortConfig = this.toSortConfig(this.selectedSort());
+
+    if (this.shouldLoadMixedSelectionProducts()) {
+      this.loadMixedSelectionProducts(page, sortConfig);
+      return;
+    }
+
+    if (this.shouldLoadCollectionGroupProducts()) {
+      this.loadCollectionGroupProducts(page, sortConfig);
+      return;
+    }
 
     this.productDataService
       .getProducts(page, this.pageSize, {
@@ -506,7 +514,7 @@ export class ProductComponent implements OnInit {
       })
       .pipe(
         catchError(() => {
-          this.errorMessage.set('Khong the tai danh sach san pham.');
+          this.errorMessage.set('Không thể tải danh sách sản phẩm.');
           this.products.set([]);
           this.totalItems.set(0);
           this.totalPages.set(1);
@@ -524,6 +532,112 @@ export class ProductComponent implements OnInit {
         this.totalItems.set(response.total);
         this.totalPages.set(response.totalPages);
       });
+  }
+
+  private loadMixedSelectionProducts(page: number, sortConfig: SortQueryConfig): void {
+    this.productDataService
+      .getProducts(1, 500, {
+        sortBy: sortConfig.sortBy,
+        order: sortConfig.order,
+        search: this.searchQuery() || undefined,
+      })
+      .pipe(
+        catchError(() => {
+          this.errorMessage.set('Không thể tải danh sách sản phẩm.');
+          this.products.set([]);
+          this.totalItems.set(0);
+          this.totalPages.set(1);
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.clearLoadingGuard();
+          this.isLoading.set(false);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((response) => {
+        const collectionIds = new Set(this.selectedCollectionIds());
+        const categoryIds = new Set(this.selectedCategoryIds());
+        const includeAllCollections = this.selectedGroupSlug() === 'bo-suu-tap' && collectionIds.size === 0;
+
+        const filteredItems = response.items.filter((item) => {
+          const matchesCollection = includeAllCollections
+            ? Boolean(item.collectionId)
+            : Boolean(item.collectionId) && collectionIds.has(item.collectionId as string);
+          const matchesCategory = Boolean(item.categoryId) && categoryIds.has(item.categoryId as string);
+
+          if ((includeAllCollections || collectionIds.size > 0) && categoryIds.size > 0) {
+            return matchesCollection || matchesCategory;
+          }
+          if (includeAllCollections || collectionIds.size > 0) {
+            return matchesCollection;
+          }
+          return matchesCategory;
+        });
+
+        const totalItems = filteredItems.length;
+        const totalPages = Math.max(Math.ceil(totalItems / this.pageSize), 1);
+        const currentPage = Math.min(Math.max(page, 1), totalPages);
+        const startIndex = (currentPage - 1) * this.pageSize;
+
+        this.products.set(filteredItems.slice(startIndex, startIndex + this.pageSize));
+        this.currentPage.set(currentPage);
+        this.totalItems.set(totalItems);
+        this.totalPages.set(totalPages);
+      });
+  }
+
+  private loadCollectionGroupProducts(page: number, sortConfig: SortQueryConfig): void {
+    this.productDataService
+      .getProducts(1, 500, {
+        sortBy: sortConfig.sortBy,
+        order: sortConfig.order,
+        search: this.searchQuery() || undefined,
+      })
+      .pipe(
+        catchError(() => {
+          this.errorMessage.set('Không thể tải danh sách sản phẩm.');
+          this.products.set([]);
+          this.totalItems.set(0);
+          this.totalPages.set(1);
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.clearLoadingGuard();
+          this.isLoading.set(false);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((response) => {
+        const collectionItems = response.items.filter((item) => Boolean(item.collectionId));
+        const totalItems = collectionItems.length;
+        const totalPages = Math.max(Math.ceil(totalItems / this.pageSize), 1);
+        const currentPage = Math.min(Math.max(page, 1), totalPages);
+        const startIndex = (currentPage - 1) * this.pageSize;
+
+        this.products.set(collectionItems.slice(startIndex, startIndex + this.pageSize));
+        this.currentPage.set(currentPage);
+        this.totalItems.set(totalItems);
+        this.totalPages.set(totalPages);
+      });
+  }
+
+  private shouldLoadCollectionGroupProducts(): boolean {
+    return (
+      this.selectedGroupSlug() === 'bo-suu-tap'
+      && this.selectedCollectionIds().length === 0
+      && !this.selectedCollectionId()
+      && this.selectedCategoryIds().length === 0
+      && !this.selectedCategoryId()
+    );
+  }
+
+  private shouldLoadMixedSelectionProducts(): boolean {
+    return (
+      this.selectedCollectionIds().length > 1
+      || (this.selectedCollectionIds().length > 0 && this.selectedCategoryIds().length > 0)
+      || (this.selectedGroupSlug() === 'bo-suu-tap' && this.selectedCategoryIds().length > 0)
+    );
   }
 
   private syncSelectedCategoryWithCollection(): void {
@@ -758,13 +872,26 @@ export class ProductComponent implements OnInit {
   }
 
   private updateRouteQuery(changes: {
+    group?: string | null;
+    groupLabel?: string | null;
+    collections?: string | null;
     collection?: string | null;
     categories?: string | null;
     sort?: ProductSortValue | null;
     page?: number | null;
   }): void {
     const queryParams: Record<string, string | number | null> = {};
+    queryParams['navScroll'] = null;
 
+    if (changes.group !== undefined) {
+      queryParams['group'] = changes.group || null;
+    }
+    if (changes.groupLabel !== undefined) {
+      queryParams['groupLabel'] = changes.groupLabel || null;
+    }
+    if (changes.collections !== undefined) {
+      queryParams['collections'] = changes.collections || null;
+    }
     if (changes.collection !== undefined) {
       queryParams['collection'] = changes.collection || null;
     }
@@ -827,14 +954,25 @@ export class ProductComponent implements OnInit {
     return /^[a-z0-9-]{2,80}$/i.test(nextValue);
   }
 
-  private scrollToCategorySection(): void {
+  private scrollToCategorySection(attempt = 0): void {
     if (typeof window === 'undefined' || typeof document === 'undefined') {
       return;
     }
 
     const sectionElement = this.categorySectionRef?.nativeElement || this.filterSectionRef?.nativeElement;
     if (!sectionElement) {
+      if (attempt < 18 && typeof requestAnimationFrame !== 'undefined') {
+        if (this.categoryScrollFrame !== null) {
+          cancelAnimationFrame(this.categoryScrollFrame);
+        }
+        this.categoryScrollFrame = requestAnimationFrame(() => this.scrollToCategorySection(attempt + 1));
+      }
       return;
+    }
+
+    if (this.categoryScrollFrame !== null && typeof cancelAnimationFrame !== 'undefined') {
+      cancelAnimationFrame(this.categoryScrollFrame);
+      this.categoryScrollFrame = null;
     }
 
     setTimeout(() => {
