@@ -1,4 +1,4 @@
-﻿/* ===== HEADER ===== */
+/* ===== HEADER ===== */
 .moho-header {
   background: #FFFFFF;
   width: 100%;
@@ -182,3 +182,122 @@
   font-weight: 400;
   color: #333333;
 }
+
+/* ===== Hamburger Button ===== */
+.mobile-menu-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  flex-shrink: 0;
+}
+
+.hamburger-line {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #333;
+  border-radius: 2px;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+/* ===== Responsive Header ===== */
+@media (max-width: 1280px) {
+  .header-top {
+    padding: 0 40px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .header-top {
+    padding: 0 20px;
+    height: 80px;
+    gap: 16px;
+  }
+
+  .header-logo-img {
+    height: 50px;
+  }
+
+  .action-text {
+    display: none;
+  }
+
+  .action-caret {
+    display: none;
+  }
+
+  .header-action-link {
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .header-top {
+    padding: 0 12px;
+    height: 60px;
+    gap: 10px;
+  }
+
+  .header-logo-img {
+    height: 40px;
+  }
+
+  .header-search {
+    height: 36px;
+  }
+
+  .search-btn {
+    width: 42px;
+    height: 36px;
+  }
+
+  .search-input-wrapper {
+    padding: 0 12px;
+  }
+
+  .search-input {
+    font-size: 12px;
+  }
+
+  .header-action-link {
+    padding: 0 6px;
+    gap: 6px;
+  }
+
+  .cart-label {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-top {
+    padding: 0 8px;
+    gap: 6px;
+  }
+
+  .header-logo-img {
+    height: 34px;
+  }
+
+  .header-search {
+    height: 34px;
+    min-width: 0;
+  }
+
+  .search-btn {
+    width: 36px;
+    height: 34px;
+  }
+}

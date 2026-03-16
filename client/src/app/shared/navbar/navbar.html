@@ -1,11 +1,12 @@
-﻿<nav class="moho-navbar" [class.nav-hidden]="isHidden()">
+<div class="mobile-menu-backdrop" [class.open]="ui.isMobileMenuOpen()" (click)="ui.closeMobileMenu()"></div>
+<nav class="moho-navbar" [class.nav-hidden]="isHidden()" [class.mobile-open]="ui.isMobileMenuOpen()">
   <div class="navbar-container">
     <ul class="navbar-list">
       <li class="navbar-item has-dropdown" [class.menu-open]="isProductsMenuOpen()"
         routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }"
         (mouseenter)="openProductsMenu()" (mouseleave)="scheduleCloseProductsMenu()" (focusin)="openProductsMenu()"
         (focusout)="scheduleCloseProductsMenu()">
-        <a [routerLink]="['/products']" class="navbar-link">
+        <a [routerLink]="['/products']" class="navbar-link" (click)="onMobileNavClick()">
           S&#7843;n ph&#7849;m
           <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
             <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
@@ -41,25 +42,25 @@
       </li>
 
       <li class="navbar-item" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }">
-        <a [routerLink]="['/khuyen-mai']" class="navbar-link">
+        <a [routerLink]="['/khuyen-mai']" class="navbar-link" (click)="onMobileNavClick()">
           Khuy&#7871;n m&#227;i
         </a>
       </li>
 
       <li class="navbar-item" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }">
-        <a [routerLink]="['/tin-tuc']" class="navbar-link">Tin t&#7913;c</a>
+        <a [routerLink]="['/tin-tuc']" class="navbar-link" (click)="onMobileNavClick()">Tin t&#7913;c</a>
       </li>
 
       <li class="navbar-item" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: true }">
-        <a [routerLink]="['/ve-unifurniture']" class="navbar-link">V&#7873; U-Home Furni</a>
+        <a [routerLink]="['/ve-unifurniture']" class="navbar-link" (click)="onMobileNavClick()">V&#7873; U-Home Furni</a>
       </li>
 
       <li class="navbar-item" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: true }">
-        <a [routerLink]="['/cong-dong']" class="navbar-link">C&#7897;ng &#273;&#7891;ng</a>
+        <a [routerLink]="['/cong-dong']" class="navbar-link" (click)="onMobileNavClick()">C&#7897;ng &#273;&#7891;ng</a>
       </li>
 
       <li class="navbar-item navbar-item--tracking" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: true }">
-        <a [routerLink]="['/tra-cuu-van-don']" class="navbar-link navbar-link--tracking">
+        <a [routerLink]="['/tra-cuu-van-don']" class="navbar-link navbar-link--tracking" (click)="onMobileNavClick()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M3 7h13v10H3z" />
             <path d="M16 10h3l2 2v5h-5z" />
@@ -71,7 +72,7 @@
       </li>
 
       <li class="navbar-item navbar-item--ar">
-        <a routerLink="/ar" class="navbar-link navbar-link--ar">
+        <a routerLink="/ar" class="navbar-link navbar-link--ar" (click)="onMobileNavClick()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
           </svg>
@@ -81,3 +82,4 @@
     </ul>
   </div>
 </nav>
+

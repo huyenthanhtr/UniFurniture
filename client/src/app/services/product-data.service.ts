@@ -115,6 +115,7 @@ export interface ProductDetailData {
   colors: ColorSwatch[];
   variants: ProductVariantDocument[];
   images: ImageWithVariant[];
+  stock_quantity?: number;
 }
 
 export interface ProductReviewItem {
@@ -280,26 +281,26 @@ export class ProductDataService {
               return !status || status === 'active';
             })
             .map((product) => {
-            const price = this.toNullableNumber(product.min_price);
-            const originalPrice = this.toNullableNumber(product.compare_at_price);
+              const price = this.toNullableNumber(product.min_price);
+              const originalPrice = this.toNullableNumber(product.compare_at_price);
 
-            const rawColors = Array.isArray((product as any).colors) ? (product as any).colors : [];
-            return {
-              id: product._id,
-              name: product.name || 'San pham',
-              price,
-              originalPrice,
-              imageUrl: product.thumbnail?.trim() || product.thumbnail_url?.trim() || FALLBACK_IMAGE_URL,
-              discountBadge: this.getDiscountBadge(price, originalPrice),
-              averageRating: 0,
-              reviewsCount: 0,
-              soldCount: this.toNullableNumber(product.sold) ?? 0,
-              colors: rawColors.filter((c: any) => c && c.name && c.hex) as ColorSwatch[],
-              categoryId: product.category_id || null,
-              collectionId: product.collection_id || null,
-              sizeText: this.valueToSizeText(product.size),
-              materialText: this.valueToText(product.material),
-            };
+              const rawColors = Array.isArray((product as any).colors) ? (product as any).colors : [];
+              return {
+                id: product._id,
+                name: product.name || 'San pham',
+                price,
+                originalPrice,
+                imageUrl: product.thumbnail?.trim() || product.thumbnail_url?.trim() || FALLBACK_IMAGE_URL,
+                discountBadge: this.getDiscountBadge(price, originalPrice),
+                averageRating: 0,
+                reviewsCount: 0,
+                soldCount: this.toNullableNumber(product.sold) ?? 0,
+                colors: rawColors.filter((c: any) => c && c.name && c.hex) as ColorSwatch[],
+                categoryId: product.category_id || null,
+                collectionId: product.collection_id || null,
+                sizeText: this.valueToSizeText(product.size),
+                materialText: this.valueToText(product.material),
+              };
             });
 
           return {
@@ -521,6 +522,7 @@ export class ProductDataService {
           originalPrice:
             this.toNullableNumber(preferredVariant?.compare_at_price) ??
             this.toNullableNumber(product.compare_at_price),
+          stock_quantity: preferredVariant?.stock_quantity ?? (product as any).stock_quantity,
           shortDescription: product.short_description || '',
           description: product.description || '',
           sizeText: this.valueToSizeText(product.size),
@@ -559,6 +561,13 @@ export class ProductDataService {
 
   getAllProductModels(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiBaseUrl}/product-models-3d`).pipe(
+      timeout(10000),
+      catchError(() => of([]))
+    );
+  }
+
+  getFeaturedReviews(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiBaseUrl}/reviews/featured`).pipe(
       timeout(10000),
       catchError(() => of([]))
     );

@@ -21,6 +21,10 @@ export class Header {
     }
   }
 
+  toggleMobileMenu() {
+    this.ui.toggleMobileMenu();
+  }
+
   ngOnInit() {
     const saved = localStorage.getItem('user_profile');
     if (saved) {

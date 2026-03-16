@@ -1,4 +1,4 @@
-﻿/* ===== OVERLAY ===== */
+/* ===== OVERLAY ===== */
 .auth-overlay {
     position: fixed;
     inset: 0;
@@ -110,6 +110,28 @@
     color: #EF683A;
 }
 
+/* Alerts */
+.auth-alert {
+    padding: 12px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.auth-alert.error {
+    background: #FFF5F5;
+    color: #E22121;
+    border: 1px solid #FFD1D1;
+}
+
+.auth-alert.success {
+    background: #F2FAF4;
+    color: #1A8C44;
+    border: 1px solid #D1EBD9;
+}
+
 /* Subtitle */
 .auth-subtitle {
     font-size: 13px;
@@ -148,6 +170,21 @@
 
 .form-input::placeholder {
     color: #aaa;
+}
+
+.required-field {
+    position: relative;
+}
+
+.required-field::after {
+    content: '*';
+    color: #ef4444;
+    position: absolute;
+    top: 11px;
+    right: 14px;
+    font-size: 16px;
+    font-weight: bold;
+    pointer-events: none;
 }
 
 /* Disclaimer */
