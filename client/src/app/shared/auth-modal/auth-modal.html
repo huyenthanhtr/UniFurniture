@@ -83,29 +83,28 @@
         <form class="auth-form" (ngSubmit)="onRegister()">
             <p class="auth-subtitle">Tạo tài khoản mới:</p>
 
-            <div class="form-group">
-                <input type="text" class="form-input" placeholder="Họ và tên" [(ngModel)]="registerData.name"
+            <div class="form-group required-field">
+                <input type="text" class="form-input" placeholder="Họ và tên *" [(ngModel)]="registerData.name"
                     name="name" required />
             </div>
 
             <div class="form-group">
-                <input type="email" class="form-input" placeholder="Email" [(ngModel)]="registerData.email" name="email"
-                    required />
+                <input type="email" class="form-input" placeholder="Email (Không bắt buộc)" [(ngModel)]="registerData.email" name="email" />
             </div>
 
-            <div class="form-group" style="display: flex; gap: 8px;">
+            <div class="form-group required-field" style="display: flex; gap: 8px;">
                 <select class="form-input" [(ngModel)]="dialCode" name="dialCode"
                     style="width: 80px; padding: 0 8px; flex-shrink: 0;" required>
                     <option value="+84">+84</option>
                     <option value="+1">+1</option>
                 </select>
-                <input type="tel" class="form-input" placeholder="Số điện thoại" [(ngModel)]="registerData.phone"
+                <input type="tel" class="form-input" placeholder="Số điện thoại *" [(ngModel)]="registerData.phone"
                     name="phone" required style="flex: 1;" />
             </div>
 
             <div class="form-group">
-                <select class="form-input" [(ngModel)]="registerData.gender" name="gender" required>
-                    <option value="" disabled selected>Giới tính</option>
+                <select class="form-input" [(ngModel)]="registerData.gender" name="gender">
+                    <option value="" disabled selected>Giới tính (Không bắt buộc)</option>
                     <option value="male">Nam</option>
                     <option value="female">Nữ</option>
                     <option value="other">Khác</option>
@@ -115,24 +114,24 @@
             <div class="form-group">
                 <label class="form-label"
                     style="display: block; font-size: 0.85rem; color: #6b7280; margin-bottom: 4px; padding-left: 4px;"
-                    for="dob-input">Ngày sinh</label>
+                    for="dob-input">Ngày sinh (Không bắt buộc)</label>
                 <input id="dob-input" type="date" class="form-input" [(ngModel)]="registerData.date_of_birth"
-                    name="date_of_birth" required />
+                    name="date_of_birth" />
             </div>
 
             <div class="form-group">
-                <input type="text" class="form-input" placeholder="Địa chỉ" [(ngModel)]="registerData.address"
-                    name="address" required />
+                <input type="text" class="form-input" placeholder="Địa chỉ (Không bắt buộc)" [(ngModel)]="registerData.address"
+                    name="address" />
             </div>
 
-            <div class="form-group">
+            <div class="form-group required-field">
                 <input [type]="showPassword ? 'text' : 'password'" class="form-input"
-                    placeholder="Mật khẩu (ít nhất 8 ký tự)" [(ngModel)]="registerData.password" name="password"
+                    placeholder="Mật khẩu (ít nhất 8 ký tự) *" [(ngModel)]="registerData.password" name="password"
                     minlength="8" required />
             </div>
 
-            <div class="form-group">
-                <input [type]="showPassword ? 'text' : 'password'" class="form-input" placeholder="Xác nhận mật khẩu"
+            <div class="form-group required-field">
+                <input [type]="showPassword ? 'text' : 'password'" class="form-input" placeholder="Xác nhận mật khẩu *"
                     [(ngModel)]="registerData.confirmPassword" name="confirmPassword" required />
                 @if (registerData.confirmPassword && registerData.password !== registerData.confirmPassword) {
                 <div style="color: #ef4444; font-size: 0.85rem; margin-top: 4px; padding-left: 4px;">Mật khẩu xác nhận

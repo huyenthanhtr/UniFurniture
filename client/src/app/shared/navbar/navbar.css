@@ -1,4 +1,4 @@
-﻿.moho-navbar {
+.moho-navbar {
     background: #ffffff;
     border-bottom: 1px solid #ececec;
     width: 100%;
@@ -412,4 +412,219 @@
     .navbar-container {
         padding: 0 16px;
     }
+
+    .navbar-link {
+        padding: 0 12px;
+        font-size: 14px;
+    }
 }
+
+@media (max-width: 1024px) {
+    .moho-navbar {
+        top: 80px;
+    }
+
+    .navbar-link {
+        padding: 0 10px;
+        font-size: 13px;
+        letter-spacing: 0.3px;
+    }
+
+    .navbar-item--ar {
+        margin-left: 8px;
+    }
+
+    .navbar-item--tracking {
+        margin-left: 6px;
+    }
+
+    .navbar-link--tracking,
+    .navbar-link--ar {
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+    }
+}
+
+/* ===== Mobile Sidebar ===== */
+.mobile-menu-backdrop {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 998;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .mobile-menu-backdrop.open {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .moho-navbar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        width: 280px;
+        height: 100vh;
+        height: 100dvh;
+        background: #fff;
+        z-index: 999;
+        border-bottom: none;
+        border-right: 1px solid #e8e8e8;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
+        transition: left 0.3s ease;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .moho-navbar.nav-hidden {
+        transform: none;
+    }
+
+    .moho-navbar.mobile-open {
+        left: 0;
+    }
+
+    .navbar-container {
+        padding: 20px 0;
+        height: auto;
+        display: block;
+    }
+
+    .navbar-list {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        height: auto;
+    }
+
+    .navbar-item {
+        height: auto;
+        display: block;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .navbar-link {
+        display: flex;
+        align-items: center;
+        padding: 14px 20px;
+        height: auto;
+        font-size: 15px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .navbar-link::after {
+        display: none;
+    }
+
+    .navbar-item--active > .navbar-link {
+        color: #ef683a;
+        background: #fff5f2;
+    }
+
+    .navbar-item--active > .navbar-link::after {
+        display: none;
+    }
+
+    /* Dropdown on mobile */
+    .has-dropdown {
+        position: static;
+    }
+
+    .dropdown-panel {
+        position: static;
+        min-width: auto;
+        width: 100%;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        pointer-events: auto;
+        display: none;
+        background: #fafafa;
+    }
+
+    .has-dropdown:hover > .dropdown-panel,
+    .has-dropdown.menu-open > .dropdown-panel {
+        display: block;
+    }
+
+    .dropdown-panel--products {
+        width: 100% !important;
+        min-width: auto !important;
+    }
+
+    .dropdown-panel--products.has-submenu {
+        width: 100% !important;
+        min-width: auto !important;
+    }
+
+    .product-mega {
+        display: block;
+        height: auto;
+    }
+
+    .product-mega.has-submenu {
+        grid-template-columns: 1fr;
+    }
+
+    .product-mega.has-submenu .product-mega__left {
+        border-right: none;
+        border-bottom: 1px solid #e8e8e8;
+    }
+
+    .product-mega__right {
+        overflow: visible;
+        max-height: none;
+    }
+
+    .product-mega__right::before,
+    .product-mega__right::after {
+        display: none;
+    }
+
+    .product-root-item {
+        padding: 12px 28px;
+        font-size: 13px;
+    }
+
+    .product-sub-item {
+        padding: 10px 36px;
+        font-size: 12px;
+    }
+
+    /* Special buttons on mobile */
+    .navbar-item--ar {
+        margin-left: 0;
+        padding: 8px 20px;
+        border-bottom: none;
+    }
+
+    .navbar-item--tracking {
+        margin-left: 0;
+        padding: 8px 20px;
+    }
+
+    .navbar-link--tracking,
+    .navbar-link--ar {
+        display: inline-flex !important;
+        width: auto;
+        font-size: 13px !important;
+        padding: 10px 18px !important;
+    }
+
+    .dropdown-arrow {
+        margin-left: auto;
+    }
+}
+

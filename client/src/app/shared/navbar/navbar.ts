@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 import { ProductDataService, TaxonomyItem } from '../../services/product-data.service';
+import { UiStateService } from '../ui-state.service';
 
 interface RootCategoryItem {
   label: string;
@@ -34,6 +35,7 @@ export class Navbar implements OnInit {
   private readonly productDataService = inject(ProductDataService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  readonly ui = inject(UiStateService);
   private closeMenuTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly productGroups = signal<NavGroupItem[]>([]);
@@ -149,6 +151,10 @@ export class Navbar implements OnInit {
 
   setActiveGroup(slug: string): void {
     this.activeGroupSlug.set(slug);
+  }
+
+  onMobileNavClick(): void {
+    this.ui.closeMobileMenu();
   }
 
   private loadProductGroups(): void {

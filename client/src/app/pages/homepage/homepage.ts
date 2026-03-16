@@ -1,7 +1,8 @@
-﻿import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProductDataService, ProductListItem } from '../../services/product-data.service';
+import { ProductCardComponent } from '../../shared/product-card/product-card';
 
 interface HomeSlide {
   title: string;
@@ -40,7 +41,7 @@ const HOME_SLIDES: HomeSlide[] = [
 @Component({
   selector: 'app-homepage',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ProductCardComponent],
   templateUrl: './homepage.html',
   styleUrl: './homepage.css',
 })
@@ -54,6 +55,7 @@ export class Homepage implements OnInit, OnDestroy {
   bestSellingProducts: ProductListItem[] = [];
   suggestedProducts: ProductListItem[] = [];
   bedroomProducts: ProductListItem[] = [];
+  featuredReviews: any[] = [];
 
   readonly slides: HomeSlide[] = HOME_SLIDES;
   activeSlideIndex = 0;
@@ -72,6 +74,10 @@ export class Homepage implements OnInit, OnDestroy {
 
   trackByProductId(index: number, product: ProductListItem): string {
     return product.id || String(index);
+  }
+
+  trackByReviewId(index: number, review: any): string {
+    return review._id || String(index);
   }
 
   trackBySlideIndex(index: number): number {
@@ -102,6 +108,17 @@ export class Homepage implements OnInit, OnDestroy {
     this.bestSellingProducts = [];
     this.suggestedProducts = [];
     this.bedroomProducts = [];
+    this.featuredReviews = [];
+
+    // Parallel aggregate or sequential - keeping it simple with product + review fetches
+    this.productDataService.getFeaturedReviews().subscribe({
+      next: (reviews) => {
+        this.ngZone.run(() => {
+          this.featuredReviews = reviews;
+          this.cdr.detectChanges();
+        });
+      }
+    });
 
     this.productDataService.getProductList(80).subscribe({
       next: (items) => {

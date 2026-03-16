@@ -268,6 +268,55 @@ exports.getAllReviews = async (req, res) => {
   }
 };
 
+exports.getFeaturedReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ status: 'approved', rating: 5 })
+      .populate('customer_id', 'full_name')
+      .populate({
+        path: 'order_detail_id',
+        select: 'product_name variant_id',
+        populate: {
+          path: 'variant_id',
+          select: 'image product_id',
+          populate: {
+            path: 'product_id',
+            select: 'thumbnail_url thumbnail'
+          }
+        }
+      })
+      .sort({ createdAt: -1 })
+      .limit(10); // get top 10
+
+    const normalized = reviews.map((review) => {
+      // Find a product image URL
+      let productImageUrl = '';
+      if (review.order_detail_id?.variant_id) {
+        if (review.order_detail_id.variant_id.image) {
+          productImageUrl = review.order_detail_id.variant_id.image;
+        } else if (review.order_detail_id.variant_id.product_id) {
+          const prod = review.order_detail_id.variant_id.product_id;
+          productImageUrl = prod.thumbnail_url || prod.thumbnail || '';
+        }
+      }
+
+      return {
+        _id: review._id,
+        rating: review.rating,
+        content: review.content,
+        customerName: review.customer_id?.full_name || 'Khách Hàng Ẩn Danh',
+        productName: review.order_detail_id?.product_name || '',
+        productImageUrl: toPublicAssetUrl(req, productImageUrl),
+        images: Array.isArray(review.images) ? review.images.map((image) => toPublicAssetUrl(req, image)).filter(Boolean) : [],
+        createdAt: review.createdAt,
+      };
+    });
+
+    res.status(200).json(normalized);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.updateReviewStatus = async (req, res) => {
   try {
     const { id } = req.params;

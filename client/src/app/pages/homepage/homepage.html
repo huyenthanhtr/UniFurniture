@@ -1,4 +1,4 @@
-﻿<div class="homepage">
+<div class="homepage">
   <div class="loading-overlay" *ngIf="loading">
     <div class="spinner"></div>
   </div>
@@ -21,18 +21,13 @@
       </article>
     </div>
 
-    <button class="hero-nav hero-nav-prev" type="button" (click)="prevSlide()" aria-label="Slide truoc">&#10094;</button>
+    <button class="hero-nav hero-nav-prev" type="button" (click)="prevSlide()"
+      aria-label="Slide truoc">&#10094;</button>
     <button class="hero-nav hero-nav-next" type="button" (click)="nextSlide()" aria-label="Slide sau">&#10095;</button>
 
     <div class="hero-dots">
-      <button
-        type="button"
-        class="hero-dot"
-        *ngFor="let slide of slides; let i = index; trackBy: trackBySlideIndex"
-        [class.active]="activeSlideIndex === i"
-        (click)="goToSlide(i)"
-        [attr.aria-label]="'Slide ' + (i + 1)"
-      ></button>
+      <button type="button" class="hero-dot" *ngFor="let slide of slides; let i = index; trackBy: trackBySlideIndex"
+        [class.active]="activeSlideIndex === i" (click)="goToSlide(i)" [attr.aria-label]="'Slide ' + (i + 1)"></button>
     </div>
   </section>
 
@@ -43,27 +38,7 @@
     </div>
 
     <div class="product-grid grid-4">
-      <a class="product-card" *ngFor="let p of cheapProducts; trackBy: trackByProductId" [routerLink]="['/products', p.id]">
-        <div class="product-img-wrap">
-          <img
-            [src]="p.imageUrl"
-            [alt]="p.name"
-            class="product-img"
-            onerror="this.src='assets/images/placeholder.png'"
-          />
-          <span class="badge badge-sale" *ngIf="p.originalPrice && p.originalPrice > (p.price || 0)">SALE</span>
-        </div>
-
-        <div class="product-info">
-          <h3 class="product-name">{{ p.name }}</h3>
-          <div class="price-row">
-            <span class="price-current">{{ formatPrice(p.price) }}</span>
-            <span class="price-original" *ngIf="p.originalPrice">{{ formatPrice(p.originalPrice) }}</span>
-          </div>
-          <div class="sold-badge">Đã bán {{ p.soldCount }}</div>
-        </div>
-      </a>
-
+      <app-product-card *ngFor="let p of cheapProducts; trackBy: trackByProductId" [product]="p"></app-product-card>
       <div class="empty-msg" *ngIf="cheapProducts.length === 0">Chua co san pham</div>
     </div>
   </section>
@@ -75,27 +50,8 @@
     </div>
 
     <div class="product-grid grid-4">
-      <a class="product-card" *ngFor="let p of bestSellingProducts; trackBy: trackByProductId" [routerLink]="['/products', p.id]">
-        <div class="product-img-wrap">
-          <img
-            [src]="p.imageUrl"
-            [alt]="p.name"
-            class="product-img"
-            onerror="this.src='assets/images/placeholder.png'"
-          />
-          <span class="badge badge-hot" *ngIf="p.soldCount > 0">HOT</span>
-        </div>
-
-        <div class="product-info">
-          <h3 class="product-name">{{ p.name }}</h3>
-          <div class="price-row">
-            <span class="price-current">{{ formatPrice(p.price) }}</span>
-            <span class="price-original" *ngIf="p.originalPrice">{{ formatPrice(p.originalPrice) }}</span>
-          </div>
-          <div class="sold-badge">Đã bán {{ p.soldCount }}</div>
-        </div>
-      </a>
-
+      <app-product-card *ngFor="let p of bestSellingProducts; trackBy: trackByProductId"
+        [product]="p"></app-product-card>
       <div class="empty-msg" *ngIf="bestSellingProducts.length === 0">Chua co san pham</div>
     </div>
   </section>
@@ -107,26 +63,7 @@
     </div>
 
     <div class="product-grid grid-4">
-      <a class="product-card" *ngFor="let p of suggestedProducts; trackBy: trackByProductId" [routerLink]="['/products', p.id]">
-        <div class="product-img-wrap">
-          <img
-            [src]="p.imageUrl"
-            [alt]="p.name"
-            class="product-img"
-            onerror="this.src='assets/images/placeholder.png'"
-          />
-        </div>
-
-        <div class="product-info">
-          <h3 class="product-name">{{ p.name }}</h3>
-          <div class="price-row">
-            <span class="price-current">{{ formatPrice(p.price) }}</span>
-            <span class="price-original" *ngIf="p.originalPrice">{{ formatPrice(p.originalPrice) }}</span>
-          </div>
-          <div class="sold-badge">Đã bán {{ p.soldCount }}</div>
-        </div>
-      </a>
-
+      <app-product-card *ngFor="let p of suggestedProducts; trackBy: trackByProductId" [product]="p"></app-product-card>
       <div class="empty-msg" *ngIf="suggestedProducts.length === 0">Chua co san pham</div>
     </div>
   </section>
@@ -138,26 +75,43 @@
     </div>
 
     <div class="product-grid grid-4">
-      <a class="product-card" *ngFor="let p of bedroomProducts; trackBy: trackByProductId" [routerLink]="['/products', p.id]">
-        <div class="product-img-wrap">
-          <img
-            [src]="p.imageUrl"
-            [alt]="p.name"
-            class="product-img"
-            onerror="this.src='assets/images/placeholder.png'"
-          />
-          <span class="badge badge-new">MOI</span>
-        </div>
+      <app-product-card *ngFor="let p of bedroomProducts; trackBy: trackByProductId" [product]="p"></app-product-card>
+    </div>
+  </section>
 
-        <div class="product-info">
-          <h3 class="product-name">{{ p.name }}</h3>
-          <div class="price-row">
-            <span class="price-current">{{ formatPrice(p.price) }}</span>
-            <span class="price-original" *ngIf="p.originalPrice">{{ formatPrice(p.originalPrice) }}</span>
+  <!-- Đánh giá thực tế section -->
+  <section class="reviews-section" *ngIf="!loading && !error && featuredReviews.length > 0">
+    <h2 class="section-title" style="padding: 0 150px; margin-bottom: 30px;">Đánh giá thực tế</h2>
+    
+    <div class="reviews-container">
+      <div class="reviews-track">
+        <!-- First set -->
+        <div class="review-card" *ngFor="let review of featuredReviews; trackBy: trackByReviewId">
+          <div class="review-image-wrap">
+            <img [src]="review.productImageUrl || 'assets/images/placeholder.png'" [alt]="review.productName" class="review-product-img" />
           </div>
-          <div class="sold-badge">Đã bán {{ p.soldCount }}</div>
+          <div class="review-info">
+            <h4 class="review-customer">{{ review.customerName }}</h4>
+            <div class="review-stars">
+              <span class="star" *ngFor="let s of [1,2,3,4,5]">★</span>
+            </div>
+            <p class="review-content">{{ review.content }}</p>
+          </div>
         </div>
-      </a>
+        <!-- Second set for infinite loop -->
+        <div class="review-card" *ngFor="let review of featuredReviews; trackBy: trackByReviewId">
+          <div class="review-image-wrap">
+            <img [src]="review.productImageUrl || 'assets/images/placeholder.png'" [alt]="review.productName" class="review-product-img" />
+          </div>
+          <div class="review-info">
+            <h4 class="review-customer">{{ review.customerName }}</h4>
+            <div class="review-stars">
+              <span class="star" *ngFor="let s of [1,2,3,4,5]">★</span>
+            </div>
+            <p class="review-content">{{ review.content }}</p>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </div>

@@ -24,31 +24,40 @@
                 <button class="cart-shop-btn" (click)="ui.closeCart()">Ti&#7871;p t&#7909;c mua s&#7855;m</button>
             </div>
             } @else {
+            <div class="cart-bulk-actions">
+                <label class="cart-checkbox-label">
+                    <input type="checkbox" class="cart-checkbox" [checked]="isAllSelected" (change)="toggleSelectAll($event)">
+                    <span>Chọn tất cả ({{ ui.cartItems().length }})</span>
+                </label>
+                <button type="button" class="cart-delete-selected" [disabled]="!hasSelectedItems" (click)="deleteSelected()">Xóa mục đã chọn</button>
+            </div>
             <div class="cart-items">
                 @for (item of ui.cartItems(); track item.cartKey) {
                 <div class="cart-item">
-                    <img
-                      class="cart-item-img"
-                      [src]="item.imageUrl || 'assets/images/placeholder.png'"
-                      [alt]="item.name"
-                      onerror="this.src='assets/images/placeholder.png'"
-                    />
+                    <input type="checkbox" class="cart-checkbox item-checkbox" [checked]="ui.selectedCartKeys().has(item.cartKey)" (change)="toggleItem(item.cartKey, $event)">
+                    <img class="cart-item-img" [src]="item.imageUrl || 'assets/images/placeholder.png'"
+                        [alt]="item.name" onerror="this.src='assets/images/placeholder.png'" />
                     <div class="cart-item-info">
                         <span class="cart-item-name">{{ item.name }}</span>
                         @if (item.colorName || item.variantLabel) {
                         <span class="cart-item-meta">
-                          {{ item.colorName || 'Mặc định' }}@if (item.variantLabel) { / {{ item.variantLabel }} }
+                            {{ item.colorName || 'Mặc định' }}@if (item.variantLabel) { / {{ item.variantLabel }} }
                         </span>
                         }
                         <span class="cart-item-price">{{ formatPrice(item.price) }}</span>
                         <div class="cart-item-actions">
                             <div class="qty-controls">
                                 <button type="button" class="qty-mini-btn" (click)="decreaseQuantity(item)">-</button>
-                                <span class="qty-mini-value">{{ item.quantity }}</span>
+                                <input type="number" class="qty-mini-input" [value]="item.quantity"
+                                    [max]="item.maxStock || 9999" (change)="onQuantityInput($event, item)"
+                                    (keyup.enter)="onQuantityInput($event, item)" />
                                 <button type="button" class="qty-mini-btn" (click)="increaseQuantity(item)">+</button>
                             </div>
-                            <button type="button" class="remove-btn" (click)="removeItem(item)">X&#243;a</button>
+                            <button type="button" class="remove-btn" (click)="removeItem(item)">Xóa</button>
                         </div>
+                        @if (errorItems().has(item.cartKey)) {
+                        <div class="cart-item-error">Đã vượt quá số lượng tồn kho</div>
+                        }
                     </div>
                 </div>
                 }

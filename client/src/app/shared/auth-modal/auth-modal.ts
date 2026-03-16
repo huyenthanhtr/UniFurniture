@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -13,6 +13,7 @@ import { UiStateService } from '../ui-state.service';
 export class AuthModal {
     ui = inject(UiStateService);
     http = inject(HttpClient);
+    cdr = inject(ChangeDetectorRef);
 
     loginData = { email: '', password: '' };
     registerData = { name: '', email: '', phone: '', password: '', confirmPassword: '', gender: 'male', date_of_birth: '', address: '' };
@@ -49,6 +50,7 @@ export class AuthModal {
 
         this.http.post('http://localhost:3000/api/auth/login', payload).subscribe({
             next: (res: any) => {
+                this.isLoading = false;
                 this.successMessage = res.message || 'Đăng nhập thành công!';
                 // Save profile to local storage for auth state visualization
                 if (res.profile) {
@@ -70,7 +72,7 @@ export class AuthModal {
         this.errorMessage = '';
         this.successMessage = '';
 
-        if (this.registerData.password.length < 8) {
+        if (!this.registerData.password || this.registerData.password.length < 8) {
             this.errorMessage = 'Mật khẩu phải có ít nhất 8 ký tự.';
             return;
         }
@@ -87,21 +89,23 @@ export class AuthModal {
         formattedPhone = this.dialCode.replace('+', '') + formattedPhone;
 
         this.isLoading = true;
-        const payload = {
+        const payload: any = {
             full_name: this.registerData.name,
-            email: this.registerData.email,
             phone: formattedPhone,
-            password_hash: this.registerData.password,
-            gender: this.registerData.gender,
-            date_of_birth: this.registerData.date_of_birth,
-            address: this.registerData.address
+            password_hash: this.registerData.password
         };
+
+        if (this.registerData.email) payload.email = this.registerData.email;
+        if (this.registerData.gender) payload.gender = this.registerData.gender;
+        if (this.registerData.date_of_birth) payload.date_of_birth = this.registerData.date_of_birth;
+        if (this.registerData.address) payload.address = this.registerData.address;
 
         this.http.post('http://localhost:3000/api/auth/register', payload).subscribe({
             next: (res: any) => {
                 this.isLoading = false;
                 this.successMessage = 'Mã OTP đã được gửi đến số điện thoại của bạn.';
                 this.isOtpOpend = true;
+                this.cdr.detectChanges();
             },
             error: (err) => {
                 this.isLoading = false;
@@ -135,6 +139,7 @@ export class AuthModal {
             next: (res: any) => {
                 this.isLoading = false;
                 this.successMessage = 'Tạo tài khoản thành công! Bạn có thể đăng nhập ngay.';
+                this.cdr.detectChanges();
                 setTimeout(() => {
                     this.switchTab('login');
                 }, 1500);

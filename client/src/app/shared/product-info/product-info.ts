@@ -116,6 +116,7 @@ export class ProductInfoComponent implements OnChanges {
         name: this.product.name,
         imageUrl: selectedImage,
         price: selectedPrice,
+        maxStock: this.selectedVariant?.stock_quantity ?? this.product.stock_quantity ?? 999
       },
       this.quantity,
     );

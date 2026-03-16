@@ -1,9 +1,9 @@
-﻿/* ===== OVERLAY ===== */
+/* ===== OVERLAY ===== */
 .cart-overlay {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.45);
-    z-index: 999;
+    z-index: 2000;
     display: flex;
     justify-content: flex-end;
     animation: fadeIn 0.2s ease;
@@ -119,12 +119,63 @@
     border-color: #EF683A;
 }
 
+/* Cart Bulk Actions */
+.cart-bulk-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    border-bottom: 1px solid #ECECEC;
+    background: #FAFAFA;
+}
+
+.cart-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #434343;
+}
+
+.cart-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #EF683A;
+}
+
+.cart-delete-selected {
+    background: none;
+    border: none;
+    color: #EF683A;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+}
+
+.cart-delete-selected:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+.cart-delete-selected:not(:disabled):hover {
+    text-decoration: underline;
+}
+
 /* Cart Items */
 .cart-item {
     display: flex;
+    align-items: flex-start;
     gap: 14px;
     padding: 14px 0;
     border-bottom: 1px solid #F4F4F4;
+}
+
+.item-checkbox {
+    margin-top: 26px; /* align roughly to center of image */
 }
 
 .cart-item-img {
@@ -198,11 +249,33 @@
     color: #ef683a;
 }
 
-.qty-mini-value {
-    min-width: 18px;
+.qty-mini-input {
+    min-width: 24px;
+    width: 32px;
     text-align: center;
     font-size: 13px;
     font-weight: 600;
+    border: none;
+    background: transparent;
+    color: #444;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.qty-mini-input::-webkit-outer-spin-button,
+.qty-mini-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.cart-item-error {
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 6px;
+    font-weight: 500;
 }
 
 .remove-btn {
@@ -261,4 +334,3 @@
 .cart-checkout-btn:hover {
     background: #d45520;
 }
-

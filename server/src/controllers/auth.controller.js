@@ -12,12 +12,27 @@ function hashValue(value) {
     return crypto.createHash('sha256').update(value).digest('hex');
 }
 
+function normalizePhone(phone) {
+    if (!phone) return phone;
+    let p = phone.replace(/\s+/g, '').replace('+', '');
+    // Vietnam: 84 -> 0
+    if (p.startsWith('84') && p.length >= 11) {
+        return '0' + p.substring(2);
+    }
+    return p;
+}
+
 async function register(req, res) {
     try {
-        const { phone, email, password_hash, full_name, gender, date_of_birth, address } = req.body;
+        let { phone, email, password_hash, full_name, gender, date_of_birth, address } = req.body;
+        phone = normalizePhone(phone);
 
         // Check if phone or email already exists in ACTIVE profiles
-        const existingProfile = await Profile.findOne({ $or: [{ phone }, { email }] });
+        const query = [{ phone }];
+        if (email) {
+            query.push({ email });
+        }
+        const existingProfile = await Profile.findOne({ $or: query });
         if (existingProfile) {
             return res.status(400).json({ message: "Phone or email already registered." });
         }
@@ -31,12 +46,12 @@ async function register(req, res) {
 
         await Otp.create({
             phone,
-            email,
-            password_hash,
+            email: email || undefined,
+            password_hash: password_hash || undefined,
             full_name,
-            gender,
-            date_of_birth,
-            address,
+            gender: gender || undefined,
+            date_of_birth: date_of_birth || undefined,
+            address: address || undefined,
             otp_hash,
             expireAt: new Date(Date.now() + 5 * 60 * 1000)
         });
@@ -57,7 +72,8 @@ async function register(req, res) {
 
 async function verifyOtp(req, res) {
     try {
-        const { phone, otp } = req.body;
+        let { phone, otp } = req.body;
+        phone = normalizePhone(phone);
 
         if (!phone || !otp) {
             return res.status(400).json({ message: "Phone and OTP are required" });
@@ -71,16 +87,14 @@ async function verifyOtp(req, res) {
         if (!otpRecord) {
             return res.status(400).json({ message: "Lỗi: Mã OTP không hợp lệ hoặc đã hết hạn." });
         }
-
-        // OTP is valid. Create Profile from OTP data
         let newProfile = new Profile({
             phone: otpRecord.phone,
-            email: otpRecord.email,
-            password_hash: otpRecord.password_hash,
+            email: otpRecord.email || undefined,
+            password_hash: otpRecord.password_hash || undefined,
             full_name: otpRecord.full_name,
-            gender: otpRecord.gender,
-            date_of_birth: otpRecord.date_of_birth,
-            address: otpRecord.address,
+            gender: otpRecord.gender || undefined,
+            date_of_birth: otpRecord.date_of_birth || undefined,
+            address: otpRecord.address || undefined,
             account_status: "active",
             role: "customer"
         });
@@ -99,7 +113,8 @@ async function verifyOtp(req, res) {
 
 async function login(req, res) {
     try {
-        const { emailOrPhone, password } = req.body;
+        let { emailOrPhone, password } = req.body;
+        emailOrPhone = normalizePhone(emailOrPhone);
 
         if (!emailOrPhone || !password) {
             return res.status(400).json({ message: "Information required" });
