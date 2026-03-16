@@ -137,7 +137,7 @@
             <div class="actions">
               <button class="btn btn-ghost btn-sm" (click)="viewDetail(order)">Chi tiết</button>
               <button
-                *ngIf="order?.cancellation_request?.reason"
+                *ngIf="isCancelledOrder(order) && order?.cancellation_request?.reason"
                 class="btn btn-cancel-info btn-sm"
                 (click)="openCancelInfo(order)"
               >

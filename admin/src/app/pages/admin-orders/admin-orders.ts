@@ -205,8 +205,12 @@ export class AdminOrders implements OnInit, OnDestroy {
     });
   }
 
+  isCancelledOrder(order: any): boolean {
+    return String(order?.status || '').toLowerCase() === 'cancelled';
+  }
+
   openCancelInfo(order: any): void {
-    if (!order?.cancellation_request) return;
+    if (!this.isCancelledOrder(order) || !order?.cancellation_request) return;
     this.cancelInfoOrder = order;
     this.showCancelInfoPopup = true;
   }
