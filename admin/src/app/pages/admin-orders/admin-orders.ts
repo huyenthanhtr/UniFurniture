@@ -44,6 +44,8 @@ export class AdminOrders implements OnInit, OnDestroy {
 
   showConfirmPopup = false;
   showResultPopup = false;
+  showCancelInfoPopup = false;
+  cancelInfoOrder: any = null;
   confirmMessage = '';
   resultMessage = { title: '', message: '', type: 'success' as 'success' | 'error' };
 
@@ -203,6 +205,17 @@ export class AdminOrders implements OnInit, OnDestroy {
     });
   }
 
+  openCancelInfo(order: any): void {
+    if (!order?.cancellation_request) return;
+    this.cancelInfoOrder = order;
+    this.showCancelInfoPopup = true;
+  }
+
+  closeCancelInfo(): void {
+    this.showCancelInfoPopup = false;
+    this.cancelInfoOrder = null;
+  }
+
   goPrev(): void {
     if (this.page > 1) this.updateRouteState({ page: this.page - 1 });
   }
@@ -279,6 +292,7 @@ export class AdminOrders implements OnInit, OnDestroy {
     const s = String(status || '').toLowerCase();
     if (s === 'pending') return 'Chờ xác nhận';
     if (s === 'confirmed') return 'Đã xác nhận';
+    if (s === 'cancel_pending') return 'Chờ xác nhận hủy';
     if (s === 'processing') return 'Đang xử lý';
     if (s === 'shipping') return 'Đang giao';
     if (s === 'delivered') return 'Đã giao';

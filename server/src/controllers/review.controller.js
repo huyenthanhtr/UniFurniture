@@ -60,7 +60,6 @@ exports.createOrderReviews = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Only allow review on delivered/completed orders.
     if (!['delivered', 'completed'].includes(String(order.status || '').toLowerCase())) {
       return res.status(400).json({ message: 'Order status does not allow review' });
     }
@@ -76,9 +75,18 @@ exports.createOrderReviews = async (req, res) => {
       return res.status(400).json({ message: 'No valid order_detail_id found' });
     }
 
-    const now = new Date();
+    const existingReviews = await Review.find({ order_detail_id: { $in: incomingDetailIds } })
+      .select({ _id: 1, order_detail_id: 1 })
+      .lean();
+
+    if (existingReviews.length > 0) {
+      return res.status(409).json({
+        message: 'Đơn hàng này đã được đánh giá trước đó, không thể đánh giá lại.',
+        reviewedDetailIds: existingReviews.map((item) => String(item.order_detail_id || '')),
+      });
+    }
+
     const created = [];
-    const updated = [];
 
     for (const item of reviews) {
       const detailId = String(item?.order_detail_id || '');
@@ -108,36 +116,61 @@ exports.createOrderReviews = async (req, res) => {
         order_detail_id: detailId,
         customer_id: order.customer_id || null,
         rating,
-        content: content || 'Khach hang da de lai danh gia.',
+        content: content || 'Khách hàng đã để lại đánh giá.',
         images,
         videos,
         status: 'pending',
       };
 
-      const existed = await Review.findOne({ order_detail_id: detailId, customer_id: order.customer_id || null });
-
-      if (existed) {
-        existed.rating = payload.rating;
-        existed.content = payload.content;
-        existed.images = payload.images;
-        existed.videos = payload.videos;
-        existed.status = 'pending';
-        existed.reply = undefined;
-        existed.createdAt = now;
-        await existed.save();
-        updated.push(existed._id);
-      } else {
-        const doc = await Review.create(payload);
-        created.push(doc._id);
-      }
+      const doc = await Review.create(payload);
+      created.push(doc._id);
     }
 
     return res.status(201).json({
       message: 'Reviews submitted',
       createdCount: created.length,
-      updatedCount: updated.length,
       createdIds: created,
-      updatedIds: updated,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getOrderReviewStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(String(orderId || ''))) {
+      return res.status(400).json({ message: 'orderId is invalid' });
+    }
+
+    const orderDetails = await OrderDetail.find({ order_id: orderId }).select({ _id: 1 }).lean();
+    const detailIds = orderDetails.map((item) => String(item._id || '')).filter(Boolean);
+
+    if (!detailIds.length) {
+      return res.status(200).json({ orderId, reviewedDetailIds: [], hasReviewed: false, items: [] });
+    }
+
+    const existed = await Review.find({ order_detail_id: { $in: detailIds } })
+      .select({ order_detail_id: 1, rating: 1, content: 1, images: 1, videos: 1, status: 1, createdAt: 1 })
+      .lean();
+
+    const reviewedDetailIds = existed.map((item) => String(item.order_detail_id || '')).filter(Boolean);
+    const items = existed.map((item) => ({
+      order_detail_id: String(item.order_detail_id || ''),
+      rating: Number(item.rating || 0),
+      content: String(item.content || ''),
+      images: Array.isArray(item.images) ? item.images.map((image) => toPublicAssetUrl(req, image)).filter(Boolean) : [],
+      videos: Array.isArray(item.videos) ? item.videos.map((video) => toPublicAssetUrl(req, video)).filter(Boolean) : [],
+      status: String(item.status || 'pending'),
+      createdAt: item.createdAt || null,
+    }));
+
+    return res.status(200).json({
+      orderId,
+      reviewedDetailIds,
+      hasReviewed: reviewedDetailIds.length > 0,
+      items,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });

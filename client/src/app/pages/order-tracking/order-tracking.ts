@@ -2,10 +2,11 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { UiStateService } from '../../shared/ui-state.service';
 
-type BackendStatus = 'pending' | 'confirmed' | 'processing' | 'shipping' | 'delivered' | 'completed' | 'cancelled' | 'refunded';
+type BackendStatus = 'pending' | 'confirmed' | 'cancel_pending' | 'processing' | 'shipping' | 'delivered' | 'completed' | 'cancelled' | 'refunded';
 
 interface ProductReview {
   rating: number;
@@ -19,12 +20,15 @@ interface ProductReview {
 interface TrackingProduct {
   id: string;
   orderDetailId: string;
+  productId: string;
+  variantId: string;
   imageUrl: string;
   name: string;
   classification: string;
   quantity: number;
   unitPrice: number;
   review: ProductReview;
+  submittedReview: SubmittedReviewData | null;
 }
 
 interface TrackingOrder {
@@ -44,15 +48,53 @@ interface TrackingOrder {
   statusLabel: string;
   products: TrackingProduct[];
   reviewSubmitted: boolean;
+  confirmedAt: string;
+  cancellationRequest: CancellationRequestData | null;
+  cancelForm: CancelFormModel;
 }
 
 interface TimelineStep {
   label: string;
 }
 
+
+interface CancellationRequestData {
+  reason: string;
+  note: string;
+  phone: string;
+  requestedAt: string;
+  previousStatus: BackendStatus | '';
+  over10mWithDeposit: boolean;
+}
+
+interface CancelFormModel {
+  open: boolean;
+  reason: string;
+  note: string;
+  phone: string;
+  submitting: boolean;
+}
+
+interface SubmittedReviewData {
+  rating: number;
+  content: string;
+  images: string[];
+  videos: string[];
+  status: string;
+  createdAt: string;
+}
+
 const API_BASE_URL = 'http://localhost:3000/api';
+const TRACKING_STATE_KEY = 'unifurniture_tracking_state_v1';
 const MAX_REVIEW_IMAGES = 5;
 const MAX_REVIEW_VIDEOS = 5;
+const CANCEL_REASONS = [
+  'Đổi ý không muốn mua nữa',
+  'Muốn đổi địa chỉ hoặc thời gian nhận',
+  'Tìm được sản phẩm phù hợp hơn',
+  'Đặt nhầm sản phẩm/số lượng',
+  'Lý do khác',
+];
 
 @Component({
   selector: 'app-order-tracking',
@@ -68,6 +110,8 @@ export class OrderTrackingComponent implements OnInit {
   infoMessage = '';
   orders: TrackingOrder[] = [];
   reviewSubmittingOrderId: string | null = null;
+  private pendingRestoreScrollY: number | null = null;
+  readonly cancelReasons = CANCEL_REASONS;
   readonly timelineSteps: TimelineStep[] = [
     { label: 'Đã đặt hàng' },
     { label: 'Đã xác nhận' },
@@ -81,6 +125,8 @@ export class OrderTrackingComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly http: HttpClient,
     private readonly cdr: ChangeDetectorRef,
+    private readonly router: Router,
+    private readonly ui: UiStateService,
   ) {}
 
   ngOnInit(): void {
@@ -88,7 +134,17 @@ export class OrderTrackingComponent implements OnInit {
     if (codeFromQuery) {
       this.searchCode = codeFromQuery;
       void this.searchOrder();
+      return;
     }
+
+    const savedState = this.readTrackingState();
+    if (!savedState?.searchCode) {
+      return;
+    }
+
+    this.searchCode = savedState.searchCode;
+    this.pendingRestoreScrollY = savedState.scrollY;
+    void this.searchOrder();
   }
 
   async searchOrder(): Promise<void> {
@@ -99,6 +155,7 @@ export class OrderTrackingComponent implements OnInit {
       this.infoMessage = '';
       this.orders = [];
       this.cdr.detectChanges();
+      this.pendingRestoreScrollY = null;
       this.scrollToAnchor('tracking-feedback');
       return;
     }
@@ -119,6 +176,7 @@ export class OrderTrackingComponent implements OnInit {
       if (!foundOrders.length) {
         this.errorMessage = 'Không tìm thấy đơn hàng nào. Vui lòng kiểm tra lại mã vận đơn.';
         this.cdr.detectChanges();
+        this.pendingRestoreScrollY = null;
         this.scrollToAnchor('tracking-feedback');
         return;
       }
@@ -127,12 +185,14 @@ export class OrderTrackingComponent implements OnInit {
         this.infoMessage = `Không tìm thấy ${missingCodes.length} mã: ${missingCodes.join(', ')}`;
       }
 
+      this.persistTrackingState(window.scrollY);
       this.cdr.detectChanges();
-      this.scrollToAnchor('tracking-results');
+      this.restoreOrScrollToResults();
     } catch {
       this.errorMessage = 'Không thể tra cứu đơn hàng lúc này. Vui lòng thử lại sau.';
       this.orders = [];
       this.cdr.detectChanges();
+      this.pendingRestoreScrollY = null;
       this.scrollToAnchor('tracking-feedback');
     } finally {
       this.loading = false;
@@ -147,6 +207,7 @@ export class OrderTrackingComponent implements OnInit {
     const map: Record<BackendStatus, number> = {
       pending: 0,
       confirmed: 1,
+      cancel_pending: 1,
       processing: 2,
       shipping: 3,
       delivered: 4,
@@ -158,7 +219,92 @@ export class OrderTrackingComponent implements OnInit {
   }
 
   showReviewSection(order: TrackingOrder): boolean {
-    return order.backendStatus === 'completed' && !order.reviewSubmitted;
+    if (order.backendStatus !== 'completed') return false;
+    return order.products.some((item) => !!item.orderDetailId && !item.submittedReview);
+  }
+
+  hasSubmittedReviews(order: TrackingOrder): boolean {
+    return order.products.some((item) => !!item.submittedReview);
+  }
+
+  reviewModerationLabel(status: string): string {
+    const key = String(status || '').toLowerCase();
+    if (key === 'approved') return 'Đã duyệt';
+    if (key === 'rejected') return 'Đã từ chối';
+    return 'Đang chờ duyệt';
+  }
+
+  isCancelPending(order: TrackingOrder): boolean {
+    return order.backendStatus === 'cancel_pending';
+  }
+
+  canRequestCancel(order: TrackingOrder): boolean {
+    if (order.backendStatus === 'pending') return true;
+    if (order.backendStatus !== 'confirmed') return false;
+
+    const confirmedAt = order.confirmedAt ? new Date(order.confirmedAt) : null;
+    if (!confirmedAt || Number.isNaN(confirmedAt.getTime())) return false;
+
+    const elapsed = Date.now() - confirmedAt.getTime();
+    return elapsed <= 24 * 60 * 60 * 1000;
+  }
+
+  toggleCancelForm(order: TrackingOrder): void {
+    order.cancelForm.open = !order.cancelForm.open;
+    this.cdr.detectChanges();
+  }
+
+  async submitCancelRequest(order: TrackingOrder): Promise<void> {
+    const reason = String(order.cancelForm.reason || '').trim();
+    const phone = String(order.cancelForm.phone || '').trim();
+
+    if (!reason) {
+      this.errorMessage = `Vui lòng chọn lý do hủy cho đơn ${order.orderCode}.`;
+      return;
+    }
+
+    if (!phone) {
+      this.errorMessage = `Vui lòng nhập số điện thoại xác nhận cho đơn ${order.orderCode}.`;
+      return;
+    }
+
+    order.cancelForm.submitting = true;
+    this.errorMessage = '';
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<{ order?: any; warning?: string }>(`${API_BASE_URL}/orders/${order.id}/cancel-request`, {
+          reason,
+          note: String(order.cancelForm.note || '').trim(),
+          phone,
+        }),
+      );
+
+      const previousStatus = String(response?.order?.cancellation_request?.previous_status || order.backendStatus || '') as BackendStatus | '';
+
+      order.backendStatus = 'cancel_pending';
+      order.statusLabel = 'Chờ xác nhận hủy';
+      order.cancelForm.open = false;
+      order.cancellationRequest = {
+        reason,
+        note: String(order.cancelForm.note || '').trim(),
+        phone,
+        requestedAt: new Date().toISOString(),
+        previousStatus,
+        over10mWithDeposit: Boolean(response?.order?.cancellation_request?.over_10m_with_deposit),
+      };
+
+      const warning = String(response?.warning || '').trim();
+      this.infoMessage = warning || `Đã gửi yêu cầu hủy đơn ${order.orderCode}. Vui lòng chờ admin xác nhận.`;
+      this.cdr.detectChanges();
+      this.scrollToAnchor(`cancel-pending-${order.id}`);
+    } catch (error: any) {
+      this.errorMessage = error?.error?.error || `Không thể gửi yêu cầu hủy cho đơn ${order.orderCode}.`;
+      this.cdr.detectChanges();
+    } finally {
+      order.cancelForm.submitting = false;
+      this.cdr.detectChanges();
+    }
   }
 
   async completeOrder(order: TrackingOrder): Promise<void> {
@@ -173,6 +319,49 @@ export class OrderTrackingComponent implements OnInit {
     } catch {
       this.errorMessage = 'Không thể cập nhật trạng thái hoàn tất lúc này.';
     }
+  }
+
+
+  viewProductFromHistory(product: TrackingProduct, target: 'top' | 'review' = 'top'): void {
+    const productId = String(product.productId || '').trim();
+    if (!productId) {
+      this.infoMessage = 'Không tìm thấy liên kết sản phẩm để mở lại.';
+      return;
+    }
+
+    this.persistTrackingState(window.scrollY);
+
+    if (target === 'review') {
+      void this.router.navigate(['/products', productId], {
+        queryParams: { tab: 'review' },
+        fragment: 'product-review-summary',
+      });
+      return;
+    }
+
+    void this.router.navigate(['/products', productId], {
+      fragment: 'product-top',
+    });
+  }
+
+  buyAgain(product: TrackingProduct): void {
+    const productId = String(product.productId || '').trim();
+    if (!productId) {
+      this.infoMessage = 'Không thể mua lại vì thiếu thông tin sản phẩm.';
+      return;
+    }
+
+    this.ui.addToCart(
+      {
+        productId,
+        name: product.name,
+        imageUrl: product.imageUrl,
+        price: product.unitPrice,
+      },
+      1,
+    );
+    this.ui.openCart();
+    this.infoMessage = `Đã thêm ${product.name} vào giỏ hàng.`;
   }
 
   setRating(product: TrackingProduct, value: number): void {
@@ -272,16 +461,19 @@ export class OrderTrackingComponent implements OnInit {
   }
 
   async submitReview(order: TrackingOrder): Promise<void> {
-    const missing = order.products.some((item) => item.review.rating < 1);
-    if (missing) {
-      this.errorMessage = `Vui lòng chọn số sao cho tất cả sản phẩm của đơn ${order.orderCode}.`;
+    const reviewProducts = order.products.filter((item) => !!item.orderDetailId && !item.submittedReview);
+
+    if (!reviewProducts.length) {
+      order.reviewSubmitted = true;
+      this.infoMessage = `Đơn ${order.orderCode} đã được đánh giá đầy đủ trước đó.`;
+      this.cdr.detectChanges();
+      this.scrollToAnchor(`review-success-${order.id}`);
       return;
     }
 
-    const reviewProducts = order.products.filter((item) => !!item.orderDetailId);
-
-    if (!reviewProducts.length) {
-      this.errorMessage = `Không tìm thấy chi tiết sản phẩm để lưu đánh giá cho đơn ${order.orderCode}.`;
+    const missing = reviewProducts.some((item) => item.review.rating < 1);
+    if (missing) {
+      this.errorMessage = `Vui lòng chọn số sao cho các sản phẩm chưa đánh giá của đơn ${order.orderCode}.`;
       return;
     }
 
@@ -290,7 +482,13 @@ export class OrderTrackingComponent implements OnInit {
     this.reviewSubmittingOrderId = order.id;
 
     try {
-      const payloadReviews = [];
+      const payloadReviews: Array<{
+        order_detail_id: string;
+        rating: number;
+        content: string;
+        images: string[];
+        videos: string[];
+      }> = [];
 
       for (const item of reviewProducts) {
         const [uploadedImages, uploadedVideos] = await Promise.all([
@@ -302,8 +500,8 @@ export class OrderTrackingComponent implements OnInit {
           order_detail_id: item.orderDetailId,
           rating: item.review.rating,
           content: String(item.review.comment || '').trim(),
-          images: uploadedImages.images,
-          videos: uploadedVideos.videos,
+          images: uploadedImages.images.map((url) => this.normalizeReviewMediaUrl(url)),
+          videos: uploadedVideos.videos.map((url) => this.normalizeReviewMediaUrl(url)),
         });
       }
 
@@ -314,12 +512,45 @@ export class OrderTrackingComponent implements OnInit {
         }),
       );
 
-      order.reviewSubmitted = true;
+      const submittedAt = new Date().toISOString();
+      const submittedMap = new Map(payloadReviews.map((item) => [item.order_detail_id, item]));
+      order.products.forEach((product) => {
+        const submitted = submittedMap.get(product.orderDetailId);
+        if (!submitted) return;
+        product.submittedReview = {
+          rating: submitted.rating,
+          content: submitted.content,
+          images: submitted.images,
+          videos: submitted.videos,
+          status: 'pending',
+          createdAt: submittedAt,
+        };
+      });
+
+      const allReviewedNow = order.products.filter((item) => !!item.orderDetailId).every((item) => !!item.submittedReview);
+      order.reviewSubmitted = allReviewedNow;
       this.infoMessage = `Cảm ơn bạn đã gửi đánh giá cho đơn ${order.orderCode}. Admin sẽ duyệt trong thời gian sớm nhất.`;
-    } catch {
-      this.errorMessage = `Không thể gửi đánh giá cho đơn ${order.orderCode}. Vui lòng thử lại.`;
+      this.cdr.detectChanges();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => this.scrollToAnchor(`review-success-${order.id}`));
+      });
+    } catch (error: any) {
+      if (error?.status === 409) {
+        await this.applyExistingReviews(order);
+        order.reviewSubmitted = true;
+        this.errorMessage = '';
+        this.infoMessage = error?.error?.message || 'Đơn hàng này đã được đánh giá trước đó, không thể sửa.';
+        this.cdr.detectChanges();
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => this.scrollToAnchor(`review-success-${order.id}`));
+        });
+      } else {
+        this.errorMessage = `Không thể gửi đánh giá cho đơn ${order.orderCode}. Vui lòng thử lại.`;
+        this.cdr.detectChanges();
+      }
     } finally {
       this.reviewSubmittingOrderId = null;
+      this.cdr.detectChanges();
     }
   }
 
@@ -358,6 +589,7 @@ export class OrderTrackingComponent implements OnInit {
     const map: Record<BackendStatus, string> = {
       pending: 'Đã đặt hàng',
       confirmed: 'Đã xác nhận',
+      cancel_pending: 'Chờ xác nhận hủy',
       processing: 'Đang xử lý',
       shipping: 'Đang giao hàng',
       delivered: 'Đã giao hàng',
@@ -366,6 +598,39 @@ export class OrderTrackingComponent implements OnInit {
       refunded: 'Đã hoàn tiền',
     };
     return map[status] || status;
+  }
+
+
+  private async applyExistingReviews(order: TrackingOrder): Promise<void> {
+    const reviewStatus = await firstValueFrom(
+      this.http.get<{ items?: Array<any> }>(`${API_BASE_URL}/reviews/order/${order.id}/status`),
+    ).catch(() => ({ items: [] }));
+
+    const submittedMap = new Map<string, SubmittedReviewData>();
+    (reviewStatus.items || []).forEach((item: any) => {
+      const detailId = String(item?.order_detail_id || '').trim();
+      if (!detailId) return;
+      submittedMap.set(detailId, {
+        rating: Number(item?.rating || 0),
+        content: String(item?.content || ''),
+        images: Array.isArray(item?.images) ? item.images.map((x: any) => this.normalizeReviewMediaUrl(x)).filter(Boolean) : [],
+        videos: Array.isArray(item?.videos) ? item.videos.map((x: any) => this.normalizeReviewMediaUrl(x)).filter(Boolean) : [],
+        status: String(item?.status || 'pending'),
+        createdAt: item?.createdAt ? String(item.createdAt) : '',
+      });
+    });
+
+    order.products.forEach((product) => {
+      product.submittedReview = submittedMap.get(product.orderDetailId) || null;
+    });
+  }
+
+  private normalizeReviewMediaUrl(value: any): string {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (/^https?:\/\//i.test(raw)) return raw;
+    if (raw.startsWith('/')) return `http://localhost:3000${raw}`;
+    return raw;
   }
 
   private normalizePayment(method: string | undefined): string {
@@ -402,6 +667,8 @@ export class OrderTrackingComponent implements OnInit {
     const products: TrackingProduct[] = items.map((item: any, index: number) => ({
       id: String(item?._id || item?.variant_id || `item-${index}`),
       orderDetailId: String(item?._id || ''),
+      productId: String(item?.product_id || ''),
+      variantId: String(item?.variant_id || ''),
       imageUrl: String(item?.image_url || 'assets/images/banner5.jpg'),
       name: String(item?.product_name || '-'),
       classification: String(item?.variant_name || item?.sku || '-'),
@@ -415,10 +682,37 @@ export class OrderTrackingComponent implements OnInit {
         imagePreviews: [],
         videoPreviews: [],
       },
+      submittedReview: null,
     }));
 
     const latestPayment = payments[0] || null;
     const backendStatus = String(order?.status || 'pending').toLowerCase() as BackendStatus;
+
+    const reviewStatus = await firstValueFrom(
+      this.http.get<{ reviewedDetailIds?: string[]; items?: Array<any> }>(`${API_BASE_URL}/reviews/order/${String(order?._id || matched._id)}/status`),
+    ).catch(() => ({ reviewedDetailIds: [], items: [] }));
+
+    const reviewedSet = new Set((reviewStatus.reviewedDetailIds || []).map((item) => String(item)));
+    const submittedMap = new Map<string, SubmittedReviewData>();
+    (reviewStatus.items || []).forEach((item: any) => {
+      const detailId = String(item?.order_detail_id || '').trim();
+      if (!detailId) return;
+      submittedMap.set(detailId, {
+        rating: Number(item?.rating || 0),
+        content: String(item?.content || ''),
+        images: Array.isArray(item?.images) ? item.images.map((x: any) => this.normalizeReviewMediaUrl(x)).filter(Boolean) : [],
+        videos: Array.isArray(item?.videos) ? item.videos.map((x: any) => this.normalizeReviewMediaUrl(x)).filter(Boolean) : [],
+        status: String(item?.status || 'pending'),
+        createdAt: item?.createdAt ? String(item.createdAt) : '',
+      });
+    });
+
+    products.forEach((product) => {
+      product.submittedReview = submittedMap.get(product.orderDetailId) || null;
+    });
+
+    const reviewableProducts = products.filter((item) => !!item.orderDetailId);
+    const reviewSubmitted = reviewableProducts.length > 0 && reviewableProducts.every((item) => reviewedSet.has(item.orderDetailId));
 
     return {
       id: String(order?._id || matched._id),
@@ -436,8 +730,75 @@ export class OrderTrackingComponent implements OnInit {
       backendStatus,
       statusLabel: this.statusLabel(backendStatus),
       products,
-      reviewSubmitted: false,
+      reviewSubmitted,
+      confirmedAt: order?.confirmed_at ? String(order.confirmed_at) : '',
+      cancellationRequest: order?.cancellation_request
+        ? {
+            reason: String(order.cancellation_request.reason || ''),
+            note: String(order.cancellation_request.note || ''),
+            phone: String(order.cancellation_request.phone || ''),
+            requestedAt: order.cancellation_request.requested_at ? String(order.cancellation_request.requested_at) : '',
+            previousStatus: String(order.cancellation_request.previous_status || '') as BackendStatus | '',
+            over10mWithDeposit: Boolean(order.cancellation_request.over_10m_with_deposit),
+          }
+        : null,
+      cancelForm: {
+        open: false,
+        reason: '',
+        note: '',
+        phone: String(display?.phone || order?.shipping_phone || ''),
+        submitting: false,
+      },
     };
+  }
+
+
+  private persistTrackingState(scrollY: number): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const payload = {
+      searchCode: this.searchCode,
+      scrollY: Math.max(0, Math.floor(scrollY || 0)),
+      savedAt: Date.now(),
+    };
+
+    window.sessionStorage.setItem(TRACKING_STATE_KEY, JSON.stringify(payload));
+  }
+
+  private readTrackingState(): { searchCode: string; scrollY: number } | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      const raw = window.sessionStorage.getItem(TRACKING_STATE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      const searchCode = String(parsed?.searchCode || '').trim();
+      const scrollY = Math.max(0, Number(parsed?.scrollY) || 0);
+      if (!searchCode) return null;
+      return { searchCode, scrollY };
+    } catch {
+      return null;
+    }
+  }
+
+  private restoreOrScrollToResults(): void {
+    const savedY = this.pendingRestoreScrollY;
+    this.pendingRestoreScrollY = null;
+
+    if (savedY !== null) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: Math.max(savedY, 0), behavior: 'auto' });
+        });
+      });
+      return;
+    }
+
+    this.scrollToAnchor('tracking-results');
   }
 
   private scrollToAnchor(anchorId: string): void {
@@ -447,7 +808,7 @@ export class OrderTrackingComponent implements OnInit {
     const tryScroll = () => {
       const node = document.getElementById(anchorId);
       if (node) {
-        const top = node.getBoundingClientRect().top + window.scrollY - 120;
+        const top = node.getBoundingClientRect().top + window.scrollY - 180;
         window.scrollTo({ top: Math.max(top, 0), behavior: 'auto' });
         return;
       }
