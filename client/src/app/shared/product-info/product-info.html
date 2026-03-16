@@ -11,34 +11,58 @@
 
   <div class="price">
     <span class="sale">
-      <ng-container
-        *ngIf="(selectedVariant?.price ?? selectedColor?.price ?? product.price) !== null; else contactPrice">
+      <ng-container *ngIf="(selectedVariant?.price ?? selectedColor?.price ?? product.price) !== null; else contactPrice">
         {{ (selectedVariant?.price ?? selectedColor?.price ?? product.price) | number }}&#273;
       </ng-container>
     </span>
-    <span class="old"
-      *ngIf="(selectedVariant?.compare_at_price ?? selectedColor?.originalPrice ?? product.originalPrice) !== null">
+    <span class="old" *ngIf="(selectedVariant?.compare_at_price ?? selectedColor?.originalPrice ?? product.originalPrice) !== null">
       {{ (selectedVariant?.compare_at_price ?? selectedColor?.originalPrice ?? product.originalPrice) | number }}&#273;
     </span>
   </div>
 
   <div class="section">
-    <div class="label">M&#224;u s&#7855;c</div>
+    <div class="label">Màu sắc</div>
     <ng-container *ngIf="product.colors.length > 0; else noColors">
       <div class="color-swatches-row">
-        <button *ngFor="let color of product.colors" type="button" class="color-swatch-lg"
-          [class.active]="selectedColor?.name === color.name" [style.background-color]="color.hex" [title]="color.name"
-          (click)="selectColor(color)" [attr.aria-label]="color.name"></button>
+        <button
+          *ngFor="let color of product.colors"
+          type="button"
+          class="color-swatch-lg"
+          [class.active]="selectedColor?.name === color.name"
+          [style.background-color]="color.hex"
+          [title]="color.name"
+          (click)="selectColor(color)"
+          [attr.aria-label]="color.name"
+        ></button>
       </div>
     </ng-container>
     <ng-template #noColors>
-      <div>&#272;ang c&#7853;p nh&#7853;t</div>
+      <div>Đang cập nhật</div>
     </ng-template>
   </div>
 
   <div class="section">
     <div class="label">Kích thước</div>
-    <div>{{ product.sizeText || 'Đang cập nhật' }}</div>
+    <ng-container *ngIf="hasSizeSelection; else staticSize">
+      <div class="size-options">
+        <button
+          *ngFor="let variant of sizeVariants"
+          type="button"
+          class="size-option-btn"
+          [class.active]="selectedVariant?._id === variant._id"
+          [class.is-disabled]="isVariantUnavailable(variant)"
+          [disabled]="isVariantUnavailable(variant)"
+          (click)="selectVariant(variant)"
+        >
+          {{ getVariantLabel(variant) }}
+        </button>
+      </div>
+      <div class="size-description" *ngIf="formattedSizeDescription">{{ formattedSizeDescription }}</div>
+      <div class="selection-hint" *ngIf="!selectedVariant">Vui lòng chọn kích thước trước khi mua</div>
+    </ng-container>
+    <ng-template #staticSize>
+      <div>{{ displaySizeText }}</div>
+    </ng-template>
   </div>
 
   <div class="section" *ngIf="product.materialText">
@@ -52,8 +76,7 @@
   </div>
 
   <div class="quantity">
-    <button type="button" class="qty-btn" (click)="decrease()"
-      aria-label="Giảm số lượng">-</button>
+    <button type="button" class="qty-btn" (click)="decrease()" aria-label="Giảm số lượng">-</button>
     <input
       type="number"
       class="qty-input"
@@ -65,13 +88,12 @@
       (blur)="onQuantityBlur()"
       aria-label="Số lượng sản phẩm"
     />
-    <button type="button" class="qty-btn" (click)="increase()"
-      aria-label="Tăng số lượng">+</button>
+    <button type="button" class="qty-btn" (click)="increase()" aria-label="Tăng số lượng">+</button>
   </div>
 
   <button type="button" class="btn-add" (click)="addToCart()">THÊM VÀO GIỎ</button>
   <button type="button" class="btn-buy" (click)="buyNow()">MUA NGAY</button>
-  <p class="add-message" *ngIf="addMessage">{{ addMessage }}</p>
+  <p class="add-message" [class.add-message--error]="addMessageTone === 'error'" *ngIf="addMessage">{{ addMessage }}</p>
 </div>
 
 <ng-template #contactPrice>Liên hệ</ng-template>

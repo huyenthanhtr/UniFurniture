@@ -12,6 +12,7 @@ import { ProductListItem, ColorSwatch } from '../../services/product-data.servic
 })
 export class ProductCardComponent {
   @Input({ required: true }) product!: ProductListItem;
+  readonly starValues = [1, 2, 3, 4, 5];
 
   readonly hoveredColor = signal<ColorSwatch | null>(null);
 
@@ -29,6 +30,14 @@ export class ProductCardComponent {
     const hovered = this.hoveredColor();
     return hovered?.originalPrice ?? this.product.originalPrice;
   });
+
+  get roundedAverageRating(): number {
+    return Math.round(Number(this.product?.averageRating || 0));
+  }
+
+  get reviewsCount(): number {
+    return Number(this.product?.reviewsCount || 0);
+  }
 
   onColorEnter(color: ColorSwatch): void {
     this.hoveredColor.set(color);

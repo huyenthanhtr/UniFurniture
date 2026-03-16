@@ -20,7 +20,8 @@
               <a class="dropdown-item dropdown-item--parent product-root-item"
                 *ngFor="let group of productGroups(); trackBy: trackByGroup"
                 [class.is-active]="activeGroupSlug() === group.root.slug" [routerLink]="['/products']"
-                [queryParams]="rootQueryParams(group)" (mouseenter)="setActiveGroup(group.root.slug)">
+                [queryParams]="rootQueryParams(group)" (mouseenter)="setActiveGroup(group.root.slug)"
+                (click)="navigateToProductGroup($event, group)">
                 <span>{{ group.root.label }}</span>
                 <span class="item-arrow" *ngIf="group.children.length > 0">&#8250;</span>
               </a>
@@ -30,7 +31,8 @@
               <a class="dropdown-item dropdown-item--child product-sub-item"
                 *ngFor="let child of activeSubItems(); trackBy: trackBySubItem" [routerLink]="['/products']"
                 [queryParams]="submenuQueryParams(child)" routerLinkActive="is-active"
-                [routerLinkActiveOptions]="{ matrixParams: 'ignored', queryParams: 'subset', paths: 'exact', fragment: 'ignored' }">
+                [routerLinkActiveOptions]="{ matrixParams: 'ignored', queryParams: 'subset', paths: 'exact', fragment: 'ignored' }"
+                (click)="navigateToProductSubItem($event, child)">
                 {{ child.label }}
               </a>
             </div>

@@ -14,11 +14,6 @@
       </button>
 
       <div class="filter-menu filter-menu--category" *ngIf="openDropdown === 'category'">
-        <button type="button" class="filter-option" [class.is-selected]="isCategorySelected('')" (click)="selectCategory('')">
-          <span class="filter-checkbox" [class.is-checked]="isCategorySelected('')"></span>
-          {{ categoryDefaultLabel }}
-        </button>
-
         <ng-container *ngIf="isCategoryTreeMode(); else categoryFlatOptions">
           <div class="category-group" *ngFor="let group of categoryTree; trackBy: trackByGroupId">
             <div class="category-group-row">
@@ -51,6 +46,11 @@
         </ng-container>
 
         <ng-template #categoryFlatOptions>
+          <button type="button" class="filter-option" [class.is-selected]="isCategorySelected('')" (click)="selectCategory('')">
+            <span class="filter-checkbox" [class.is-checked]="isCategorySelected('')"></span>
+            {{ categoryDefaultLabel }}
+          </button>
+
           <button
             type="button"
             class="filter-option"
@@ -100,7 +100,7 @@
             [class.is-selected]="isColorSelected(option.value)"
             (click)="selectColor(option.value)"
             [title]="option.label"
-            [attr.aria-label]="'Mau ' + option.label"
+            [attr.aria-label]="'Màu ' + option.label"
           >
             <span class="color-dot" [style.background]="getColorSwatchStyle(option.value).background"></span>
           </button>

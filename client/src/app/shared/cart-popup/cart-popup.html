@@ -25,7 +25,7 @@
             </div>
             } @else {
             <div class="cart-items">
-                @for (item of ui.cartItems(); track item.productId) {
+                @for (item of ui.cartItems(); track item.cartKey) {
                 <div class="cart-item">
                     <img
                       class="cart-item-img"
@@ -35,6 +35,11 @@
                     />
                     <div class="cart-item-info">
                         <span class="cart-item-name">{{ item.name }}</span>
+                        @if (item.colorName || item.variantLabel) {
+                        <span class="cart-item-meta">
+                          {{ item.colorName || 'Mặc định' }}@if (item.variantLabel) { / {{ item.variantLabel }} }
+                        </span>
+                        }
                         <span class="cart-item-price">{{ formatPrice(item.price) }}</span>
                         <div class="cart-item-actions">
                             <div class="qty-controls">

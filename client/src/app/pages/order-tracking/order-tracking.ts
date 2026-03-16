@@ -353,6 +353,7 @@ export class OrderTrackingComponent implements OnInit {
 
     this.ui.addToCart(
       {
+        cartKey: productId,
         productId,
         name: product.name,
         imageUrl: product.imageUrl,

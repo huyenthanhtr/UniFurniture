@@ -16,6 +16,39 @@ function toObjectIdOrNull(value) {
   return mongoose.Types.ObjectId.isValid(String(value)) ? value : null;
 }
 
+async function resolveTaxonomyObjectIds(model, rawValue) {
+  const tokens = String(rawValue || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (!tokens.length) {
+    return [];
+  }
+
+  const objectIds = tokens
+    .filter((item) => mongoose.Types.ObjectId.isValid(item))
+    .map((item) => new mongoose.Types.ObjectId(item));
+
+  const slugTokens = tokens.filter((item) => !mongoose.Types.ObjectId.isValid(item));
+  if (!slugTokens.length) {
+    return objectIds;
+  }
+
+  const matchedDocs = await model.find({ slug: { $in: slugTokens } }).select({ _id: 1 }).lean();
+  const mergedIds = [...objectIds, ...matchedDocs.map((item) => item._id)];
+  const seen = new Set();
+
+  return mergedIds.filter((item) => {
+    const key = String(item);
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
 function normalizeProductPayload(body = {}) {
   return {
     name: String(body.name || "").trim(),
@@ -87,14 +120,22 @@ async function getProducts(req, res, next) {
     const andConditions = [];
 
     if (category) {
-      const ids = String(category)
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      andConditions.push({ category_id: ids.length > 1 ? { $in: ids } : ids[0] });
+      const categoryIds = await resolveTaxonomyObjectIds(Category, category);
+      andConditions.push(
+        categoryIds.length
+          ? { category_id: categoryIds.length > 1 ? { $in: categoryIds } : categoryIds[0] }
+          : { _id: { $in: [] } }
+      );
     }
 
-    if (collection) andConditions.push({ collection_id: collection });
+    if (collection) {
+      const collectionIds = await resolveTaxonomyObjectIds(Collection, collection);
+      andConditions.push(
+        collectionIds.length
+          ? { collection_id: collectionIds.length > 1 ? { $in: collectionIds } : collectionIds[0] }
+          : { _id: { $in: [] } }
+      );
+    }
 
     if (status) {
       const statuses = String(status)

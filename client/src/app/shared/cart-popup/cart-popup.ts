@@ -19,18 +19,18 @@ export class CartPopup {
 
     decreaseQuantity(item: CartItem) {
         if (item.quantity <= 1) {
-            this.ui.removeFromCart(item.productId);
+            this.ui.removeFromCart(item.cartKey);
             return;
         }
-        this.ui.updateCartItemQuantity(item.productId, item.quantity - 1);
+        this.ui.updateCartItemQuantity(item.cartKey, item.quantity - 1);
     }
 
     increaseQuantity(item: CartItem) {
-        this.ui.updateCartItemQuantity(item.productId, item.quantity + 1);
+        this.ui.updateCartItemQuantity(item.cartKey, item.quantity + 1);
     }
 
     removeItem(item: CartItem) {
-        this.ui.removeFromCart(item.productId);
+        this.ui.removeFromCart(item.cartKey);
     }
 
     formatPrice(price: number | null): string {

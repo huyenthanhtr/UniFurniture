@@ -32,9 +32,10 @@
         [categoryOptions]="filterCategoryOptions()"
         [categoryTree]="filterCategoryTree()"
         [preferredExpandedGroupIds]="preferredExpandedFilterGroupIds()"
-        [categoryDefaultLabel]="'Tat ca danh muc'"
+        [categoryDefaultLabel]="'Tất cả danh mục'"
         [categoryTriggerLabel]="categoryFilterLabel()"
         [selectedCategoryId]="selectedFilterCategoryId()"
+        [selectedCategoryGroupId]="selectedFilterCategoryGroupId()"
         [selectedCategoryIds]="selectedFilterCategoryIds()"
         [selectedPriceRanges]="selectedPriceRanges()"
         [colorOptions]="filterColorOptions()"
@@ -55,7 +56,7 @@
       <ng-container *ngIf="!isLoading() && !errorMessage()">
         <app-product-grid [products]="visibleProducts()"></app-product-grid>
 
-        <p *ngIf="visibleProducts().length === 0" class="status-message">Khong co san pham phu hop bo loc hien tai.</p>
+        <p *ngIf="visibleProducts().length === 0" class="status-message">Không có sản phẩm nào phù hợp với bộ lọc hiện tại.</p>
 
         <div class="pagination" *ngIf="totalPages() > 1">
           <button class="page-btn" (click)="previousPage()" [disabled]="currentPage() === 1">Previous</button>

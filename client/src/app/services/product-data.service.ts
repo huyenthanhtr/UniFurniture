@@ -80,6 +80,9 @@ export interface ProductVariantDocument {
   color?: string;
   price?: number;
   compare_at_price?: number;
+  stock_quantity?: number;
+  status?: string;
+  variant_status?: string;
 }
 
 export interface ColorSwatch {
@@ -110,6 +113,7 @@ export interface ProductDetailData {
   materialText: string;
   warrantyMonths: number | null;
   colors: ColorSwatch[];
+  variants: ProductVariantDocument[];
   images: ImageWithVariant[];
 }
 
@@ -179,6 +183,7 @@ export interface ProductListItem {
   originalPrice: number | null;
   imageUrl: string;
   discountBadge: string | null;
+  averageRating: number;
   reviewsCount: number;
   soldCount: number;
   colors: ColorSwatch[];
@@ -286,6 +291,7 @@ export class ProductDataService {
               originalPrice,
               imageUrl: product.thumbnail?.trim() || product.thumbnail_url?.trim() || FALLBACK_IMAGE_URL,
               discountBadge: this.getDiscountBadge(price, originalPrice),
+              averageRating: 0,
               reviewsCount: 0,
               soldCount: this.toNullableNumber(product.sold) ?? 0,
               colors: rawColors.filter((c: any) => c && c.name && c.hex) as ColorSwatch[],
@@ -304,6 +310,14 @@ export class ProductDataService {
             items,
           };
         }),
+        switchMap((response) =>
+          this.attachReviewSummaries(response.items).pipe(
+            map((items) => ({
+              ...response,
+              items,
+            })),
+          ),
+        ),
       );
   }
 
@@ -444,6 +458,7 @@ export class ProductDataService {
               originalPrice,
               imageUrl: product.thumbnail?.trim() || product.thumbnail_url?.trim() || FALLBACK_IMAGE_URL,
               discountBadge: this.getDiscountBadge(price, originalPrice),
+              averageRating: 0,
               reviewsCount: 0,
               soldCount: this.toNullableNumber(product.sold) ?? 0,
               colors: [],
@@ -454,6 +469,7 @@ export class ProductDataService {
             };
           });
         }),
+        switchMap((items) => this.attachReviewSummaries(items)),
         catchError(() => of([]))
       );
   }
@@ -511,6 +527,7 @@ export class ProductDataService {
           materialText: this.valueToText(product.material),
           warrantyMonths: this.toNullableNumber(product.warranty_months),
           colors: this.extractColors(variants.items, images.items, product),
+          variants: variants.items,
           images: uniqueImages.length > 0 ? uniqueImages : [{ url: product.thumbnail?.trim() || FALLBACK_IMAGE_URL }],
         };
       }),
@@ -551,8 +568,54 @@ export class ProductDataService {
     return `${this.apiBaseUrl}/product-models-3d/file/${fileId}`;
   }
 
+  private attachReviewSummaries(items: ProductListItem[]): Observable<ProductListItem[]> {
+    if (!items.length) {
+      return of(items);
+    }
+
+    return forkJoin(
+      items.map((item) =>
+        this.getProductReviews(item.id).pipe(
+          map((summary) => ({
+            id: item.id,
+            averageRating: this.toSafeRating(summary.averageRating),
+            reviewsCount: this.toSafeCount(summary.totalReviews),
+          })),
+        ),
+      ),
+    ).pipe(
+      map((summaries) => {
+        const summaryMap = new Map(summaries.map((summary) => [summary.id, summary]));
+        return items.map((item) => {
+          const summary = summaryMap.get(item.id);
+          return {
+            ...item,
+            averageRating: summary?.averageRating ?? 0,
+            reviewsCount: summary?.reviewsCount ?? 0,
+          };
+        });
+      }),
+    );
+  }
+
   private emptyListResponse<T>(): ApiListResponse<T> {
     return { page: 1, limit: 0, total: 0, items: [] };
+  }
+
+  private toSafeRating(value: unknown): number {
+    const rating = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(rating)) {
+      return 0;
+    }
+    return Math.max(0, Math.min(5, rating));
+  }
+
+  private toSafeCount(value: unknown): number {
+    const count = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(count) || count < 0) {
+      return 0;
+    }
+    return Math.trunc(count);
   }
 
   private pickPreferredVariant(variants: ProductVariantDocument[]): ProductVariantDocument | null {

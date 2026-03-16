@@ -22,24 +22,35 @@
     </div>
 
     <div class="product-meta">
-      <div class="rating-box">
+      <div class="rating-box" [class.rating-box--empty]="reviewsCount === 0">
         <span class="stars">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="#ff5722" *ngFor="let i of [1, 2, 3, 4, 5]">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            *ngFor="let star of starValues"
+            [class.filled]="star <= roundedAverageRating"
+          >
             <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
           </svg>
         </span>
 
-        <span class="reviews-count">({{ product.reviewsCount || 0 }})</span>
+        <span class="reviews-count">({{ reviewsCount }})</span>
       </div>
 
       <div class="sold-count">Đã bán {{ product.soldCount || 0 }}</div>
     </div>
 
     <div class="product-colors" *ngIf="product.colors && product.colors.length > 0">
-      <span *ngFor="let color of product.colors; let first = first" class="color-swatch"
+      <span
+        *ngFor="let color of product.colors; let first = first"
+        class="color-swatch"
         [class.border-active]="first && !hoveredColor() || hoveredColor()?.name === color.name"
-        [style.background-color]="color.hex" [title]="color.name" (mouseenter)="onColorEnter(color)"
-        (mouseleave)="onColorLeave()"></span>
+        [style.background-color]="color.hex"
+        [title]="color.name"
+        (mouseenter)="onColorEnter(color)"
+        (mouseleave)="onColorLeave()"
+      ></span>
     </div>
   </div>
 </a>

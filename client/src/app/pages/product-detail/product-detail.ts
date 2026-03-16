@@ -37,7 +37,7 @@ export class ProductDetailComponent {
   private loadingGuard: ReturnType<typeof setTimeout> | null = null;
   private pendingDeepLinkFragment: 'product-top' | 'product-reviews' | 'product-review-summary' = 'product-top';
 
-  readonly activeTab = signal<'desc' | 'review' | 'policy'>('desc');
+  readonly activeTab = signal<'desc' | 'review'>('desc');
   readonly product = signal<ProductDetailData | null>(null);
   readonly selectedColor = signal<ColorSwatch | null>(null);
   readonly selectedVariant = signal<ProductVariantDocument | null>(null);
@@ -96,7 +96,7 @@ export class ProductDetailComponent {
 
   readonly normalizedDescriptionHtml = computed(() => {
     const current = this.product();
-    const rawDescription = current?.description || current?.shortDescription || 'Thong tin dang cap nhat.';
+    const rawDescription = current?.description || current?.shortDescription || 'Thông tin đang cập nhật.';
     return this.normalizeDescriptionMedia(rawDescription);
   });
 
@@ -153,7 +153,7 @@ export class ProductDetailComponent {
       });
   }
 
-  setActiveTab(tab: 'desc' | 'review' | 'policy'): void {
+  setActiveTab(tab: 'desc' | 'review'): void {
     this.activeTab.set(tab);
   }
 
@@ -161,7 +161,7 @@ export class ProductDetailComponent {
     this.selectedColor.set(color);
   }
 
-  onVariantChanged(variant: ProductVariantDocument): void {
+  onVariantChanged(variant: ProductVariantDocument | null): void {
     this.selectedVariant.set(variant);
   }
 
@@ -314,6 +314,8 @@ export class ProductDetailComponent {
     this.isLoading.set(true);
     this.errorMessage.set('');
     this.product.set(null);
+    this.selectedColor.set(null);
+    this.selectedVariant.set(null);
     this.reviews.set([]);
     this.isReviewsLoading.set(false);
     this.reviewsError.set('');

@@ -14,10 +14,9 @@
 
     <div class="tabs">
       <div class="tab-header">
-        <button (click)="setActiveTab('desc')" [class.active]="activeTab() === 'desc'">M&#244; t&#7843;</button>
-        <button (click)="setActiveTab('review')" [class.active]="activeTab() === 'review'">&#272;&#225;nh
-          gi&#225;</button>
-        <button (click)="setActiveTab('policy')" [class.active]="activeTab() === 'policy'">Ch&#237;nh s&#225;ch</button>
+        <button (click)="setActiveTab('desc')" [class.active]="activeTab() === 'desc'">Mô tả</button>
+        <button (click)="setActiveTab('review')" [class.active]="activeTab() === 'review'">Đánh
+          giá</button>
       </div>
 
       <div class="tab-content" *ngIf="activeTab() === 'desc'">
@@ -33,7 +32,7 @@
             *ngIf="shouldCollapseDescription()"
             (click)="toggleDescription()"
           >
-            {{ isDescriptionExpanded() ? 'Thu gá»n mÃ´ táº£' : 'Xem thÃªm mÃ´ táº£' }}
+            {{ isDescriptionExpanded() ? 'Thu gọn mô tả' : 'Xem thêm mô tả' }}
           </button>
         </div>
       </div>
@@ -47,15 +46,15 @@
               <div class="review-summary__stars">
                 <span *ngFor="let star of reviewStars" [class.filled]="star <= averageRating()">&#9733;</span>
               </div>
-              <p>{{ reviewCount() }} &#273;&#225;nh gi&#225; &#273;&#227; &#273;&#432;&#7907;c duy&#7879;t</p>
+              <p>{{ reviewCount() }} Đánh giá &#273;&#227; &#273;&#432;&#7907;c duy&#7879;t</p>
             </div>
           </div>
 
-          <p *ngIf="isReviewsLoading()" class="status-message">&#272;ang t&#7843;i &#273;&#225;nh gi&#225;...</p>
+          <p *ngIf="isReviewsLoading()" class="status-message">Đang tải đánh giá...</p>
           <p *ngIf="!isReviewsLoading() && reviewsError()" class="status-message status-error">{{ reviewsError() }}</p>
 
           <div class="review-list" *ngIf="!isReviewsLoading() && !reviewsError()">
-            <div class="review-empty" *ngIf="reviews().length === 0">Ch&#432;a c&#243; &#273;&#225;nh gi&#225; n&#224;o &#273;&#432;&#7907;c duy&#7879;t.</div>
+            <div class="review-empty" *ngIf="reviews().length === 0">Chưa có đánh giá nào được duyệt.</div>
 
             <article class="review-card" *ngFor="let review of reviews()">
               <div class="review-card__head">
@@ -85,7 +84,7 @@
               </div>
 
               <div class="review-reply" *ngIf="review.reply?.content">
-                <p class="review-reply__label">Ph&#7843;n h&#7891;i t&#7915; U-HOME FURNI</p>
+                <p class="review-reply__label">Phản hồi từ U-HOME FURNI</p>
                 <p class="review-reply__content">{{ review.reply?.content }}</p>
               </div>
             </article>
@@ -109,15 +108,6 @@
           </div>
 
         </div>
-      </div>
-
-      <div class="tab-content" *ngIf="activeTab() === 'policy'">
-        <p *ngIf="productData.warrantyMonths !== null; else noPolicy">
-          B&#7843;o h&#224;nh {{ productData.warrantyMonths }} th&#225;ng.
-        </p>
-        <ng-template #noPolicy>
-          <p>Th&#244;ng tin b&#7843;o h&#224;nh &#273;ang c&#7853;p nh&#7853;t.</p>
-        </ng-template>
       </div>
     </div>
 
