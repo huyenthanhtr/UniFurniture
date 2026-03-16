@@ -1,7 +1,7 @@
 ﻿<div class="tracking-page">
   <section class="tracking-hero">
     <div class="tracking-hero__content">
-      <h1>Tra c&#7913;u <span>m&#227; v&#7853;n &#273;&#417;n</span></h1>
+      <h1>Tra cứu <span>mã vận đơn</span></h1>
       <p>Không cần đăng nhập. Bạn có thể nhập 1 hoặc nhiều mã (phân tách bằng dấu phẩy hoặc xuống dòng).</p>
 
       <div class="tracking-search">
@@ -59,6 +59,24 @@
         <button type="button" (click)="completeOrder(order)">Hoàn tất đơn hàng</button>
       </div>
 
+      <div class="alert warning cancel-pending-alert" *ngIf="isCancelPending(order)" [attr.id]="'cancel-pending-' + order.id">
+        Đơn hàng đang chờ xác nhận hủy. Vui lòng chờ admin xử lý.
+        <div *ngIf="order.cancellationRequest?.over10mWithDeposit" class="cancel-note">
+          Lưu ý: Đơn trên 10 triệu đã đặt cọc 10% sẽ không được hoàn lại tiền cọc.
+        </div>
+      </div>
+
+      <div class="card action-history-card" *ngIf="order.cancellationRequest">
+        <h3>Lịch sử yêu cầu hủy của bạn</h3>
+        <div class="action-history-grid">
+          <p><strong>Lý do hủy:</strong> {{ order.cancellationRequest.reason || '-' }}</p>
+          <p><strong>SĐT xác nhận:</strong> {{ order.cancellationRequest.phone || '-' }}</p>
+          <p><strong>Thời gian gửi:</strong> {{ order.cancellationRequest.requestedAt ? (order.cancellationRequest.requestedAt | date:'dd/MM/yyyy HH:mm') : '-' }}</p>
+          <p><strong>Trạng thái:</strong> {{ order.statusLabel }}</p>
+          <p class="full"><strong>Ghi chú:</strong> {{ order.cancellationRequest.note || '-' }}</p>
+        </div>
+      </div>
+
       <div class="detail-grid">
         <div class="card">
           <h3>Thông tin giao hàng</h3>
@@ -96,11 +114,50 @@
         </div>
       </div>
 
+      <div class="card cancel-card" *ngIf="canRequestCancel(order) || order.cancelForm.open">
+        <h3>Yêu cầu hủy đơn hàng</h3>
+        <p class="review-note">Chỉ áp dụng với đơn Chờ xác nhận hoặc Đã xác nhận trong vòng 24 giờ.</p>
+
+        <div class="cancel-action" *ngIf="!order.cancelForm.open">
+          <button type="button" (click)="toggleCancelForm(order)">Yêu cầu hủy đơn</button>
+        </div>
+
+        <div class="cancel-form" *ngIf="order.cancelForm.open">
+          <label>
+            Lý do hủy
+            <select [(ngModel)]="order.cancelForm.reason">
+              <option value="">-- Chọn lý do --</option>
+              <option *ngFor="let reason of cancelReasons" [value]="reason">{{ reason }}</option>
+            </select>
+          </label>
+
+          <label>
+            Ghi chú thêm (tùy chọn)
+            <textarea rows="3" [(ngModel)]="order.cancelForm.note" placeholder="Nhập thêm thông tin nếu cần..."></textarea>
+          </label>
+
+          <label>
+            SĐT xác nhận
+            <input type="text" [(ngModel)]="order.cancelForm.phone" placeholder="Nhập số điện thoại để admin gọi lại" />
+          </label>
+
+          <div class="cancel-note">Lưu ý: Đơn trên 10 triệu đã đặt cọc 10% sẽ không được hoàn lại.</div>
+
+          <div class="cancel-form__actions">
+            <button type="button" class="btn-secondary" (click)="toggleCancelForm(order)" [disabled]="order.cancelForm.submitting">Đóng</button>
+            <button type="button" (click)="submitCancelRequest(order)" [disabled]="order.cancelForm.submitting">
+              {{ order.cancelForm.submitting ? 'Đang gửi...' : 'Gửi yêu cầu hủy' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="card review-card" *ngIf="showReviewSection(order)">
         <h3>Đánh giá sản phẩm</h3>
         <p class="review-note">Đánh giá từng sản phẩm riêng (1-5 sao), thêm nhận xét, ảnh và video.</p>
 
-        <div class="review-item" *ngFor="let product of order.products; let idx = index" [class.review-item--alt]="idx % 2 === 1">
+        <ng-container *ngFor="let product of order.products; let idx = index">
+        <div class="review-item" [class.review-item--alt]="idx % 2 === 1" *ngIf="!product.submittedReview">
           <div class="review-item__head">
             <img [src]="product.imageUrl" [alt]="product.name" />
             <div>
@@ -161,6 +218,7 @@
             </div>
           </div>
         </div>
+      </ng-container>
 
         <div class="review-action">
           <button
@@ -173,7 +231,49 @@
         </div>
       </div>
 
-      <div class="alert success" *ngIf="order.reviewSubmitted">
+      <div class="card submitted-review-card" *ngIf="hasSubmittedReviews(order)">
+        <h3>Lịch sử đánh giá của bạn</h3>
+        <div class="submitted-review-item" *ngFor="let product of order.products">
+          <ng-container *ngIf="product.submittedReview as submitted">
+            <div class="review-item__head review-item__head--history">
+              <img [src]="product.imageUrl" [alt]="product.name" />
+              <div class="review-item__head-main">
+                <h4>{{ product.name }}</h4>
+                <p>{{ product.classification }}</p>
+                <p class="submitted-meta">
+                  {{ reviewModerationLabel(submitted.status) }}
+                  <span *ngIf="submitted.createdAt">• {{ submitted.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                </p>
+              </div>
+              <div class="history-actions">
+                <button type="button" class="history-btn" (click)="viewProductFromHistory(product, 'top')">Xem lại sản phẩm</button>
+                <button type="button" class="history-btn history-btn--green" (click)="buyAgain(product)">Mua lại</button>
+                <button type="button" class="history-btn" (click)="viewProductFromHistory(product, 'review')">Xem cmt</button>
+              </div>
+            </div>
+
+            <div class="stars stars-readonly">
+              <button type="button" *ngFor="let star of [1,2,3,4,5]" [class.filled]="star <= submitted.rating" disabled>★</button>
+            </div>
+
+            <p class="submitted-content">{{ submitted.content || 'Khách hàng không để lại nhận xét.' }}</p>
+
+            <div class="preview-list" *ngIf="submitted.images.length > 0">
+              <div class="preview-item" *ngFor="let image of submitted.images">
+                <img [src]="image" alt="Ảnh đã gửi" />
+              </div>
+            </div>
+
+            <div class="preview-list video" *ngIf="submitted.videos.length > 0">
+              <div class="preview-item" *ngFor="let video of submitted.videos">
+                <video [src]="video" controls></video>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <div class="alert success" *ngIf="order.reviewSubmitted" [attr.id]="'review-success-' + order.id">
         Cảm ơn bạn đã gửi đánh giá cho đơn {{ order.orderCode }}.
       </div>
     </div>

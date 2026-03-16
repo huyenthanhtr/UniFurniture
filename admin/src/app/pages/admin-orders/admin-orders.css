@@ -288,6 +288,12 @@ tbody tr:last-child td {
   border-color: #93c5fd;
 }
 
+.status-dropdown.cancel_pending {
+  color: #b45309;
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
 .status-dropdown.processing {
   color: #7c3aed;
   background: #f5f3ff;
@@ -503,5 +509,73 @@ tbody tr:last-child td {
   th,
   td {
     padding: 10px;
+  }
+}
+
+
+.btn-cancel-info {
+  background: #fff1f2;
+  color: #be123c;
+  border-color: #fda4af;
+}
+
+.btn-cancel-info:hover {
+  background: #ffe4e6;
+  border-color: #fb7185;
+}
+
+.cancel-info-box {
+  background: #fff;
+  padding: 22px;
+  border-radius: 16px;
+  width: min(760px, 92vw);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cancel-info-box h4 {
+  margin: 0 0 14px;
+  font-size: 20px;
+}
+
+.cancel-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.cancel-info-item {
+  border: 1px solid #f2e8dd;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fffdfa;
+}
+
+.cancel-info-item.full {
+  grid-column: 1 / -1;
+}
+
+.cancel-info-item label {
+  display: block;
+  font-size: 12px;
+  color: #7a6a5a;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.cancel-info-item p {
+  margin: 0;
+  color: #33281f;
+  line-height: 1.45;
+}
+
+@media (max-width: 700px) {
+  .cancel-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cancel-info-item.full {
+    grid-column: auto;
   }
 }

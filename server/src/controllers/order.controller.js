@@ -8,27 +8,71 @@ const ProductVariant = require("../models/ProductVariant");
 const ProductImage = require("../models/ProductImage");
 const Coupon = require("../models/Coupon");
 
-const ORDER_STATUSES = ["pending", "confirmed", "processing", "shipping", "delivered", "completed", "cancelled", "refunded"];
+const ORDER_STATUSES = ["pending", "confirmed", "cancel_pending", "processing", "shipping", "delivered", "completed", "cancelled", "refunded"];
 const NORMAL_STATUS_ASC_WEIGHT = {
   pending: 1,
   confirmed: 2,
-  processing: 3,
-  shipping: 4,
-  delivered: 5,
-  completed: 6,
+  cancel_pending: 3,
+  processing: 4,
+  shipping: 5,
+  delivered: 6,
+  completed: 7,
 };
 const NORMAL_STATUS_DESC_WEIGHT = {
   completed: 1,
   delivered: 2,
   shipping: 3,
   processing: 4,
-  confirmed: 5,
-  pending: 6,
+  cancel_pending: 5,
+  confirmed: 6,
+  pending: 7,
 };
+const CANCELLATION_GRACE_HOURS = 24;
 
 function normalizeStatus(value) {
   const status = String(value || "").trim().toLowerCase();
   return ORDER_STATUSES.includes(status) ? status : null;
+}
+
+function getConfirmedAt(order) {
+  const direct = order?.confirmed_at || order?.status_confirmed_at;
+  if (direct) {
+    const date = new Date(direct);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+
+  const fallback = new Date(order?.updatedAt || 0);
+  if (!Number.isNaN(fallback.getTime())) return fallback;
+  return null;
+}
+
+function checkCancelEligibility(order) {
+  const status = String(order?.status || "").toLowerCase();
+
+  if (status === "pending") {
+    return { allowed: true, message: "" };
+  }
+
+  if (status === "confirmed") {
+    const confirmedAt = getConfirmedAt(order);
+    if (!confirmedAt) {
+      return { allowed: false, message: "Không xác định được thời điểm xác nhận đơn." };
+    }
+
+    const elapsedMs = Date.now() - confirmedAt.getTime();
+    const withinWindow = elapsedMs <= CANCELLATION_GRACE_HOURS * 60 * 60 * 1000;
+    if (!withinWindow) {
+      return { allowed: false, message: "Đơn đã quá 24h kể từ lúc xác nhận nên không thể yêu cầu hủy." };
+    }
+
+    return { allowed: true, message: "" };
+  }
+
+  if (status === "cancel_pending") {
+    return { allowed: false, message: "Đơn đang chờ xác nhận hủy." };
+  }
+
+  return { allowed: false, message: "Đơn hàng không còn trong thời hạn cho phép hủy." };
 }
 
 async function resolveProfile(order, customerId) {
@@ -50,7 +94,7 @@ function buildDisplay(order, customer, profile) {
     order?.shipping_name ||
     customer?.full_name ||
     profile?.full_name ||
-    "KhÃ¡ch khÃ´ng Ä‘Äƒng nháº­p";
+    "Khách không đăng nhập";
 
   const phone =
     order?.shipping_phone ||
@@ -430,6 +474,62 @@ async function getOrderById(req, res, next) {
   }
 }
 
+async function requestCancelOrder(req, res, next) {
+  try {
+    const { id } = req.params;
+    const reason = String(req.body?.reason || "").trim();
+    const note = String(req.body?.note || "").trim();
+    const phone = String(req.body?.phone || "").trim();
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid id" });
+    }
+
+    if (!reason) {
+      return res.status(400).json({ error: "Lý do hủy là bắt buộc." });
+    }
+
+    if (!phone) {
+      return res.status(400).json({ error: "Số điện thoại xác nhận là bắt buộc." });
+    }
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    const eligibility = checkCancelEligibility(order);
+    if (!eligibility.allowed) {
+      return res.status(400).json({ error: eligibility.message || "Đơn hàng không thể yêu cầu hủy." });
+    }
+
+    const previousStatus = String(order.status || "").toLowerCase();
+    const over10mWithDeposit = Number(order.total_amount || 0) >= 10000000 && Number(order.deposit_amount || 0) > 0;
+
+    order.status = "cancel_pending";
+    order.cancellation_request = {
+      reason,
+      note,
+      phone,
+      requested_at: new Date(),
+      previous_status: previousStatus,
+      over_10m_with_deposit: over10mWithDeposit,
+    };
+
+    await order.save();
+
+    return res.status(200).json({
+      message: "Đã ghi nhận yêu cầu hủy đơn. Vui lòng chờ admin xác nhận.",
+      warning: over10mWithDeposit
+        ? "Đơn trên 10 triệu đã đặt cọc 10% sẽ không được hoàn lại tiền cọc."
+        : "",
+      order: order.toObject(),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function patchOrderStatus(req, res, next) {
   try {
     const { id } = req.params;
@@ -443,15 +543,17 @@ async function patchOrderStatus(req, res, next) {
       return res.status(400).json({ error: "Invalid status" });
     }
 
-    const doc = await Order.findByIdAndUpdate(
-      id,
-      { $set: { status: nextStatus } },
-      { new: true, runValidators: true }
-    ).lean();
-
+    const doc = await Order.findById(id);
     if (!doc) return res.status(404).json({ error: "Order not found" });
 
-    res.json(doc);
+    doc.status = nextStatus;
+
+    if (nextStatus === "confirmed" && !doc.confirmed_at) {
+      doc.confirmed_at = new Date();
+    }
+
+    await doc.save();
+    res.json(doc.toObject());
   } catch (err) {
     next(err);
   }
@@ -461,4 +563,5 @@ module.exports = {
   getOrders,
   getOrderById,
   patchOrderStatus,
+  requestCancelOrder,
 };

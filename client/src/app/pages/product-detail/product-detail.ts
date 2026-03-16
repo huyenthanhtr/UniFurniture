@@ -13,7 +13,7 @@ import {
   ProductReviewItem,
 } from '../../services/product-data.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, catchError, finalize, map } from 'rxjs';
+import { EMPTY, catchError, combineLatest, finalize, map } from 'rxjs';
 
 interface ReviewMediaItem {
   type: 'image' | 'video';
@@ -35,6 +35,7 @@ export class ProductDetailComponent {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly destroyRef = inject(DestroyRef);
   private loadingGuard: ReturnType<typeof setTimeout> | null = null;
+  private pendingDeepLinkFragment: 'product-top' | 'product-reviews' | 'product-review-summary' = 'product-top';
 
   readonly activeTab = signal<'desc' | 'review' | 'policy'>('desc');
   readonly product = signal<ProductDetailData | null>(null);
@@ -115,19 +116,40 @@ export class ProductDetailComponent {
   });
 
   ngOnInit(): void {
-    this.route.paramMap
-      .pipe(
-        map((params) => params.get('id')),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((productId) => {
+    combineLatest([
+      this.route.paramMap.pipe(map((params) => params.get('id'))),
+      this.route.queryParamMap,
+      this.route.fragment,
+    ])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([productId, queryParams, fragment]) => {
         if (!productId) {
           this.errorMessage.set('Không tìm thấy mã sản phẩm.');
           this.isLoading.set(false);
           return;
         }
+
+        const tab = queryParams.get('tab');
+        this.activeTab.set(tab === 'review' ? 'review' : 'desc');
+
+        const nextFragment = (fragment || '').trim();
+        if (nextFragment === 'product-review-summary') {
+          this.pendingDeepLinkFragment = 'product-review-summary';
+        } else if (nextFragment === 'product-reviews' || (tab === 'review' && !nextFragment)) {
+          this.pendingDeepLinkFragment = 'product-reviews';
+        } else {
+          this.pendingDeepLinkFragment = 'product-top';
+        }
+
+        const previousProductId = this.currentProductId();
         this.currentProductId.set(productId);
-        this.loadProduct(productId);
+
+        if (previousProductId !== productId || !this.product()) {
+          this.loadProduct(productId);
+          return;
+        }
+
+        this.scrollToDeepLink(this.pendingDeepLinkFragment);
       });
   }
 
@@ -152,6 +174,53 @@ export class ProductDetailComponent {
 
   toggleDescription(): void {
     this.isDescriptionExpanded.update((expanded) => !expanded);
+  }
+
+  private scrollToDeepLink(fragment: 'product-top' | 'product-reviews' | 'product-review-summary'): void {
+    let retries = 0;
+    const maxRetries = 18;
+
+    const alignToSection = (node: HTMLElement) => {
+      const scrollTopNow = () => window.scrollTo({ top: 0, behavior: 'auto' });
+      if (fragment === 'product-top') {
+        scrollTopNow();
+        setTimeout(scrollTopNow, 120);
+        setTimeout(scrollTopNow, 360);
+        return;
+      }
+
+      // Multi-pass scroll keeps anchor stable while review media is still rendering.
+      const offset = 140;
+      const scrollNow = () => {
+        node.scrollIntoView({ block: 'start', behavior: 'auto' });
+        window.scrollBy({ top: -offset, behavior: 'auto' });
+      };
+
+      scrollNow();
+      setTimeout(scrollNow, 120);
+      setTimeout(scrollNow, 360);
+      setTimeout(scrollNow, 720);
+    };
+
+    const tryScroll = () => {
+      if ((fragment === 'product-reviews' || fragment === 'product-review-summary') && this.activeTab() !== 'review') {
+        this.activeTab.set('review');
+      }
+
+      const node = (document.getElementById(fragment)
+        || (fragment === 'product-review-summary' ? document.getElementById('product-reviews') : null)) as HTMLElement | null;
+      if (node) {
+        alignToSection(node);
+        return;
+      }
+
+      if (retries < maxRetries) {
+        retries += 1;
+        requestAnimationFrame(tryScroll);
+      }
+    };
+
+    requestAnimationFrame(tryScroll);
   }
 
   getReviewMediaItems(review: ProductReviewItem): ReviewMediaItem[] {
@@ -272,6 +341,7 @@ export class ProductDetailComponent {
       .subscribe((product) => {
         this.product.set(product);
         this.loadReviews(productId);
+        this.scrollToDeepLink(this.pendingDeepLinkFragment);
       });
   }
 

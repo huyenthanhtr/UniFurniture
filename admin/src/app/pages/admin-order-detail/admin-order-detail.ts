@@ -37,6 +37,7 @@ export class AdminOrderDetail implements OnInit {
   readonly statuses = [
     'pending',
     'confirmed',
+    'cancel_pending',
     'processing',
     'shipping',
     'delivered',
@@ -216,6 +217,7 @@ export class AdminOrderDetail implements OnInit {
     const key = String(status || '').toLowerCase();
     if (key === 'pending') return 'Chờ xác nhận';
     if (key === 'confirmed') return 'Đã xác nhận';
+    if (key === 'cancel_pending') return 'Chờ xác nhận hủy';
     if (key === 'processing') return 'Đang xử lý';
     if (key === 'shipping') return 'Đang giao';
     if (key === 'delivered') return 'Đã giao';
