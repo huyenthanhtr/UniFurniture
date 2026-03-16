@@ -227,6 +227,10 @@ export class AdminOrderDetail implements OnInit {
     return status || '-';
   }
 
+  isCancelledOrder(): boolean {
+    return String(this.order?.status || '').toLowerCase() === 'cancelled';
+  }
+
   customerTypeLabel(type: any): string {
     const key = String(type || '').toLowerCase();
     if (key === 'guest') return 'Khách vãng lai';

@@ -382,19 +382,10 @@ export class ProductDetailComponent {
   private normalizeDescriptionMedia(html: string): string {
     const container = document.createElement('div');
     container.innerHTML = String(html || '');
-    this.cleanupDescriptionLayout(container);
-    this.removeTrailingVideoBlock(container);
-    this.cleanupDescriptionLayout(container);
-    this.groupConsecutiveMediaBlocks(container);
 
     container.querySelectorAll<HTMLElement>('*').forEach((element) => {
       element.style.maxWidth = '100%';
       element.style.boxSizing = 'border-box';
-      element.style.minHeight = '';
-      if (!['img', 'video', 'iframe'].includes(element.tagName.toLowerCase())) {
-        element.style.height = '';
-        element.style.maxHeight = '';
-      }
     });
 
     container.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6').forEach((element) => {
@@ -406,13 +397,13 @@ export class ProductDetailComponent {
     container.querySelectorAll<HTMLElement>('img, video, iframe').forEach((element) => {
       const rawSrc = element.getAttribute('src') || '';
       if (rawSrc.startsWith('//')) element.setAttribute('src', `https:${rawSrc}`);
+      if (rawSrc.startsWith('/assets/upload/')) element.setAttribute('src', `http://localhost:3000${rawSrc}`);
       if (rawSrc.startsWith('/uploads/')) element.setAttribute('src', `http://localhost:3000${rawSrc}`);
-      const isInsideMediaGrid = Boolean(element.closest('.description-media-grid'));
       element.style.display = 'block';
-      element.style.width = isInsideMediaGrid ? '100%' : '48%';
-      element.style.maxWidth = isInsideMediaGrid ? '100%' : '420px';
+      element.style.width = '70%';
+      element.style.maxWidth = '70%';
       element.style.height = 'auto';
-      element.style.margin = isInsideMediaGrid ? '0 auto' : '14px auto';
+      element.style.margin = '14px auto';
       if (element.tagName === 'IFRAME' || element.tagName === 'VIDEO') {
         element.style.aspectRatio = '16 / 9';
       }
