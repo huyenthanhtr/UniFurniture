@@ -23,6 +23,7 @@ export class AdminOrders implements OnInit, OnDestroy {
 
   orders: any[] = [];
   pendingStatusChange: { order: any; newStatus: string; oldStatus: string } | null = null;
+  cancelReasonDraft = '';
 
   filter = {
     search: '',
@@ -45,6 +46,7 @@ export class AdminOrders implements OnInit, OnDestroy {
   showConfirmPopup = false;
   showResultPopup = false;
   showCancelInfoPopup = false;
+  showCancelFormPopup = false;
   cancelInfoOrder: any = null;
   confirmMessage = '';
   resultMessage = { title: '', message: '', type: 'success' as 'success' | 'error' };
@@ -155,6 +157,13 @@ export class AdminOrders implements OnInit, OnDestroy {
 
     order._selectedStatus = nextStatus;
     this.pendingStatusChange = { order, newStatus: nextStatus, oldStatus };
+
+    if (String(nextStatus).toLowerCase() === 'cancelled') {
+      this.cancelReasonDraft = '';
+      this.showCancelFormPopup = true;
+      return;
+    }
+
     this.confirmMessage = `Đổi trạng thái đơn hàng sang ${this.orderStatusLabel(nextStatus)}?`;
     this.showConfirmPopup = true;
   }
@@ -168,6 +177,7 @@ export class AdminOrders implements OnInit, OnDestroy {
 
     this.api.patchOrderStatus(String(order._id), newStatus).subscribe({
       next: (doc: any) => {
+        Object.assign(order, doc || {});
         order.status = doc?.status || newStatus;
         order._selectedStatus = order.status;
         this.pendingStatusChange = null;
@@ -185,6 +195,42 @@ export class AdminOrders implements OnInit, OnDestroy {
     });
   }
 
+  executeCancelStatusChange(): void {
+    if (!this.pendingStatusChange) return;
+
+    const { order, newStatus } = this.pendingStatusChange;
+    const reason = this.cancelReasonDraft.trim();
+
+    if (!reason) {
+      this.showResult('Thiếu thông tin', 'Vui lòng nhập lý do huỷ đơn.', 'error');
+      return;
+    }
+
+    this.showCancelFormPopup = false;
+    this.isLoading = true;
+
+    this.api.patchOrderStatus(String(order._id), newStatus, reason).subscribe({
+      next: (doc: any) => {
+        Object.assign(order, doc || {});
+        order.status = doc?.status || newStatus;
+        order._selectedStatus = order.status;
+        this.pendingStatusChange = null;
+        this.cancelReasonDraft = '';
+        this.isLoading = false;
+        this.showResult('Thành công', 'Đã huỷ đơn hàng và lưu lý do huỷ.', 'success');
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        order._selectedStatus = order.status;
+        this.pendingStatusChange = null;
+        this.cancelReasonDraft = '';
+        this.isLoading = false;
+        this.showResult('Thất bại', err?.error?.error || 'Huỷ đơn hàng thất bại.', 'error');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   cancelConfirm(): void {
     if (this.pendingStatusChange) {
       const { order, oldStatus } = this.pendingStatusChange;
@@ -192,6 +238,8 @@ export class AdminOrders implements OnInit, OnDestroy {
     }
     this.pendingStatusChange = null;
     this.showConfirmPopup = false;
+    this.showCancelFormPopup = false;
+    this.cancelReasonDraft = '';
   }
 
   showResult(title: string, message: string, type: 'success' | 'error'): void {
@@ -206,11 +254,15 @@ export class AdminOrders implements OnInit, OnDestroy {
   }
 
   isCancelledOrder(order: any): boolean {
-    return String(order?.status || '').toLowerCase() === 'cancelled';
+    return ['cancelled', 'refunded'].includes(String(order?.status || '').toLowerCase());
+  }
+
+  canShowCancelInfo(order: any): boolean {
+    return this.isCancelledOrder(order) && !!String(order?.cancellation_request?.reason || '').trim();
   }
 
   openCancelInfo(order: any): void {
-    if (!this.isCancelledOrder(order) || !order?.cancellation_request) return;
+    if (!this.canShowCancelInfo(order)) return;
     this.cancelInfoOrder = order;
     this.showCancelInfoPopup = true;
   }
@@ -218,6 +270,15 @@ export class AdminOrders implements OnInit, OnDestroy {
   closeCancelInfo(): void {
     this.showCancelInfoPopup = false;
     this.cancelInfoOrder = null;
+  }
+
+  getCancellationReasonLabel(order: any): string {
+    const cancelledBy = String(order?.cancellation_request?.cancelled_by || '').toLowerCase();
+    if (cancelledBy === 'admin') return 'Lý do huỷ (shop)';
+    if (cancelledBy === 'customer' || String(order?.cancellation_request?.reason || '').trim()) {
+      return 'Lý do huỷ (khách)';
+    }
+    return 'Lý do huỷ';
   }
 
   goPrev(): void {
@@ -296,12 +357,12 @@ export class AdminOrders implements OnInit, OnDestroy {
     const s = String(status || '').toLowerCase();
     if (s === 'pending') return 'Chờ xác nhận';
     if (s === 'confirmed') return 'Đã xác nhận';
-    if (s === 'cancel_pending') return 'Chờ xác nhận hủy';
+    if (s === 'cancel_pending') return 'Chờ xác nhận huỷ';
     if (s === 'processing') return 'Đang xử lý';
     if (s === 'shipping') return 'Đang giao';
     if (s === 'delivered') return 'Đã giao';
     if (s === 'completed') return 'Hoàn tất';
-    if (s === 'cancelled') return 'Đã hủy';
+    if (s === 'cancelled') return 'Đã huỷ';
     if (s === 'refunded') return 'Đã hoàn tiền';
     return status || '-';
   }

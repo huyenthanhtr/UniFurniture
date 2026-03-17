@@ -25,6 +25,7 @@ const OrderSchema = new mongoose.Schema(
       reason: { type: String, default: "" },
       note: { type: String, default: "" },
       phone: { type: String, default: "" },
+      cancelled_by: { type: String, enum: ["customer", "admin", ""], default: "" },
       requested_at: { type: Date, default: null },
       previous_status: { type: String, default: "" },
       over_10m_with_deposit: { type: Boolean, default: false },

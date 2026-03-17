@@ -101,12 +101,14 @@
 .order-items-wrap {
   border: 1px solid #ece6e0;
   border-radius: 12px;
-  overflow: hidden;
-  max-width: 1120px;
+  overflow-x: auto;
+  overflow-y: visible;
+  max-width: 100%;
 }
 
 .order-items-table {
-  table-layout: fixed;
+  table-layout: auto;
+  min-width: 1320px;
 }
 
 .order-items-table th {
@@ -115,6 +117,7 @@
 
 .order-items-table td {
   font-size: 14px;
+  vertical-align: top;
 }
 
 .order-item-row.clickable {
@@ -187,11 +190,6 @@
   font-weight: 700;
 }
 
-.summary-row td:first-child {
-  text-align: right;
-  padding-right: 24px;
-}
-
 .discount-row td {
   color: #b42318;
 }
@@ -199,6 +197,29 @@
 .total-row td {
   color: #2f2720;
   border-bottom: none;
+}
+
+.summary-inline {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
+}
+
+.review-rating-col,
+.review-rating-cell {
+  width: 100px;
+  text-align: center;
+  vertical-align: top;
+}
+
+.review-content-col,
+.review-content-cell {
+  width: 280px;
+  min-width: 280px;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.5;
 }
 
 .payment-summary {
@@ -388,6 +409,98 @@ tbody tr:last-child td {
   gap: 10px;
 }
 
+.cancel-form-box {
+  background: #fff;
+  width: min(700px, 94vw);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cancel-form-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f2ede8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cancel-form-header h4 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.close-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #f9f9f9;
+  color: #999;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cancel-form-body {
+  padding: 20px 24px;
+}
+
+.cancel-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cancel-form-item label {
+  display: block;
+  font-size: 12px;
+  color: #7a6a5a;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.cancel-form-item div {
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #eee3da;
+  border-radius: 12px;
+  background: #fffdfa;
+  display: flex;
+  align-items: center;
+}
+
+.cancel-form-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #f2ede8;
+  background: #faf7f3;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cancel-reason-input {
+  width: 100%;
+  min-height: 112px;
+  border: 1px solid #ddd2c6;
+  border-radius: 12px;
+  padding: 12px;
+  resize: vertical;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.cancel-reason-input:focus {
+  outline: none;
+  border-color: #908372;
+  box-shadow: 0 0 0 3px rgba(144, 131, 114, 0.12);
+}
+
+.required-mark {
+  color: #b42318;
+}
+
 @keyframes slideUp {
   from {
     transform: translateY(15px);
@@ -413,6 +526,10 @@ tbody tr:last-child td {
 
   .actions {
     flex-wrap: wrap;
+  }
+
+  .cancel-form-grid {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -161,10 +161,6 @@ tbody tr:last-child td {
   border-bottom: none;
 }
 
-.cell-title {
-  cursor: pointer;
-}
-
 .sortable {
   user-select: none;
 }
@@ -202,6 +198,10 @@ tbody tr:last-child td {
   object-fit: cover;
   background: #fffdfb;
   flex: 0 0 auto;
+}
+
+.thumb-clickable {
+  cursor: pointer;
 }
 
 .title .sub {

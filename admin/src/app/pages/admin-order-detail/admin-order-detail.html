@@ -7,7 +7,7 @@
 
     <div class="actions">
       <button class="btn btn-ghost" (click)="back()">← Quay lại</button>
-      <button class="btn btn-primary" (click)="askSaveStatus()" [disabled]="!order || editableStatus===order.status">
+      <button class="btn btn-primary" (click)="askSaveStatus()" [disabled]="!order || editableStatus === order.status">
         Lưu
       </button>
     </div>
@@ -50,35 +50,10 @@
             <option *ngFor="let s of statuses" [value]="s">{{ orderStatusLabel(s) }}</option>
           </select>
         </div>
-      </div>
-    </section>
 
-    <section class="card cancellation-card" *ngIf="isCancelledOrder() && order?.cancellation_request">
-      <h3>Yêu cầu hủy đơn</h3>
-      <div class="grid">
-        <div class="field readonly">
-          <label>Lý do hủy</label>
-          <div>{{ order.cancellation_request.reason || '-' }}</div>
-        </div>
-
-        <div class="field readonly">
-          <label>Số điện thoại xác nhận</label>
-          <div>{{ order.cancellation_request.phone || '-' }}</div>
-        </div>
-
-        <div class="field readonly full">
-          <label>Ghi chú</label>
-          <div>{{ order.cancellation_request.note || '-' }}</div>
-        </div>
-
-        <div class="field readonly">
-          <label>Thời gian gửi yêu cầu</label>
-          <div>{{ order.cancellation_request.requested_at ? (order.cancellation_request.requested_at | date:'dd/MM/yyyy HH:mm') : '-' }}</div>
-        </div>
-
-        <div class="field readonly">
-          <label>Lưu ý hoàn cọc</label>
-          <div>{{ order.cancellation_request.over_10m_with_deposit ? 'Đơn trên 10 triệu đã đặt cọc 10% (không hoàn lại tiền cọc)' : 'Không có lưu ý' }}</div>
+        <div class="field readonly full" *ngIf="hasCancellationReason()">
+          <label>{{ getCancellationReasonLabel() }}</label>
+          <div>{{ order.cancellation_request?.reason || '-' }}</div>
         </div>
       </div>
     </section>
@@ -97,6 +72,8 @@
               <th>SL</th>
               <th class="money-col">Đơn giá</th>
               <th class="money-col">Thành tiền</th>
+              <th class="review-rating-col" *ngIf="hasApprovedReviews">Đánh giá</th>
+              <th class="review-content-col" *ngIf="hasApprovedReviews">Nội dung đánh giá</th>
             </tr>
           </thead>
           <tbody>
@@ -115,16 +92,26 @@
               <td>{{ item.quantity || 0 }}</td>
               <td class="money-cell">{{ item.unit_price | number }}</td>
               <td class="money-cell">{{ item.total | number }}</td>
+              <td class="review-rating-cell" *ngIf="hasApprovedReviews">{{ item.approved_review ? getItemReviewRating(item) : '-' }}</td>
+              <td class="review-content-cell" *ngIf="hasApprovedReviews">{{ item.approved_review ? getItemReviewContent(item) : '-' }}</td>
             </tr>
 
             <tr class="summary-row discount-row" *ngIf="showDiscountRow">
-              <td colspan="6">{{ discountLabel }}</td>
-              <td class="money-cell">-{{ discountAmount | number }}</td>
+              <td [attr.colspan]="summaryColspan">
+                <div class="summary-inline">
+                  <span>{{ discountLabel }}</span>
+                  <span>-{{ discountAmount | number }}</span>
+                </div>
+              </td>
             </tr>
 
             <tr class="summary-row total-row">
-              <td colspan="6">Tổng thanh toán</td>
-              <td class="money-cell">{{ grandTotal | number }}</td>
+              <td [attr.colspan]="summaryColspan">
+                <div class="summary-inline">
+                  <span>Tổng thanh toán</span>
+                  <span>{{ grandTotal | number }}</span>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -258,8 +245,58 @@
       <h4>Xác nhận</h4>
       <p>{{ confirmMessage }}</p>
       <div class="confirm-actions">
-        <button class="btn btn-ghost" (click)="closeConfirm()">Hủy</button>
+        <button class="btn btn-ghost" (click)="closeConfirm()">Huỷ</button>
         <button class="btn btn-primary" (click)="runConfirm()">Đồng ý lưu</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" *ngIf="showCancelForm && order">
+    <div class="cancel-form-box">
+      <div class="cancel-form-header">
+        <h4>Xác nhận huỷ đơn</h4>
+        <button class="close-btn" (click)="closeConfirm()" aria-label="Đóng">×</button>
+      </div>
+
+      <div class="cancel-form-body">
+        <div class="cancel-form-grid">
+          <div class="cancel-form-item">
+            <label>Mã đơn</label>
+            <div>{{ order.order_code || order._id }}</div>
+          </div>
+
+          <div class="cancel-form-item">
+            <label>Khách hàng</label>
+            <div>{{ display?.receiver_name || '-' }}</div>
+          </div>
+
+          <div class="cancel-form-item">
+            <label>Số điện thoại</label>
+            <div>{{ display?.phone || '-' }}</div>
+          </div>
+
+          <div class="cancel-form-item">
+            <label>Tổng tiền</label>
+            <div>{{ order.total_amount | number }}</div>
+          </div>
+
+          <div class="cancel-form-item full">
+            <label>Lý do huỷ đơn <span class="required-mark">*</span></label>
+            <textarea
+              [(ngModel)]="cancelReasonDraft"
+              class="cancel-reason-input"
+              rows="4"
+              placeholder="Nhập lý do huỷ đơn"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="cancel-form-footer">
+        <button class="btn btn-ghost" (click)="closeConfirm()">Huỷ bỏ</button>
+        <button class="btn btn-primary" [disabled]="!cancelReasonDraft.trim()" (click)="saveCancelledStatus()">
+          Xác nhận huỷ đơn
+        </button>
       </div>
     </div>
   </div>
