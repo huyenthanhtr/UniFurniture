@@ -56,6 +56,7 @@ app.use("/api/profiles", profilesRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/product-models-3d", productModels3dRoutes);
 app.use('/api/reviews', reviewRoutes);
+
 connectDB().then(() => {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
