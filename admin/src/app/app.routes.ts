@@ -13,6 +13,7 @@ import { AdminCustomerDetail } from './pages/admin-customer-detail/admin-custome
 import { AdminCustomerAddressDetail } from './pages/admin-customer-address-detail/admin-customer-address-detail';
 import { AdminCollections } from './pages/admin-collections/admin-collections';
 import { AdminReview } from './pages/admin-review/admin-review';
+import { AdminDashboard } from './pages/admin-dashboard/admin-dashboard';
 type PendingChangesComponent = {
   canDeactivate: () => boolean | Promise<boolean>;
 };
@@ -33,6 +34,7 @@ export const routes: Routes = [
       { path: 'categories', component: AdminCategoryList},
       { path: 'collections', component: AdminCollections},
       { path: 'reviews', component: AdminReview },
+      { path: 'dashboard', component: AdminDashboard},
       { path: 'products', component: AdminProducts },
       { path: 'products/new', component: AdminProductForm, canDeactivate: [pendingChangesGuard] },
       { path: 'products/:id', component: AdminProductDetail },

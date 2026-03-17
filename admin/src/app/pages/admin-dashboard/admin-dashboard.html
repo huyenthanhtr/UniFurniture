@@ -1,0 +1,180 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Tổng quan hệ thống</h1>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card kpi-revenue pointer" (click)="goToOrders('completed')">
+      <div class="kpi-content">
+        <h4>TỔNG DOANH THU</h4>
+        <p class="kpi-value text-primary">{{ totalRevenue | currency:'VND':'symbol':'1.0-0' }}</p>
+      </div>
+      <div class="kpi-icon"><i class="fas fa-wallet"></i></div>
+    </div>
+
+    <div class="kpi-card kpi-orders pointer" (click)="goToOrders()">
+      <div class="kpi-content">
+        <h4>TỔNG ĐƠN HÀNG</h4>
+        <p class="kpi-value text-success">{{ totalOrders }}</p>
+      </div>
+      <div class="kpi-icon"><i class="fas fa-shopping-bag"></i></div>
+    </div>
+
+    <div class="kpi-card kpi-pending pointer" (click)="goToOrders('pending')">
+      <div class="kpi-content">
+        <h4>ĐƠN CHỜ XỬ LÝ</h4>
+        <p class="kpi-value text-warning">{{ pendingOrdersCount }}</p>
+      </div>
+      <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+    </div>
+
+    <div class="kpi-card kpi-restock pointer" (click)="goToProducts()">
+      <div class="kpi-content">
+        <h4>CẦN NHẬP HÀNG</h4>
+        <p class="kpi-value text-danger">{{ needRestockItems.length }}</p>
+      </div>
+      <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="card">
+      <div class="card-header card-header-wrap">
+        <div>
+          <h3 class="card-title">Xu hướng Doanh thu & Đơn hàng</h3>
+        </div>
+
+        <div class="chart-toolbar">
+          <div class="granularity-group">
+            <button class="btn btn-sm" [ngClass]="currentFilter === 'day' ? 'btn-primary' : 'btn-ghost'" (click)="updateTrendChart('day')">Ngày</button>
+            <button class="btn btn-sm" [ngClass]="currentFilter === 'week' ? 'btn-primary' : 'btn-ghost'" (click)="updateTrendChart('week')">Tuần</button>
+            <button class="btn btn-sm" [ngClass]="currentFilter === 'month' ? 'btn-primary' : 'btn-ghost'" (click)="updateTrendChart('month')">Tháng</button>
+            <button class="btn btn-sm" [ngClass]="currentFilter === 'quarter' ? 'btn-primary' : 'btn-ghost'" (click)="updateTrendChart('quarter')">Quý</button>
+          </div>
+
+          <div class="custom-date">
+            <label>
+              Từ ngày
+              <input type="date" [(ngModel)]="startDate" (change)="onDateChange()" class="search-input">
+            </label>
+            <label>
+              Đến ngày
+              <input type="date" [(ngModel)]="endDate" (change)="onDateChange()" class="search-input">
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Tỷ lệ Trạng thái đơn hàng</h3>
+      </div>
+      <div class="card-body">
+        <div class="chart-container chart-container-sm">
+          <canvas id="statusPieChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tables-grid">
+    <div class="card table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+          <h3 class="card-title">Đơn hàng mới giao dịch</h3>
+        </div>
+        <button class="btn-link" (click)="goToOrders()">Xem tất cả &rarr;</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã đơn</th>
+              <th>Khách hàng</th>
+              <th>Ngày đặt</th>
+              <th class="text-end">Tổng tiền</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let order of recentOrders" class="pointer list-hover" (click)="goToOrderDetail(order._id)">
+              <td class="font-weight-bold text-primary">{{ order.order_code }}</td>
+              <td>
+                <div class="customer-name">{{ order.shipping_name || 'Khách vãng lai' }}</div>
+              </td>
+              <td>{{ getOrderDate(order) | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="text-end font-weight-bold">{{ order.total_amount | currency:'VND':'symbol':'1.0-0' }}</td>
+              <td>
+                <span class="badge" [ngClass]="getStatusBadgeClass(order.status)">
+                  {{ getStatusName(order.status) }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="recentOrders.length === 0">
+              <td colspan="5" class="empty-cell">Chưa có dữ liệu đơn hàng gần đây.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="operational-column">
+      <div class="card" style="margin-bottom: 0;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="border-top: 4px solid #908372;">
+          <h3 class="card-title"><i class="fas fa-tools mr-2 text-primary"></i> Yêu cầu kỹ thuật lắp ráp</h3>
+        </div>
+        <div class="card-body p-0 alert-scroll operational-list">
+          <ul class="list-group">
+            <li class="list-group-item pointer list-hover" *ngFor="let order of installationOrders" (click)="goToOrderDetail(order._id)">
+              <div class="d-flex justify-content-between align-items-center mb-1 gap-8">
+                <strong class="text-dark">{{ order.order_code }}</strong>
+                <span class="badge" [ngClass]="getStatusBadgeClass(order.status)">{{ getStatusName(order.status) }}</span>
+              </div>
+              <small class="text-muted d-block mb-1"><i class="fas fa-map-marker-alt text-danger mr-1"></i>{{ order.shipping_address || 'Chưa cập nhật địa chỉ' }}</small>
+              <small class="text-muted">{{ getOrderDate(order) | date:'dd/MM/yyyy HH:mm' }}</small>
+            </li>
+            <li class="list-group-item text-center text-muted py-4" *ngIf="installationOrders.length === 0">
+              Hiện không có đơn hàng nào ở giai đoạn cần điều phối lắp đặt.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 0;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="border-top: 4px solid #b42318;">
+          <div>
+            <h3 class="card-title text-danger">Cần nhập hàng ngay</h3>
+          </div>
+          <button class="btn-link text-danger" (click)="goToProducts()">Kho hàng</button>
+        </div>
+        <div class="card-body p-0 alert-scroll operational-list">
+          <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-between align-items-center list-hover pointer"
+                *ngFor="let item of needRestockItems" (click)="goToProductDetail(item.parent_product_id)">
+              <div>
+                <strong class="d-block text-dark">{{ item.parent_product_name }}</strong>
+                <small class="text-muted d-block">Biến thể: {{ item.name || 'Mặc định' }} | SKU: {{ item.sku || 'N/A' }}</small>
+                <small class="stock-note stock-note-danger">{{ getStockSeverityLabel(item) }}</small>
+              </div>
+              <span class="badge badge-danger">Tồn: {{ item.stock_quantity }}</span>
+            </li>
+            <li class="list-group-item text-center text-muted py-4" *ngIf="needRestockItems.length === 0">
+              <i class="fas fa-check-circle mb-2 icon-ok"></i><br>
+              Chưa có biến thể nào cần nhập gấp.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+     
+    </div>
+  </div>
+</div>
