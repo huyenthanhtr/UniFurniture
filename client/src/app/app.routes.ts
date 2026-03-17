@@ -25,4 +25,5 @@ export const routes: Routes = [
   { path: 'cong-dong', component: CommunityPageComponent },
   { path: 'cua-hang', redirectTo: 'cong-dong', pathMatch: 'full' },
   { path: 'tra-cuu-van-don', component: OrderTrackingComponent },
+  { path: 'checkout', loadComponent: () => import('./pages/checkout/checkout').then(m => m.CheckoutComponent) }
 ];

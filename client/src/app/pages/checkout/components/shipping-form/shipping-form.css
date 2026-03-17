@@ -1,0 +1,93 @@
+﻿.card {
+  border: 1px solid #e8e0d8;
+  border-radius: 12px;
+}
+
+.country-field {
+  background: #f8f8f8;
+  cursor: not-allowed;
+  color: #555;
+}
+
+.flag-prefix {
+  background: #fff;
+  border-right: none;
+  font-size: 1.1rem;
+}
+
+.address-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 10px;
+}
+
+.country-chip {
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8f8f8;
+}
+
+.required-star {
+  color: #ef4b2b;
+  font-size: 0.72rem;
+  margin-top: 4px;
+}
+
+.required-invalid {
+  border-color: #ef4b2b !important;
+  box-shadow: 0 0 0 0.12rem rgba(239, 75, 43, 0.15) !important;
+}
+
+.zone-badge .badge {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.zone-badge .badge-success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.zone-badge .badge-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.shipping-option {
+  border: 1.5px solid #e8e0d8;
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.shipping-option:hover,
+.shipping-option.selected {
+  border-color: #c8923a;
+  background: #fdf8f2;
+}
+
+.shipping-policy-list {
+  padding-left: 18px;
+  line-height: 1.6;
+}
+
+.text-primary {
+  color: #c8923a !important;
+}
+
+.bg-success-subtle {
+  background: #d1fae5 !important;
+}
+
+@media (max-width: 991px) {
+  .address-row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+﻿import { Injectable, computed, signal } from '@angular/core';
 
 export interface CartItem {
     cartKey: string;
@@ -10,6 +10,7 @@ export interface CartItem {
     imageUrl: string;
     quantity: number;
     price: number | null;
+    originalPrice?: number | null;
     maxStock?: number;
 }
 
@@ -77,6 +78,7 @@ export class UiStateService {
                     variantLabel: item.variantLabel ?? existingItem.variantLabel,
                     colorName: item.colorName ?? existingItem.colorName,
                     maxStock: item.maxStock ?? existingItem.maxStock,
+                    originalPrice: typeof item.originalPrice === 'number' ? item.originalPrice : existingItem.originalPrice ?? null,
                 };
                 this.persistCart(updatedItems);
                 
@@ -221,6 +223,7 @@ export class UiStateService {
                     imageUrl: String(item?.imageUrl || ''),
                     quantity: Math.max(1, Number(item?.quantity) || 1),
                     price: typeof item?.price === 'number' ? item.price : null,
+                    originalPrice: typeof item?.originalPrice === 'number' ? item.originalPrice : null,
                     maxStock: typeof item?.maxStock === 'number' ? item.maxStock : undefined,
                 }))
                 .filter((item: CartItem) => item.cartKey && item.productId && item.name);
@@ -261,3 +264,4 @@ export class UiStateService {
         window.localStorage.setItem(this.cartStorageKey + '_selected', JSON.stringify(Array.from(keys)));
     }
 }
+

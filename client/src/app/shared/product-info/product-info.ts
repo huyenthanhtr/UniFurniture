@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+﻿import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ColorSwatch, ProductDetailData, ProductVariantDocument } from '../../services/product-data.service';
 import { UiStateService } from '../ui-state.service';
@@ -97,13 +97,14 @@ export class ProductInfoComponent implements OnChanges {
 
     if (this.requiresVariantSelection() && !this.selectedVariant) {
       this.addMessageTone = 'error';
-      this.addMessage = 'Vui lòng chọn kích thước trước khi thêm vào giỏ hàng.';
+      this.addMessage = 'Vui lÃ²ng chá»n kÃ­ch thÆ°á»›c trÆ°á»›c khi thÃªm vÃ o giá» hÃ ng.';
       return;
     }
 
     const selectedPrice = this.selectedVariant?.price ?? this.selectedColor?.price ?? this.product.price;
     const selectedImage = this.selectedColor?.imageUrl ?? this.product.images[0]?.url ?? '';
     const selectedVariantLabel = this.selectedVariant ? this.getVariantLabel(this.selectedVariant) : '';
+    const selectedOriginalPrice = this.selectedVariant?.compare_at_price ?? this.selectedColor?.originalPrice ?? this.product.originalPrice;
     const cartKey = this.selectedVariant?._id || this.product.id;
 
     this.ui.addToCart(
@@ -116,13 +117,14 @@ export class ProductInfoComponent implements OnChanges {
         name: this.product.name,
         imageUrl: selectedImage,
         price: selectedPrice,
+        originalPrice: selectedOriginalPrice,
         maxStock: this.selectedVariant?.stock_quantity ?? this.product.stock_quantity ?? 999
       },
       this.quantity,
     );
 
     this.addMessageTone = 'success';
-    this.addMessage = 'Đã thêm vào giỏ hàng.';
+    this.addMessage = 'ÄÃ£ thÃªm vÃ o giá» hÃ ng.';
     this.ui.openCart();
   }
 
@@ -149,7 +151,7 @@ export class ProductInfoComponent implements OnChanges {
       return this.getVariantLabel(firstVariant);
     }
 
-    return this.product.sizeText || 'Đang cập nhật';
+    return this.product.sizeText || 'Äang cáº­p nháº­t';
   }
 
   get formattedSizeDescription(): string {
@@ -161,7 +163,7 @@ export class ProductInfoComponent implements OnChanges {
   }
 
   getVariantLabel(variant: ProductVariantDocument): string {
-    return this.extractVariantSizeLabel(variant, this.selectedColor?.name || '') || this.product.sizeText || 'Kích thước';
+    return this.extractVariantSizeLabel(variant, this.selectedColor?.name || '') || this.product.sizeText || 'KÃ­ch thÆ°á»›c';
   }
 
   isVariantUnavailable(variant: ProductVariantDocument): boolean {
@@ -250,3 +252,5 @@ export class ProductInfoComponent implements OnChanges {
       .trim();
   }
 }
+
+

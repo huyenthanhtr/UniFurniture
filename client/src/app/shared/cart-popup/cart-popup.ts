@@ -1,16 +1,19 @@
-import { Component, inject, signal } from '@angular/core';
+﻿import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CartItem, UiStateService } from '../ui-state.service';
 
 @Component({
     selector: 'app-cart-popup',
+    standalone: true,
     imports: [CommonModule, FormsModule],
     templateUrl: './cart-popup.html',
     styleUrl: './cart-popup.css',
 })
 export class CartPopup {
     ui = inject(UiStateService);
+    private readonly router = inject(Router);
     errorItems = signal<Set<string>>(new Set());
 
     closeOnBackdrop(event: MouseEvent) {
@@ -91,11 +94,25 @@ export class CartPopup {
         }
     }
 
+
+    proceedToCheckout() {
+        if (this.ui.cartItems().length === 0) {
+            return;
+        }
+
+        if (this.ui.selectedCartKeys().size === 0) {
+            this.ui.toggleAllSelection(true);
+        }
+
+        this.ui.closeCart();
+        void this.router.navigate(['/checkout']);
+    }
+
     formatPrice(price: number | null): string {
         if (typeof price !== 'number') {
             return 'Liên hệ';
         }
-        return `${new Intl.NumberFormat('vi-VN').format(price)}đ`;
+        return `${new Intl.NumberFormat('vi-VN').format(price)}₫`;
     }
 
     private setError(cartKey: string) {
@@ -114,3 +131,5 @@ export class CartPopup {
         });
     }
 }
+
+
