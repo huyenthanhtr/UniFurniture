@@ -7,6 +7,7 @@ const Payment = require("../models/Payment");
 const ProductVariant = require("../models/ProductVariant");
 const ProductImage = require("../models/ProductImage");
 const Coupon = require("../models/Coupon");
+const Review = require("../models/Review");
 
 const ORDER_STATUSES = ["pending", "confirmed", "cancel_pending", "processing", "shipping", "delivered", "completed", "cancelled", "refunded"];
 const NORMAL_STATUS_ASC_WEIGHT = {
@@ -451,7 +452,34 @@ async function getOrderById(req, res, next) {
       };
     });
 
-    const itemsSubtotal = normalizedItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
+    const detailIds = normalizedItems
+      .map((item) => String(item._id || ""))
+      .filter((value) => mongoose.Types.ObjectId.isValid(value));
+
+    const approvedReviews = detailIds.length
+      ? await Review.find({ order_detail_id: { $in: detailIds }, status: "approved" })
+          .select({ order_detail_id: 1, rating: 1, content: 1, createdAt: 1 })
+          .sort({ createdAt: -1, _id: -1 })
+          .lean()
+      : [];
+
+    const approvedReviewMap = new Map();
+    for (const review of approvedReviews) {
+      const key = String(review.order_detail_id || "");
+      if (!key || approvedReviewMap.has(key)) continue;
+      approvedReviewMap.set(key, {
+        rating: Number(review.rating || 0),
+        content: String(review.content || "").trim(),
+        createdAt: review.createdAt || null,
+      });
+    }
+
+    const itemsWithReview = normalizedItems.map((item) => ({
+      ...item,
+      approved_review: approvedReviewMap.get(String(item._id || "")) || null,
+    }));
+
+    const itemsSubtotal = itemsWithReview.reduce((sum, item) => sum + Number(item.total || 0), 0);
     const orderTotal = Number(order.total_amount || 0);
     const discountAmount = itemsSubtotal > orderTotal ? itemsSubtotal - orderTotal : 0;
 
@@ -459,7 +487,7 @@ async function getOrderById(req, res, next) {
       order,
       customer,
       profile,
-      items: normalizedItems,
+      items: itemsWithReview,
       payments,
       display: buildDisplay(order, customer, profile),
       pricing: {
@@ -511,6 +539,7 @@ async function requestCancelOrder(req, res, next) {
       reason,
       note,
       phone,
+      cancelled_by: "customer",
       requested_at: new Date(),
       previous_status: previousStatus,
       over_10m_with_deposit: over10mWithDeposit,
@@ -534,6 +563,7 @@ async function patchOrderStatus(req, res, next) {
   try {
     const { id } = req.params;
     const nextStatus = normalizeStatus(req.body.status);
+    const cancelReason = String(req.body?.reason || "").trim();
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: "Invalid id" });
@@ -546,10 +576,31 @@ async function patchOrderStatus(req, res, next) {
     const doc = await Order.findById(id);
     if (!doc) return res.status(404).json({ error: "Order not found" });
 
+    const previousStatus = String(doc.status || "").toLowerCase();
     doc.status = nextStatus;
 
     if (nextStatus === "confirmed" && !doc.confirmed_at) {
       doc.confirmed_at = new Date();
+    }
+
+    if (nextStatus === "cancelled") {
+      if (!cancelReason) {
+        return res.status(400).json({ error: "Lý do huỷ đơn là bắt buộc." });
+      }
+
+      const existingCancellation = doc.cancellation_request || {};
+      const over10mWithDeposit =
+        Number(doc.total_amount || 0) >= 10000000 && Number(doc.deposit_amount || 0) > 0;
+
+      doc.cancellation_request = {
+        reason: cancelReason,
+        note: String(existingCancellation.note || "").trim(),
+        phone: String(existingCancellation.phone || doc.shipping_phone || "").trim(),
+        cancelled_by: "admin",
+        requested_at: new Date(),
+        previous_status: previousStatus,
+        over_10m_with_deposit: over10mWithDeposit,
+      };
     }
 
     await doc.save();

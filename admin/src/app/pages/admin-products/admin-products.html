@@ -75,12 +75,13 @@
         </tr>
 
         <tr *ngFor="let p of products">
-          <td class="cell-title" (click)="viewDetail(p)">
+          <td>
             <div class="product-cell">
               <img
-                class="thumb"
+                class="thumb thumb-clickable"
                 [src]="p.thumbnail || p.thumbnail_url || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'"
                 [alt]="p.name"
+                (click)="viewDetail(p)"
               />
               <div class="title">
                 <strong>{{ p.name }}</strong>

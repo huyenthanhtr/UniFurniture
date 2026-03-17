@@ -15,7 +15,11 @@ export class AdminOrdersService {
     return this.http.get<any>(`${this.base}/orders/${id}`);
   }
 
-  patchOrderStatus(id: string, status: string): Observable<any> {
-    return this.http.patch<any>(`${this.base}/orders/${id}/status`, { status });
+  patchOrderStatus(id: string, status: string, reason?: string): Observable<any> {
+    const payload: Record<string, string> = { status };
+    if (reason && reason.trim()) {
+      payload['reason'] = reason.trim();
+    }
+    return this.http.patch<any>(`${this.base}/orders/${id}/status`, payload);
   }
 }

@@ -29,8 +29,10 @@ export class AdminOrderDetail implements OnInit {
   pricing: any = null;
 
   editableStatus = 'pending';
+  cancelReasonDraft = '';
 
   showConfirm = false;
+  showCancelForm = false;
   confirmMessage = '';
   confirmAction: null | (() => void) = null;
 
@@ -71,6 +73,7 @@ export class AdminOrderDetail implements OnInit {
         this.display = res?.display ?? null;
         this.pricing = res?.pricing ?? null;
         this.editableStatus = this.order?.status || 'pending';
+        this.cancelReasonDraft = '';
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -95,6 +98,14 @@ export class AdminOrderDetail implements OnInit {
 
   askSaveStatus() {
     if (!this.order?._id || !this.editableStatus || this.editableStatus === this.order.status) return;
+
+    if (String(this.editableStatus).toLowerCase() === 'cancelled') {
+      this.cancelReasonDraft = '';
+      this.showCancelForm = true;
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.confirmMessage = `Đổi trạng thái đơn hàng sang ${this.orderStatusLabel(this.editableStatus)}?`;
     this.confirmAction = () => this.saveStatus();
     this.showConfirm = true;
@@ -107,8 +118,30 @@ export class AdminOrderDetail implements OnInit {
 
     this.api.patchOrderStatus(String(this.order._id), this.editableStatus).subscribe({
       next: (doc: any) => {
-        this.order = { ...this.order, status: doc?.status || this.editableStatus };
+        this.order = { ...this.order, ...(doc || {}), status: doc?.status || this.editableStatus };
         this.editableStatus = this.order.status;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  saveCancelledStatus(): void {
+    const reason = this.cancelReasonDraft.trim();
+    if (!reason || !this.order?._id) return;
+
+    this.showCancelForm = false;
+    this.isLoading = true;
+
+    this.api.patchOrderStatus(String(this.order._id), this.editableStatus, reason).subscribe({
+      next: (doc: any) => {
+        this.order = { ...this.order, ...(doc || {}), status: doc?.status || this.editableStatus };
+        this.editableStatus = this.order.status;
+        this.cancelReasonDraft = '';
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -121,7 +154,10 @@ export class AdminOrderDetail implements OnInit {
 
   closeConfirm() {
     this.showConfirm = false;
+    this.showCancelForm = false;
     this.confirmAction = null;
+    this.cancelReasonDraft = '';
+    this.editableStatus = this.order?.status || this.editableStatus;
     this.cdr.detectChanges();
   }
 
@@ -180,6 +216,14 @@ export class AdminOrderDetail implements OnInit {
     return code ? `Mã khuyến mãi: ${code}` : 'Khuyến mãi';
   }
 
+  get hasApprovedReviews(): boolean {
+    return this.items.some((item) => !!item?.approved_review);
+  }
+
+  get summaryColspan(): number {
+    return this.hasApprovedReviews ? 9 : 7;
+  }
+
   getPaymentTypeText(type: any): string {
     const key = String(type || '').toLowerCase();
     if (key === 'deposit') return 'Đặt cọc';
@@ -217,18 +261,38 @@ export class AdminOrderDetail implements OnInit {
     const key = String(status || '').toLowerCase();
     if (key === 'pending') return 'Chờ xác nhận';
     if (key === 'confirmed') return 'Đã xác nhận';
-    if (key === 'cancel_pending') return 'Chờ xác nhận hủy';
+    if (key === 'cancel_pending') return 'Chờ xác nhận huỷ';
     if (key === 'processing') return 'Đang xử lý';
     if (key === 'shipping') return 'Đang giao';
     if (key === 'delivered') return 'Đã giao';
     if (key === 'completed') return 'Hoàn tất';
-    if (key === 'cancelled') return 'Đã hủy';
+    if (key === 'cancelled') return 'Đã huỷ';
     if (key === 'refunded') return 'Đã hoàn tiền';
     return status || '-';
   }
 
   isCancelledOrder(): boolean {
-    return String(this.order?.status || '').toLowerCase() === 'cancelled';
+    return ['cancelled', 'refunded'].includes(String(this.order?.status || '').toLowerCase());
+  }
+
+  hasCancellationReason(): boolean {
+    return this.isCancelledOrder() && !!String(this.order?.cancellation_request?.reason || '').trim();
+  }
+
+  getCancellationReasonLabel(): string {
+    const cancelledBy = String(this.order?.cancellation_request?.cancelled_by || '').toLowerCase();
+    if (cancelledBy === 'admin') return 'Lý do huỷ (shop)';
+    if (cancelledBy === 'customer' || this.hasCancellationReason()) return 'Lý do huỷ (khách)';
+    return 'Lý do huỷ';
+  }
+
+  getItemReviewRating(item: any): string {
+    const rating = Number(item?.approved_review?.rating || 0);
+    return rating > 0 ? `${rating}/5` : '-';
+  }
+
+  getItemReviewContent(item: any): string {
+    return String(item?.approved_review?.content || '').trim() || '-';
   }
 
   customerTypeLabel(type: any): string {
