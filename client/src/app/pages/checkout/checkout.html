@@ -1,0 +1,85 @@
+﻿<div class="checkout-page">
+  <div class="container py-5">
+
+    <div *ngIf="orderSuccess" class="order-success text-center py-5">
+      <div class="success-icon mb-4">&#127881;</div>
+      <h3 class="fw-bold mb-2">Đặt hàng thành công!</h3>
+      <p class="text-muted">Cảm ơn bạn đã đặt hàng. U-Home Furni sẽ liên hệ xác nhận đơn trong thời gian sớm nhất.</p>
+      <a routerLink="/" class="btn btn-primary mt-3 px-5">Tiếp tục mua sắm</a>
+    </div>
+
+    <div *ngIf="!orderSuccess" class="row g-4 align-items-start">
+      <div class="col-12 col-lg-7">
+        <div class="login-hint d-flex align-items-center justify-content-between mb-4 px-4 py-3 rounded-3">
+          <span class="small text-muted">Đăng nhập để mua hàng tiện lợi và nhận nhiều ưu đãi hơn nữa</span>
+          <button type="button" class="btn btn-sm btn-outline-primary ms-3 text-nowrap" (click)="openLoginModal()">Đăng nhập</button>
+        </div>
+
+        <div *ngIf="submitError" class="alert alert-danger mb-3" role="alert">
+          {{ submitError }}
+        </div>
+
+        <app-shipping-form
+          [form]="form"
+          (formChange)="onFormChange($event)"
+        ></app-shipping-form>
+
+        <app-payment-method
+          [form]="form"
+          [total]="total"
+          [requireDeposit]="requireDeposit"
+          [depositAmount]="depositAmount"
+          (formChange)="onFormChange($event)"
+        ></app-payment-method>
+      </div>
+
+      <div class="col-12 col-lg-5">
+        <div class="sticky-summary">
+          <app-order-summary
+            [cartItems]="cartItems"
+            [subtotal]="subtotal"
+            [totalDiscount]="totalDiscount"
+            [couponAmount]="couponAmount"
+            [total]="total"
+            [requireDeposit]="requireDeposit"
+            [depositAmount]="depositAmount"
+            [isSubmitting]="isSubmitting"
+            [canSubmit]="canSubmit()"
+            [appliedCoupon]="form.couponCode"
+            (couponApplied)="onCouponApplied($event)"
+            (quantityChange)="onQuantityChange($event)"
+            (removeItem)="onRemoveItem($event)"
+            (placeOrder)="placeOrder()"
+          ></app-order-summary>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="showSuccessPopup" class="checkout-success-overlay">
+    <div class="checkout-success-popup">
+      <h4 class="mb-2">Đặt hàng thành công!</h4>
+      <p class="text-muted mb-2">
+        Chúc mừng quý khách đã đặt hàng thành công tại U-HOME FURNI.
+      </p>
+      <p class="text-muted mb-2">
+        Nhân viên sẽ liên hệ quý khách sớm nhất để xác nhận đơn và lịch giao/lắp đặt.
+      </p>
+      <p class="text-muted mb-2">
+        Nếu cần hỗ trợ, vui lòng liên hệ hotline hoặc các ứng dụng hỗ trợ trên website (Zalo/Messenger).
+      </p>
+      <p class="text-muted mb-3">
+        Mã vận đơn sẽ được gửi qua SMS và Email để quý khách tra cứu tiến trình đơn hàng.
+      </p>
+
+      <div *ngIf="successOrderCode" class="success-order-code mb-3">
+        Mã đơn của bạn: <strong>{{ successOrderCode }}</strong>
+      </div>
+
+      <div class="d-flex gap-2 justify-content-end">
+        <button type="button" class="btn btn-outline-secondary" (click)="closeSuccessPopup()">Đóng</button>
+        <a routerLink="/" class="btn btn-primary" (click)="closeSuccessPopup()">Về trang chủ</a>
+      </div>
+    </div>
+  </div>
+</div>

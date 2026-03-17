@@ -1,0 +1,85 @@
+﻿<div class="coupon-trigger d-flex gap-2 align-items-center" (click)="openModal()">
+  <i class="bi bi-tag text-primary"></i>
+  <span class="flex-grow-1 small">
+    <span *ngIf="!selectedCoupon" class="text-muted">Chọn mã khuyến mãi</span>
+    <span *ngIf="selectedCoupon" class="text-primary fw-semibold">{{ selectedCoupon.code }}</span>
+  </span>
+  <span *ngIf="selectedCoupon" class="badge bg-primary-subtle text-primary small">
+    -{{ formatCurrency(selectedCoupon.discountAmount) }}
+  </span>
+  <i class="bi bi-chevron-right text-muted small"></i>
+</div>
+
+<div class="d-flex gap-2 mt-2">
+  <input
+    type="text"
+    class="form-control form-control-sm"
+    placeholder="Nhập mã khuyến mãi"
+    [(ngModel)]="manualCode"
+    (keyup.enter)="applyManual()"
+  />
+  <button type="button" class="btn btn-sm btn-primary px-3" (click)="applyManual()">
+    {{ selectedCoupon && manualCode.trim().toUpperCase() !== selectedCoupon.code ? 'Đổi mã' : 'Áp dụng' }}
+  </button>
+</div>
+<div *ngIf="manualError" class="text-danger small mt-1">{{ manualError }}</div>
+<div *ngIf="selectedCoupon && manualCode.trim().toUpperCase() && manualCode.trim().toUpperCase() !== selectedCoupon.code" class="text-warning small mt-1">
+  Bạn đang nhập mã khác với mã đang áp dụng. Bấm "Đổi mã" để thay thế.
+</div>
+
+<div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-header-row d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+      <button type="button" class="btn btn-sm btn-light" (click)="closeModal()"><i class="bi bi-x-lg"></i></button>
+      <span class="fw-bold">Chọn mã khuyến mãi</span>
+      <span></span>
+    </div>
+
+    <div class="modal-body-inner px-4 py-3">
+      <div class="fw-semibold mb-3">Ưu đãi khả dụng</div>
+      <div *ngIf="loadingCoupons" class="small text-muted py-2">Đang tải mã khuyến mãi...</div>
+
+      <div
+        *ngFor="let coupon of availableCoupons"
+        class="coupon-card mb-3"
+        [class.selected]="tempSelected === coupon.code"
+        (click)="selectTemp(coupon.code)"
+      >
+        <div class="d-flex gap-3 align-items-center">
+          <div class="coupon-ticket">
+            <i class="bi bi-tag-fill"></i>
+            <span class="ticket-label">Mã giảm</span>
+          </div>
+
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2">
+              <span class="fw-bold">{{ coupon.label }}</span>
+              <span *ngIf="coupon.isBest" class="badge best-badge">Lựa chọn tốt nhất</span>
+            </div>
+            <div class="small text-muted">{{ coupon.description }}</div>
+            <div class="small text-muted">Giảm dự kiến: {{ formatCurrency(coupon.discountAmount) }}</div>
+            <div class="small text-muted">Đơn tối thiểu: {{ formatCurrency(coupon.minOrder) }}</div>
+            <div class="small text-muted">HSD: {{ coupon.expiry }}</div>
+            <div class="small mt-1">Mã: <strong>{{ coupon.code }}</strong></div>
+          </div>
+
+          <div>
+            <i *ngIf="tempSelected !== coupon.code" class="bi bi-plus-circle fs-4 text-muted"></i>
+            <i *ngIf="tempSelected === coupon.code" class="bi bi-check-circle-fill fs-4 text-primary"></i>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!loadingCoupons && availableCoupons.length === 0" class="text-center text-muted py-4">
+        Chưa có mã phù hợp với giá trị đơn hàng hiện tại.
+      </div>
+    </div>
+
+    <div class="modal-footer-row d-flex align-items-center justify-content-between px-4 py-3 border-top">
+      <span class="small text-muted">
+        {{ tempSelected ? 'Đã chọn 1 mã giảm giá' : 'Chưa chọn mã giảm giá' }}
+      </span>
+      <button type="button" class="btn btn-dark px-5 fw-semibold" (click)="confirm()">Đồng ý</button>
+    </div>
+  </div>
+</div>

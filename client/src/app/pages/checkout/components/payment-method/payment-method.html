@@ -1,0 +1,96 @@
+﻿<div class="card shadow-sm mb-4">
+  <div class="card-body px-4 py-4">
+    <h6 class="fw-bold mb-4">Phương thức thanh toán</h6>
+
+    <div *ngIf="requireDeposit" class="deposit-notice mb-4 p-3 rounded-3 d-flex gap-3 align-items-start">
+      <span class="deposit-icon">⚠️</span>
+      <div>
+        <div class="fw-semibold text-warning-emphasis">Đơn hàng trên 10 triệu: bắt buộc đặt cọc 10%</div>
+        <div class="small mt-1">
+          Tổng đơn hiện tại <strong>{{ formatCurrency(total) }}</strong>. Quý khách vui lòng chuyển khoản cọc
+          <strong class="text-danger">{{ formatCurrency(depositAmount) }}</strong> trước khi xử lý đơn.
+        </div>
+      </div>
+    </div>
+
+    <div class="payment-option mb-3" [class.disabled]="codDisabled" [class.selected]="form.paymentMethod === 'COD'" (click)="selectPayment('COD')">
+      <div class="d-flex align-items-center gap-3">
+        <div class="radio-dot" [class.active]="form.paymentMethod === 'COD'"></div>
+        <span class="method-icon">💵</span>
+        <div>
+          <div class="fw-semibold">Thanh toán khi nhận hàng (COD)</div>
+          <div class="small text-muted">Thanh toán tiền mặt khi nhận hàng</div>
+          <div *ngIf="codDisabled" class="small text-danger mt-1">Tạm khóa COD vì đơn hàng cần chuyển khoản cọc 10%.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="payment-option" [class.selected]="form.paymentMethod === 'CHUYEN_KHOAN'" (click)="selectPayment('CHUYEN_KHOAN')">
+      <div class="d-flex align-items-center gap-3">
+        <div class="radio-dot" [class.active]="form.paymentMethod === 'CHUYEN_KHOAN'"></div>
+        <span class="method-icon">🏦</span>
+        <div>
+          <div class="fw-semibold">Chuyển khoản ngân hàng</div>
+          <div class="small text-muted">Quét QR hoặc chuyển khoản theo thông tin bên dưới</div>
+        </div>
+      </div>
+
+      <div *ngIf="form.paymentMethod === 'CHUYEN_KHOAN'" class="bank-detail mt-3 pt-3 border-top">
+        <div class="row g-3 align-items-center">
+          <div class="col-12 col-md-6">
+            <table class="bank-table w-100 small">
+              <tr>
+                <td class="label">Tên TK</td>
+                <td class="fw-semibold">{{ bankInfo.accountName }}</td>
+              </tr>
+              <tr>
+                <td class="label">Số TK</td>
+                <td>
+                  <span class="fw-semibold me-2">{{ bankInfo.accountNumber }}</span>
+                  <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" (click)="copyValue(bankInfo.accountNumber, 'account', $event)">
+                    {{ copiedField === 'account' ? 'Đã copy' : 'Copy' }}
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td class="label">Ngân hàng</td>
+                <td>{{ bankInfo.bankName }}</td>
+              </tr>
+              <tr>
+                <td class="label">Nội dung CK</td>
+                <td>
+                  <span class="text-danger fw-semibold me-2">{{ bankInfo.content }}</span>
+                  <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" (click)="copyValue(bankInfo.content, 'content', $event)">
+                    {{ copiedField === 'content' ? 'Đã copy' : 'Copy' }}
+                  </button>
+                </td>
+              </tr>
+            </table>
+
+            <div *ngIf="requireDeposit" class="deposit-amount-badge mt-3 p-2 rounded text-center">
+              Chuyển khoản cọc ngay: <strong class="text-danger">{{ formatCurrency(depositAmount) }}</strong>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6 text-center">
+            <img [src]="bankInfo.qrUrl" alt="QR chuyển khoản" class="qr-img rounded" />
+            <div class="small text-muted mt-1">Quét mã QR để chuyển khoản</div>
+          </div>
+
+          <div class="mt-3 d-grid gap-2">
+            <button
+              type="button"
+              class="btn btn-success btn-sm"
+              (click)="markTransferDone($event)"
+            >
+              Tôi đã chuyển khoản / cọc
+            </button>
+            <div class="small" [class.text-success]="form.bankTransferConfirmed" [class.text-muted]="!form.bankTransferConfirmed">
+              {{ form.bankTransferConfirmed ? 'Đã xác nhận chuyển khoản. Bạn có thể đặt hàng.' : 'Sau khi quét mã xong, bấm nút xác nhận để hoàn tất bước thanh toán.' }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

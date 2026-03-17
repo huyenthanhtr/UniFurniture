@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+﻿const mongoose = require("mongoose");
 const Order = require("../models/Order");
 const OrderDetail = require("../models/OrderDetail");
 const Customer = require("../models/Customer");
@@ -57,23 +57,23 @@ function checkCancelEligibility(order) {
   if (status === "confirmed") {
     const confirmedAt = getConfirmedAt(order);
     if (!confirmedAt) {
-      return { allowed: false, message: "Không xác định được thời điểm xác nhận đơn." };
+      return { allowed: false, message: "KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c thá»i Ä‘iá»ƒm xÃ¡c nháº­n Ä‘Æ¡n." };
     }
 
     const elapsedMs = Date.now() - confirmedAt.getTime();
     const withinWindow = elapsedMs <= CANCELLATION_GRACE_HOURS * 60 * 60 * 1000;
     if (!withinWindow) {
-      return { allowed: false, message: "Đơn đã quá 24h kể từ lúc xác nhận nên không thể yêu cầu hủy." };
+      return { allowed: false, message: "ÄÆ¡n Ä‘Ã£ quÃ¡ 24h ká»ƒ tá»« lÃºc xÃ¡c nháº­n nÃªn khÃ´ng thá»ƒ yÃªu cáº§u há»§y." };
     }
 
     return { allowed: true, message: "" };
   }
 
   if (status === "cancel_pending") {
-    return { allowed: false, message: "Đơn đang chờ xác nhận hủy." };
+    return { allowed: false, message: "ÄÆ¡n Ä‘ang chá» xÃ¡c nháº­n há»§y." };
   }
 
-  return { allowed: false, message: "Đơn hàng không còn trong thời hạn cho phép hủy." };
+  return { allowed: false, message: "ÄÆ¡n hÃ ng khÃ´ng cÃ²n trong thá»i háº¡n cho phÃ©p há»§y." };
 }
 
 async function resolveProfile(order, customerId) {
@@ -95,7 +95,7 @@ function buildDisplay(order, customer, profile) {
     order?.shipping_name ||
     customer?.full_name ||
     profile?.full_name ||
-    "Khách không đăng nhập";
+    "KhÃ¡ch khÃ´ng Ä‘Äƒng nháº­p";
 
   const phone =
     order?.shipping_phone ||
@@ -514,11 +514,11 @@ async function requestCancelOrder(req, res, next) {
     }
 
     if (!reason) {
-      return res.status(400).json({ error: "Lý do hủy là bắt buộc." });
+      return res.status(400).json({ error: "LÃ½ do há»§y lÃ  báº¯t buá»™c." });
     }
 
     if (!phone) {
-      return res.status(400).json({ error: "Số điện thoại xác nhận là bắt buộc." });
+      return res.status(400).json({ error: "Sá»‘ Ä‘iá»‡n thoáº¡i xÃ¡c nháº­n lÃ  báº¯t buá»™c." });
     }
 
     const order = await Order.findById(id);
@@ -528,7 +528,7 @@ async function requestCancelOrder(req, res, next) {
 
     const eligibility = checkCancelEligibility(order);
     if (!eligibility.allowed) {
-      return res.status(400).json({ error: eligibility.message || "Đơn hàng không thể yêu cầu hủy." });
+      return res.status(400).json({ error: eligibility.message || "ÄÆ¡n hÃ ng khÃ´ng thá»ƒ yÃªu cáº§u há»§y." });
     }
 
     const previousStatus = String(order.status || "").toLowerCase();
@@ -548,9 +548,9 @@ async function requestCancelOrder(req, res, next) {
     await order.save();
 
     return res.status(200).json({
-      message: "Đã ghi nhận yêu cầu hủy đơn. Vui lòng chờ admin xác nhận.",
+      message: "ÄÃ£ ghi nháº­n yÃªu cáº§u há»§y Ä‘Æ¡n. Vui lÃ²ng chá» admin xÃ¡c nháº­n.",
       warning: over10mWithDeposit
-        ? "Đơn trên 10 triệu đã đặt cọc 10% sẽ không được hoàn lại tiền cọc."
+        ? "ÄÆ¡n trÃªn 10 triá»‡u Ä‘Ã£ Ä‘áº·t cá»c 10% sáº½ khÃ´ng Ä‘Æ°á»£c hoÃ n láº¡i tiá»n cá»c."
         : "",
       order: order.toObject(),
     });
@@ -585,7 +585,7 @@ async function patchOrderStatus(req, res, next) {
 
     if (nextStatus === "cancelled") {
       if (!cancelReason) {
-        return res.status(400).json({ error: "Lý do huỷ đơn là bắt buộc." });
+        return res.status(400).json({ error: "LÃ½ do huá»· Ä‘Æ¡n lÃ  báº¯t buá»™c." });
       }
 
       const existingCancellation = doc.cancellation_request || {};
@@ -610,9 +610,158 @@ async function patchOrderStatus(req, res, next) {
   }
 }
 
+async function createCheckoutOrder(req, res, next) {
+  try {
+    const {
+      shipping_name,
+      shipping_phone,
+      shipping_email,
+      shipping_address,
+      province,
+      district,
+      payment_method,
+      shipping_method,
+      coupon_code,
+      coupon_discount,
+      total_amount,
+      deposit_amount,
+      items,
+    } = req.body || {};
+
+    const safeName = String(shipping_name || '').trim();
+    const safePhone = String(shipping_phone || '').trim();
+    const safeEmail = String(shipping_email || '').trim();
+    const safeAddress = String(shipping_address || '').trim();
+    const safeProvince = String(province || '').trim();
+    const safeDistrict = String(district || '').trim();
+
+    if (!safeName || !safePhone || !safeAddress || !safeProvince || !safeDistrict) {
+      return res.status(400).json({ error: 'Thiếu thông tin giao hàng bắt buộc.' });
+    }
+
+    const rawItems = Array.isArray(items) ? items : [];
+    if (!rawItems.length) {
+      return res.status(400).json({ error: 'Đơn hàng chưa có sản phẩm.' });
+    }
+
+    const prepared = [];
+    for (const item of rawItems) {
+      const quantity = Math.max(1, parseInt(item?.quantity, 10) || 1);
+      const productId = String(item?.product_id || item?.productId || '').trim();
+      const variantId = String(item?.variant_id || item?.variantId || '').trim();
+
+      let variantDoc = null;
+      if (variantId && mongoose.Types.ObjectId.isValid(variantId)) {
+        variantDoc = await ProductVariant.findById(variantId).lean();
+      }
+
+      if (!variantDoc && productId && mongoose.Types.ObjectId.isValid(productId)) {
+        variantDoc = await ProductVariant.findOne({
+          product_id: productId,
+          variant_status: 'active',
+          status: 'available',
+        })
+          .sort({ stock_quantity: -1, sold: 1, _id: 1 })
+          .lean();
+      }
+
+      if (!variantDoc) {
+        return res.status(400).json({
+          error: `Không tìm thấy biến thể sản phẩm hợp lệ cho: ${item?.name || item?.product_name || 'Sản phẩm'}`,
+        });
+      }
+
+      const unitPrice = Math.max(0, Number(item?.unit_price ?? item?.salePrice ?? item?.price ?? variantDoc.price ?? 0));
+      const lineTotal = unitPrice * quantity;
+
+      prepared.push({
+        variant: variantDoc,
+        quantity,
+        unitPrice,
+        lineTotal,
+        productName: String(item?.product_name || item?.name || variantDoc.name || 'Sản phẩm').trim(),
+        variantName: String(item?.variant_name || item?.variantLabel || variantDoc.variant_name || variantDoc.name || 'Mặc định').trim(),
+        sku: String(variantDoc.sku || item?.sku || '-').trim(),
+      });
+    }
+
+    const itemsSubtotal = prepared.reduce((sum, item) => sum + item.lineTotal, 0);
+    const couponDiscount = Math.max(0, Number(coupon_discount || 0));
+    const computedTotal = Math.max(0, itemsSubtotal - couponDiscount);
+    const requestTotal = Math.max(0, Number(total_amount || 0));
+    const finalTotal = requestTotal > 0 ? requestTotal : computedTotal;
+
+    const requireDeposit = finalTotal >= 10000000;
+    const finalDeposit = requireDeposit
+      ? Math.max(0, Number(deposit_amount || Math.round(finalTotal * 0.1)))
+      : 0;
+
+    const orderCode = `UH${Date.now().toString().slice(-8)}${Math.floor(10 + Math.random() * 90)}`;
+
+    const orderDoc = await Order.create({
+      order_code: orderCode,
+      customer_id: null,
+      account_id: null,
+      coupon_id: String(coupon_code || '').trim() || null,
+      shipping_name: safeName,
+      shipping_phone: safePhone,
+      shipping_email: safeEmail,
+      shipping_address: `${safeAddress}, ${safeDistrict}, ${safeProvince}`,
+      total_amount: finalTotal,
+      deposit_amount: finalDeposit,
+      is_installed: String(shipping_method || '') === 'GIAO_VA_LAP',
+      status: 'pending',
+      ordered_at: new Date(),
+    });
+
+    await OrderDetail.insertMany(
+      prepared.map((item) => ({
+        order_id: orderDoc._id,
+        variant_id: item.variant._id,
+        product_name: item.productName,
+        variant_name: item.variantName,
+        sku: item.sku,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        total: item.lineTotal,
+      }))
+    );
+
+    const method = String(payment_method || '').toUpperCase() === 'CHUYEN_KHOAN' ? 'bank_transfer' : 'COD';
+    const paymentType = method === 'bank_transfer'
+      ? (finalDeposit > 0 ? 'deposit' : 'full')
+      : 'full';
+
+    const paymentAmount = paymentType === 'deposit' ? finalDeposit : finalTotal;
+    const paymentStatus = method === 'bank_transfer' ? 'paid' : 'pending';
+
+    await Payment.create({
+      payment_code: `PAY${Date.now().toString().slice(-8)}`,
+      order_id: orderDoc._id,
+      type: paymentType,
+      method,
+      amount: paymentAmount,
+      status: paymentStatus,
+      paid_at: paymentStatus === 'paid' ? new Date() : null,
+    });
+
+    return res.status(201).json({
+      message: 'Đặt hàng thành công.',
+      order_id: orderDoc._id,
+      order_code: orderDoc.order_code,
+      total_amount: orderDoc.total_amount,
+      deposit_amount: orderDoc.deposit_amount,
+      status: orderDoc.status,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
 module.exports = {
   getOrders,
   getOrderById,
   patchOrderStatus,
   requestCancelOrder,
+  createCheckoutOrder,
 };
+

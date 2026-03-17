@@ -1,10 +1,10 @@
-@if (ui.isCartOpen()) {
+﻿@if (ui.isCartOpen()) {
 <div class="cart-overlay" (click)="closeOnBackdrop($event)">
     <div class="cart-drawer">
 
         <div class="cart-header">
-            <h2 class="cart-title">Gi&#7887; h&#224;ng</h2>
-            <button class="cart-close" (click)="ui.closeCart()" aria-label="&#272;&#243;ng">
+            <h2 class="cart-title">Giỏ hàng</h2>
+            <button class="cart-close" (click)="ui.closeCart()" aria-label="Đóng">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -20,8 +20,8 @@
                     <line x1="3" y1="6" x2="21" y2="6" />
                     <path d="M16 10a4 4 0 0 1-8 0" />
                 </svg>
-                <p>Gi&#7887; h&#224;ng c&#7911;a b&#7841;n &#273;ang tr&#7889;ng</p>
-                <button class="cart-shop-btn" (click)="ui.closeCart()">Ti&#7871;p t&#7909;c mua s&#7855;m</button>
+                <p>Giỏ hàng của bạn đang trống</p>
+                <button class="cart-shop-btn" (click)="ui.closeCart()">Tiếp tục mua sắm</button>
             </div>
             } @else {
             <div class="cart-bulk-actions">
@@ -68,10 +68,10 @@
         @if (ui.cartItems().length > 0) {
         <div class="cart-footer">
             <div class="cart-total-row">
-                <span class="cart-total-label">T&#7893;ng ti&#7873;n:</span>
+                <span class="cart-total-label">Tổng tiền:</span>
                 <span class="cart-total-price">{{ formatPrice(ui.cartSubtotal()) }}</span>
             </div>
-            <button class="cart-checkout-btn">Ti&#7871;n h&#224;nh thanh to&#225;n</button>
+            <button type="button" class="cart-checkout-btn" (click)="proceedToCheckout()">Tiến hành thanh toán</button>
         </div>
         }
 
