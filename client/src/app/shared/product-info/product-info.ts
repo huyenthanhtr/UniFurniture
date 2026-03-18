@@ -1,6 +1,12 @@
-﻿import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ColorSwatch, ProductDetailData, ProductVariantDocument } from '../../services/product-data.service';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Router } from '@angular/router';
+import {
+  ColorSwatch,
+  ProductDataService,
+  ProductDetailData,
+  ProductVariantDocument,
+} from '../../services/product-data.service';
 import { UiStateService } from '../ui-state.service';
 
 @Component({
@@ -11,6 +17,13 @@ import { UiStateService } from '../ui-state.service';
   styleUrl: './product-info.css',
 })
 export class ProductInfoComponent implements OnChanges {
+  private readonly reachedStockLimitMessage = 'Đạt giới hạn số lượng sản phẩm còn hàng';
+  private readonly stockLimitMessage = 'Đã vượt quá số lượng tồn kho';
+  private readonly outOfStockMessage = 'Sản phẩm đã hết hàng';
+  private readonly addSuccessMessage = 'Đã thêm vào giỏ hàng.';
+  private latestStockRequestKey = '';
+  private stockFromApi?: number;
+
   @Input({ required: true }) product!: ProductDetailData;
   @Input() averageRating = 0;
   @Input() reviewsCount = 0;
@@ -25,7 +38,11 @@ export class ProductInfoComponent implements OnChanges {
   selectedVariant: ProductVariantDocument | null = null;
   readonly starValues = [1, 2, 3, 4, 5];
 
-  constructor(private readonly ui: UiStateService) {}
+  constructor(
+    private readonly ui: UiStateService,
+    private readonly productDataService: ProductDataService,
+    private readonly router: Router,
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!changes['product']) {
@@ -34,8 +51,11 @@ export class ProductInfoComponent implements OnChanges {
 
     this.selectedColor = this.product.colors?.[0] ?? null;
     this.selectedVariant = null;
+    this.stockFromApi = undefined;
     this.addMessage = '';
     this.addMessageTone = 'success';
+    this.syncQuantityWithRemainingStock();
+    this.refreshStockFromApi(true);
 
     if (this.selectedColor) {
       this.colorChange.emit(this.selectedColor);
@@ -47,7 +67,10 @@ export class ProductInfoComponent implements OnChanges {
   selectColor(color: ColorSwatch): void {
     this.selectedColor = color;
     this.selectedVariant = null;
+    this.stockFromApi = undefined;
     this.addMessage = '';
+    this.syncQuantityWithRemainingStock();
+    this.refreshStockFromApi(true);
     this.colorChange.emit(color);
     this.variantChange.emit(null);
   }
@@ -58,22 +81,32 @@ export class ProductInfoComponent implements OnChanges {
     }
 
     this.selectedVariant = variant;
+    this.stockFromApi = undefined;
     this.addMessage = '';
+    this.syncQuantityWithRemainingStock();
+    this.refreshStockFromApi(true);
     this.variantChange.emit(variant);
   }
 
   increase(): void {
+    if (!this.canIncreaseQuantity) {
+      this.showStockLimitMessage();
+      return;
+    }
+
     this.quantity += 1;
     this.quantityInput = String(this.quantity);
+    this.clearTransientMessage();
   }
 
   decrease(): void {
-    if (this.quantity <= 1) {
+    if (this.quantity <= this.quantityInputMin) {
       return;
     }
 
     this.quantity -= 1;
     this.quantityInput = String(this.quantity);
+    this.clearTransientMessage();
   }
 
   onQuantityInput(event: Event): void {
@@ -84,52 +117,80 @@ export class ProductInfoComponent implements OnChanges {
     if (!Number.isNaN(parsed)) {
       this.quantity = this.normalizeQuantity(parsed);
     }
+
+    this.clearTransientMessage();
   }
 
   onQuantityBlur(): void {
     const parsed = Number.parseInt(this.quantityInput, 10);
     this.quantity = this.normalizeQuantity(parsed);
     this.quantityInput = String(this.quantity);
+    this.clearTransientMessage();
   }
 
   addToCart(): void {
-    this.onQuantityBlur();
-
-    if (this.requiresVariantSelection() && !this.selectedVariant) {
-      this.addMessageTone = 'error';
-      this.addMessage = 'Vui lÃ²ng chá»n kÃ­ch thÆ°á»›c trÆ°á»›c khi thÃªm vÃ o giá» hÃ ng.';
-      return;
-    }
-
-    const selectedPrice = this.selectedVariant?.price ?? this.selectedColor?.price ?? this.product.price;
-    const selectedImage = this.selectedColor?.imageUrl ?? this.product.images[0]?.url ?? '';
-    const selectedVariantLabel = this.selectedVariant ? this.getVariantLabel(this.selectedVariant) : '';
-    const selectedOriginalPrice = this.selectedVariant?.compare_at_price ?? this.selectedColor?.originalPrice ?? this.product.originalPrice;
-    const cartKey = this.selectedVariant?._id || this.product.id;
-
-    this.ui.addToCart(
-      {
-        cartKey,
-        productId: this.product.id,
-        variantId: this.selectedVariant?._id || '',
-        variantLabel: selectedVariantLabel,
-        colorName: this.selectedColor?.name || '',
-        name: this.product.name,
-        imageUrl: selectedImage,
-        price: selectedPrice,
-        originalPrice: selectedOriginalPrice,
-        maxStock: this.selectedVariant?.stock_quantity ?? this.product.stock_quantity ?? 999
-      },
-      this.quantity,
-    );
-
-    this.addMessageTone = 'success';
-    this.addMessage = 'ÄÃ£ thÃªm vÃ o giá» hÃ ng.';
-    this.ui.openCart();
+    this.processCartAction(false);
   }
 
   buyNow(): void {
-    this.addToCart();
+    this.processCartAction(true);
+  }
+
+  get canIncreaseQuantity(): boolean {
+    const remainingStock = this.remainingStock;
+    if (remainingStock === undefined) {
+      return true;
+    }
+
+    return this.quantity < remainingStock;
+  }
+
+  get isBuyNowDisabled(): boolean {
+    return this.quantity <= 0 || this.isQuantityOverStock;
+  }
+
+  get displayMessage(): string {
+    if (this.addMessage) {
+      return this.addMessage;
+    }
+
+    if (this.isOutOfStock) {
+      return this.outOfStockMessage;
+    }
+
+    if (this.quantity <= 0) {
+      return '';
+    }
+
+    if (this.isQuantityOverStock) {
+      return this.stockLimitMessage;
+    }
+
+    if (this.hasReachedSelectableLimit) {
+      return this.reachedStockLimitMessage;
+    }
+
+    return '';
+  }
+
+  get isDisplayMessageError(): boolean {
+    if (this.addMessage) {
+      return this.addMessageTone === 'error';
+    }
+
+    if (this.isOutOfStock) {
+      return true;
+    }
+
+    if (this.quantity <= 0) {
+      return false;
+    }
+
+    return this.isQuantityOverStock || this.hasReachedSelectableLimit;
+  }
+
+  get quantityInputMin(): number {
+    return 0;
   }
 
   get sizeVariants(): ProductVariantDocument[] {
@@ -151,7 +212,7 @@ export class ProductInfoComponent implements OnChanges {
       return this.getVariantLabel(firstVariant);
     }
 
-    return this.product.sizeText || 'Äang cáº­p nháº­t';
+    return this.product.sizeText || 'Đang cập nhật';
   }
 
   get formattedSizeDescription(): string {
@@ -163,7 +224,7 @@ export class ProductInfoComponent implements OnChanges {
   }
 
   getVariantLabel(variant: ProductVariantDocument): string {
-    return this.extractVariantSizeLabel(variant, this.selectedColor?.name || '') || this.product.sizeText || 'KÃ­ch thÆ°á»›c';
+    return this.extractVariantSizeLabel(variant, this.selectedColor?.name || '') || this.product.sizeText || 'Kích thước';
   }
 
   isVariantUnavailable(variant: ProductVariantDocument): boolean {
@@ -178,16 +239,248 @@ export class ProductInfoComponent implements OnChanges {
     return Math.round(this.averageRating);
   }
 
-  private normalizeQuantity(value: number): number {
-    if (!Number.isFinite(value)) {
-      return 1;
+  get isQuantityOverStock(): boolean {
+    const remainingStock = this.remainingStock;
+    if (remainingStock === undefined || this.quantity <= 0) {
+      return false;
     }
 
-    return Math.max(1, Math.floor(value));
+    return this.quantity > remainingStock;
+  }
+
+  get isOutOfStock(): boolean {
+    return typeof this.remainingStock === 'number' && this.remainingStock <= 0;
+  }
+
+  private processCartAction(redirectToCheckout: boolean): void {
+    this.onQuantityBlur();
+
+    if (this.requiresVariantSelection() && !this.selectedVariant) {
+      this.addMessageTone = 'error';
+      this.addMessage = 'Vui lòng chọn kích thước trước khi thêm vào giỏ hàng.';
+      return;
+    }
+
+    if (this.quantity <= 0) {
+      this.addMessageTone = 'error';
+      this.addMessage = this.isOutOfStock ? this.outOfStockMessage : 'Vui lòng chọn số lượng sản phẩm.';
+      return;
+    }
+
+    this.refreshStockFromApi(false, () => {
+      if (this.isQuantityOverStock || (typeof this.remainingStock === 'number' && this.remainingStock <= 0)) {
+        this.showStockLimitMessage();
+        return;
+      }
+
+      if (redirectToCheckout) {
+        const checkoutItem = this.buildBuyNowCheckoutItem();
+        this.resetQuantityAfterCartAction();
+        this.addMessage = '';
+        void this.router.navigate(['/checkout'], { state: { buyNowItem: checkoutItem } });
+        return;
+      }
+
+      const isAdded = this.commitAddToCart();
+      if (!isAdded) {
+        return;
+      }
+
+      this.resetQuantityAfterCartAction();
+      this.addMessageTone = 'success';
+      this.addMessage = this.addSuccessMessage;
+    });
+  }
+
+  private buildBuyNowCheckoutItem() {
+    const variant = this.effectiveVariant;
+    const selectedPrice = variant?.price ?? this.selectedColor?.price ?? this.product.price;
+    const selectedImage = this.selectedColor?.imageUrl ?? this.product.images[0]?.url ?? '';
+    const selectedVariantLabel = variant ? this.getVariantLabel(variant) : '';
+    const selectedOriginalPrice =
+      variant?.compare_at_price ?? this.selectedColor?.originalPrice ?? this.product.originalPrice;
+    const variantParts = [this.selectedColor?.name || '', selectedVariantLabel].filter(Boolean);
+
+    return {
+      cartKey: variant?._id || this.product.id,
+      productId: this.product.id,
+      variantId: variant?._id || '',
+      name: this.product.name,
+      imageUrl: selectedImage,
+      variant: variantParts.length ? variantParts.join(' / ') : 'Mặc định',
+      quantity: this.quantity,
+      originalPrice: Math.max(
+        typeof selectedOriginalPrice === 'number' ? selectedOriginalPrice : 0,
+        typeof selectedPrice === 'number' ? selectedPrice : 0,
+      ),
+      salePrice: typeof selectedPrice === 'number' ? selectedPrice : 0,
+      maxStock: this.selectedMaxStock,
+    };
+  }
+
+  private commitAddToCart(): boolean {
+    const variant = this.effectiveVariant;
+    const selectedPrice = variant?.price ?? this.selectedColor?.price ?? this.product.price;
+    const selectedImage = this.selectedColor?.imageUrl ?? this.product.images[0]?.url ?? '';
+    const selectedVariantLabel = variant ? this.getVariantLabel(variant) : '';
+    const selectedOriginalPrice =
+      variant?.compare_at_price ?? this.selectedColor?.originalPrice ?? this.product.originalPrice;
+    const cartKey = variant?._id || this.product.id;
+    const maxStock = this.selectedMaxStock;
+
+    if (this.isQuantityOverStock || (typeof this.remainingStock === 'number' && this.remainingStock <= 0)) {
+      this.showStockLimitMessage();
+      return false;
+    }
+
+    const result = this.ui.addToCart(
+      {
+        cartKey,
+        productId: this.product.id,
+        variantId: variant?._id || '',
+        variantLabel: selectedVariantLabel,
+        colorName: this.selectedColor?.name || '',
+        name: this.product.name,
+        imageUrl: selectedImage,
+        price: selectedPrice,
+        originalPrice: selectedOriginalPrice,
+        maxStock,
+      },
+      this.quantity,
+    );
+
+    if (result.exceededStock) {
+      this.addMessageTone = 'error';
+      this.addMessage = this.stockLimitMessage;
+      return false;
+    }
+
+    return true;
+  }
+
+  private refreshStockFromApi(syncQuantityAfterLoad: boolean, done?: () => void): void {
+    const productId = String(this.product?.id || '').trim();
+    if (!productId) {
+      done?.();
+      return;
+    }
+
+    const variantId = this.effectiveVariant?._id;
+    const requestKey = `${productId}:${variantId || 'product'}`;
+    this.latestStockRequestKey = requestKey;
+
+    this.productDataService.getProductStockFromApi(productId, variantId).subscribe((stock) => {
+      if (this.latestStockRequestKey !== requestKey) {
+        return;
+      }
+
+      this.stockFromApi = typeof stock === 'number' ? stock : undefined;
+      if (syncQuantityAfterLoad) {
+        this.syncQuantityWithRemainingStock();
+      }
+      done?.();
+    });
+  }
+
+  private get selectedMaxStock(): number | undefined {
+    if (typeof this.stockFromApi === 'number') {
+      return this.stockFromApi;
+    }
+
+    return this.effectiveVariant?.stock_quantity ?? this.product.stock_quantity;
+  }
+
+  private get currentCartQuantity(): number {
+    const cartKey = this.effectiveVariant?._id || this.product.id;
+    return this.ui.getCartItemQuantity(cartKey);
+  }
+
+  private get remainingStock(): number | undefined {
+    if (typeof this.selectedMaxStock !== 'number') {
+      return undefined;
+    }
+
+    return Math.max(0, this.selectedMaxStock - this.currentCartQuantity);
+  }
+
+  private get hasReachedSelectableLimit(): boolean {
+    if (this.quantity <= 0) {
+      return false;
+    }
+
+    const remainingStock = this.remainingStock;
+    if (remainingStock === undefined) {
+      return false;
+    }
+
+    if (remainingStock === 0) {
+      return true;
+    }
+
+    return this.quantity >= remainingStock;
+  }
+
+  private get effectiveVariant(): ProductVariantDocument | null {
+    if (this.selectedVariant) {
+      return this.selectedVariant;
+    }
+
+    return this.sizeVariants.length === 1 ? this.sizeVariants[0] : null;
+  }
+
+  private normalizeQuantity(value: number): number {
+    if (!Number.isFinite(value)) {
+      return this.quantityInputMin;
+    }
+
+    return Math.max(this.quantityInputMin, Math.floor(value));
   }
 
   private requiresVariantSelection(): boolean {
     return this.hasSizeSelection;
+  }
+
+  private clearTransientMessage(): void {
+    if (
+      this.addMessageTone === 'success' ||
+      this.addMessage === this.stockLimitMessage ||
+      this.addMessage === this.reachedStockLimitMessage
+    ) {
+      this.addMessage = '';
+    }
+  }
+
+  private showStockLimitMessage(): void {
+    this.addMessageTone = 'error';
+    if (this.isOutOfStock) {
+      this.addMessage = this.outOfStockMessage;
+      return;
+    }
+
+    this.addMessage = this.hasReachedSelectableLimit ? this.reachedStockLimitMessage : this.stockLimitMessage;
+  }
+
+  private resetQuantityAfterCartAction(): void {
+    this.quantity = 0;
+    this.quantityInput = '0';
+  }
+
+  private syncQuantityWithRemainingStock(): void {
+    const remainingStock = this.remainingStock;
+    if (remainingStock === undefined) {
+      this.quantity = Math.max(1, this.quantity || 1);
+      this.quantityInput = String(this.quantity);
+      return;
+    }
+
+    if (remainingStock <= 0) {
+      this.quantity = 0;
+      this.quantityInput = '0';
+      return;
+    }
+
+    this.quantity = Math.min(Math.max(1, this.quantity || 1), remainingStock);
+    this.quantityInput = String(this.quantity);
   }
 
   private toSizeVariants(variants: ProductVariantDocument[], colorName = ''): ProductVariantDocument[] {
@@ -252,5 +545,3 @@ export class ProductInfoComponent implements OnChanges {
       .trim();
   }
 }
-
-

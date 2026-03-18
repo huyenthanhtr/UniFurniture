@@ -15,7 +15,7 @@ export const routes: Routes = [
   { path: 'ar', component: ArViewer },
   { path: 'ar-viewer', component: ArViewer },
   { path: 'products', component: ProductComponent },
-  { path: 'products/:id', component: ProductDetailComponent },
+  { path: 'products/:slug', component: ProductDetailComponent },
   { path: 'danh-muc', component: CategoryPageComponent },
   { path: 'khuyen-mai', component: PromotionsPageComponent },
   { path: 'tin-tuc', component: NewsPageComponent },
