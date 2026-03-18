@@ -292,7 +292,7 @@
 
 /* ===== Reviews Section ===== */
 .reviews-section {
-  padding: 60px 0;
+  padding: 10px 0 60px;
   background: #fff;
   overflow: hidden;
 }
@@ -324,6 +324,7 @@
   display: flex;
   flex-direction: column;
   transition: transform 0.3s ease;
+  cursor: pointer;
 }
 
 .review-image-wrap {

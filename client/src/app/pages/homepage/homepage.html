@@ -33,33 +33,33 @@
 
   <section class="product-section" *ngIf="!loading && !error">
     <div class="section-header">
-      <h2 class="section-title">Gía siêu tốt</h2>
-      <a class="view-all" [routerLink]="['/products']">Xem tất cả &rsaquo;</a>
+      <h2 class="section-title">Giá siêu tốt</h2>
+      <a class="view-all" [routerLink]="['/products']" [queryParams]="{ title: 'Giá siêu tốt', sort: 'price', order: 'asc' }">Xem tất cả &rsaquo;</a>
     </div>
 
     <div class="product-grid grid-4">
       <app-product-card *ngFor="let p of cheapProducts; trackBy: trackByProductId" [product]="p"></app-product-card>
-      <div class="empty-msg" *ngIf="cheapProducts.length === 0">Chua co san pham</div>
+      <div class="empty-msg" *ngIf="cheapProducts.length === 0">Chưa có sản phẩm</div>
     </div>
   </section>
 
   <section class="product-section" *ngIf="!loading && !error">
     <div class="section-header">
       <h2 class="section-title">Bán chạy</h2>
-      <a class="view-all" [routerLink]="['/products']">Xem tất cả &rsaquo;</a>
+      <a class="view-all" [routerLink]="['/products']" [queryParams]="{ title: 'Bán chạy nhất', sort: 'bestSelling', order: 'desc' }">Xem tất cả &rsaquo;</a>
     </div>
 
     <div class="product-grid grid-4">
       <app-product-card *ngFor="let p of bestSellingProducts; trackBy: trackByProductId"
         [product]="p"></app-product-card>
-      <div class="empty-msg" *ngIf="bestSellingProducts.length === 0">Chua co san pham</div>
+      <div class="empty-msg" *ngIf="bestSellingProducts.length === 0">Chưa có sản phẩm</div>
     </div>
   </section>
 
   <section class="product-section" *ngIf="!loading && !error">
     <div class="section-header">
       <h2 class="section-title">Gợi ý</h2>
-      <a class="view-all" [routerLink]="['/products']">Xem tất cả &rsaquo;</a>
+      <a class="view-all" [routerLink]="['/products']" [queryParams]="{ title: 'Gợi ý cho bạn', sort: 'suggested', userId: userId }">Xem tất cả &rsaquo;</a>
     </div>
 
     <div class="product-grid grid-4">
@@ -70,8 +70,8 @@
 
   <section class="product-section" *ngIf="!loading && !error && bedroomProducts.length > 0">
     <div class="section-header">
-      <h2 class="section-title">Phong ngu</h2>
-      <a class="view-all" [routerLink]="['/products']">Xem tất cả &rsaquo;</a>
+      <h2 class="section-title">Phòng ngủ</h2>
+      <a class="view-all" [routerLink]="['/products']" [queryParams]="{ title: 'Phòng ngủ', q: 'phòng ngủ' }">Xem tất cả &rsaquo;</a>
     </div>
 
     <div class="product-grid grid-4">
@@ -81,14 +81,17 @@
 
   <!-- Đánh giá thực tế section -->
   <section class="reviews-section" *ngIf="!loading && !error && featuredReviews.length > 0">
-    <h2 class="section-title" style="padding: 0 150px; margin-bottom: 30px;">Đánh giá thực tế</h2>
-    
+    <div class="section-header">
+      <h2 class="section-title">Đánh giá thực tế</h2>
+    </div>
+
     <div class="reviews-container">
       <div class="reviews-track">
         <!-- First set -->
-        <div class="review-card" *ngFor="let review of featuredReviews; trackBy: trackByReviewId">
+        <div class="review-card" *ngFor="let review of featuredReviews; trackBy: trackByReviewId" (click)="onReviewClick(review)">
           <div class="review-image-wrap">
-            <img [src]="review.productImageUrl || 'assets/images/placeholder.png'" [alt]="review.productName" class="review-product-img" />
+            <img [src]="review.productImageUrl || 'assets/images/placeholder.png'" [alt]="review.productName"
+              class="review-product-img" />
           </div>
           <div class="review-info">
             <h4 class="review-customer">{{ review.customerName }}</h4>
@@ -99,9 +102,10 @@
           </div>
         </div>
         <!-- Second set for infinite loop -->
-        <div class="review-card" *ngFor="let review of featuredReviews; trackBy: trackByReviewId">
+        <div class="review-card" *ngFor="let review of featuredReviews; trackBy: trackByReviewId" (click)="onReviewClick(review)">
           <div class="review-image-wrap">
-            <img [src]="review.productImageUrl || 'assets/images/placeholder.png'" [alt]="review.productName" class="review-product-img" />
+            <img [src]="review.productImageUrl || 'assets/images/placeholder.png'" [alt]="review.productName"
+              class="review-product-img" />
           </div>
           <div class="review-info">
             <h4 class="review-customer">{{ review.customerName }}</h4>

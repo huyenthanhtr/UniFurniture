@@ -102,28 +102,6 @@
                     name="phone" required style="flex: 1;" />
             </div>
 
-            <div class="form-group">
-                <select class="form-input" [(ngModel)]="registerData.gender" name="gender">
-                    <option value="" disabled selected>Giới tính (Không bắt buộc)</option>
-                    <option value="male">Nam</option>
-                    <option value="female">Nữ</option>
-                    <option value="other">Khác</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label"
-                    style="display: block; font-size: 0.85rem; color: #6b7280; margin-bottom: 4px; padding-left: 4px;"
-                    for="dob-input">Ngày sinh (Không bắt buộc)</label>
-                <input id="dob-input" type="date" class="form-input" [(ngModel)]="registerData.date_of_birth"
-                    name="date_of_birth" />
-            </div>
-
-            <div class="form-group">
-                <input type="text" class="form-input" placeholder="Địa chỉ (Không bắt buộc)" [(ngModel)]="registerData.address"
-                    name="address" />
-            </div>
-
             <div class="form-group required-field">
                 <input [type]="showPassword ? 'text' : 'password'" class="form-input"
                     placeholder="Mật khẩu (ít nhất 8 ký tự) *" [(ngModel)]="registerData.password" name="password"

@@ -1,7 +1,7 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, HostListener, Input, Output, inject } from '@angular/core';
 
-export type ProductSortValue = 'best-selling' | 'newest' | 'oldest';
+export type ProductSortValue = 'best-selling' | 'newest' | 'oldest' | 'price' | 'suggested';
 
 interface SortOption {
   value: ProductSortValue;
@@ -22,9 +22,11 @@ export class ProductSortComponent {
   @Output() sortChange = new EventEmitter<ProductSortValue>();
 
   readonly sortOptions: SortOption[] = [
-    { value: 'best-selling', label: 'S\u1ea3n ph\u1ea9m n\u1ed5i b\u1eadt' },
-    { value: 'newest', label: 'M\u1edbi nh\u1ea5t' },
-    { value: 'oldest', label: 'C\u0169 nh\u1ea5t' },
+    { value: 'best-selling', label: 'Sản phẩm nổi bật' },
+    { value: 'newest', label: 'Mới nhất' },
+    { value: 'oldest', label: 'Cũ nhất' },
+    { value: 'price', label: 'Giá từ thấp đến cao' },
+    { value: 'suggested', label: 'Gợi ý cho bạn' },
   ];
 
   isOpen = false;

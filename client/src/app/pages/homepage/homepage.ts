@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { forkJoin, map } from 'rxjs';
 import { ProductDataService, ProductListItem } from '../../services/product-data.service';
 import { ProductCardComponent } from '../../shared/product-card/product-card';
 
@@ -47,6 +48,7 @@ const HOME_SLIDES: HomeSlide[] = [
 })
 export class Homepage implements OnInit, OnDestroy {
   private readonly productDataService = inject(ProductDataService);
+  private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly ngZone = inject(NgZone);
   private autoSlideTimer?: ReturnType<typeof setInterval>;
@@ -56,6 +58,7 @@ export class Homepage implements OnInit, OnDestroy {
   suggestedProducts: ProductListItem[] = [];
   bedroomProducts: ProductListItem[] = [];
   featuredReviews: any[] = [];
+  userId: string | undefined;
 
   readonly slides: HomeSlide[] = HOME_SLIDES;
   activeSlideIndex = 0;
@@ -101,14 +104,20 @@ export class Homepage implements OnInit, OnDestroy {
     this.goToSlide(this.activeSlideIndex - 1);
   }
 
+  onReviewClick(review: any): void {
+    const slug = review.productSlug || review.productId;
+    if (slug) {
+      this.ngZone.run(() => {
+        this.router.navigate(['/product', slug]).then(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      });
+    }
+  }
+
   loadAll(): void {
     this.loading = true;
     this.error = '';
-    this.cheapProducts = [];
-    this.bestSellingProducts = [];
-    this.suggestedProducts = [];
-    this.bedroomProducts = [];
-    this.featuredReviews = [];
 
     // Parallel aggregate or sequential - keeping it simple with product + review fetches
     this.productDataService.getFeaturedReviews().subscribe({
@@ -120,25 +129,30 @@ export class Homepage implements OnInit, OnDestroy {
       }
     });
 
-    this.productDataService.getProductList(80).subscribe({
-      next: (items) => {
+    let userId: string | undefined;
+    try {
+      const profile = localStorage.getItem('user_profile');
+      if (profile) {
+        const userData = JSON.parse(profile);
+        userId = userData._id || userData.id;
+        this.userId = userId;
+      }
+    } catch (e) {}
+
+    const categories$ = {
+      cheap: this.productDataService.getProducts(1, 8, { sortBy: 'price', order: 'asc' }),
+      bestSelling: this.productDataService.getProducts(1, 8, { sortBy: 'bestSelling', order: 'desc' }),
+      suggested: this.productDataService.getProducts(1, 8, { sortBy: 'suggested', order: 'desc', userId }),
+      bedroom: this.productDataService.getProducts(1, 8, { search: 'phòng ngủ' })
+    };
+
+    forkJoin(categories$).subscribe({
+      next: (results) => {
         this.ngZone.run(() => {
-          const available = items.filter((item) => item.price !== null);
-
-          this.cheapProducts = [...available]
-            .sort((left, right) => (left.price ?? 0) - (right.price ?? 0))
-            .slice(0, 8);
-
-          this.bestSellingProducts = [...available]
-            .sort((left, right) => right.soldCount - left.soldCount)
-            .slice(0, 8);
-
-          this.suggestedProducts = [...available].slice(0, 8);
-
-          this.bedroomProducts = [...available]
-            .filter((item) => /(giuong|tu|phong ngu|wardrobe|bedroom)/i.test(item.name))
-            .slice(0, 8);
-
+          this.cheapProducts = results.cheap.items;
+          this.bestSellingProducts = results.bestSelling.items;
+          this.suggestedProducts = results.suggested.items;
+          this.bedroomProducts = results.bedroom.items;
           this.loading = false;
           this.cdr.detectChanges();
         });
@@ -146,11 +160,11 @@ export class Homepage implements OnInit, OnDestroy {
       error: (err: unknown) => {
         this.ngZone.run(() => {
           const message = err instanceof Error ? err.message : '';
-          this.error = message || 'Khong the tai san pham tu API.';
+          this.error = message || 'Không thể tải sản phẩm từ API.';
           this.loading = false;
           this.cdr.detectChanges();
         });
-      },
+      }
     });
   }
 
