@@ -106,7 +106,9 @@
           <td>{{ customer.updatedAt | date:'dd/MM/yyyy HH:mm' }}</td>
           <td class="actions-cell">
             <div class="actions">
-              <button class="btn btn-ghost btn-sm" (click)="viewDetail(customer)">Chi ti&#7871;t</button>
+              <button class="btn btn-ghost btn-sm btn-icon-only" (click)="viewDetail(customer)" title="Chi tiết" aria-label="Chi tiết">
+                <i class="bi bi-eye"></i>
+              </button>
             </div>
           </td>
         </tr>

@@ -22,4 +22,13 @@ export class AdminOrdersService {
     }
     return this.http.patch<any>(`${this.base}/orders/${id}/status`, payload);
   }
+
+  addWarrantyRecord(id: string, payload: {
+    order_detail_id: string;
+    serviced_at: string;
+    cost: number;
+    description: string;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.base}/orders/${id}/warranty-records`, payload);
+  }
 }

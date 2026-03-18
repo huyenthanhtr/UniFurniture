@@ -215,7 +215,17 @@ export class CheckoutComponent implements OnInit {
     this.isSubmitting = true;
     this.submitError = '';
 
+    let accountId = '';
+    try {
+      const rawProfile = localStorage.getItem('user_profile');
+      const savedProfile = rawProfile ? JSON.parse(rawProfile) : null;
+      accountId = String(savedProfile?._id || savedProfile?.id || '').trim();
+    } catch {
+      accountId = '';
+    }
+
     const payload = {
+      account_id: accountId,
       shipping_name: this.form.fullName,
       shipping_phone: this.form.phone,
       shipping_email: this.form.email,

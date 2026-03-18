@@ -8,8 +8,9 @@ const ProductVariant = require("../models/ProductVariant");
 const ProductImage = require("../models/ProductImage");
 const Coupon = require("../models/Coupon");
 const Review = require("../models/Review");
+const WarrantyRecord = require("../models/WarrantyRecord");
 
-const ORDER_STATUSES = ["pending", "confirmed", "cancel_pending", "processing", "shipping", "delivered", "completed", "cancelled", "refunded"];
+const ORDER_STATUSES = ["pending", "confirmed", "cancel_pending", "processing", "shipping", "delivered", "completed", "cancelled", "exchanged"];
 const NORMAL_STATUS_ASC_WEIGHT = {
   pending: 1,
   confirmed: 2,
@@ -29,10 +30,111 @@ const NORMAL_STATUS_DESC_WEIGHT = {
   pending: 7,
 };
 const CANCELLATION_GRACE_HOURS = 24;
+const WARRANTY_YEARS = 5;
+
+function generateCustomerCode() {
+  return `CUS${Date.now().toString().slice(-8)}${Math.floor(10 + Math.random() * 90)}`;
+}
 
 function normalizeStatus(value) {
   const status = String(value || "").trim().toLowerCase();
   return ORDER_STATUSES.includes(status) ? status : null;
+}
+
+function normalizeStoredOrderStatus(value) {
+  const status = String(value || "").trim().toLowerCase();
+  if (status === "refunded") return "cancelled";
+  return ORDER_STATUSES.includes(status) ? status : status;
+}
+
+function addYears(dateInput, years) {
+  const date = new Date(dateInput || Date.now());
+  if (Number.isNaN(date.getTime())) return null;
+  const result = new Date(date);
+  result.setFullYear(result.getFullYear() + years);
+  return result;
+}
+
+function ensureWarrantySummary(orderDoc) {
+  const normalizedStatus = String(orderDoc?.status || "").toLowerCase();
+  const isWarrantyEligibleStatus = ["completed", "exchanged"].includes(normalizedStatus);
+  const activatedRaw = orderDoc?.warranty?.activated_at
+    || (isWarrantyEligibleStatus ? orderDoc?.updatedAt || orderDoc?.createdAt : null);
+  const activatedAt = activatedRaw ? new Date(activatedRaw) : null;
+  const safeActivatedAt = activatedAt && !Number.isNaN(activatedAt.getTime()) ? activatedAt : null;
+
+  const expiresRaw = orderDoc?.warranty?.expires_at || (safeActivatedAt ? addYears(safeActivatedAt, WARRANTY_YEARS) : null);
+  const expiresAt = expiresRaw ? new Date(expiresRaw) : null;
+  const safeExpiresAt = expiresAt && !Number.isNaN(expiresAt.getTime()) ? expiresAt : null;
+
+  const history = Array.isArray(orderDoc?.warranty?.history) ? orderDoc.warranty.history : [];
+
+  return {
+    activated_at: safeActivatedAt,
+    expires_at: safeExpiresAt,
+    history,
+  };
+}
+
+function activateWarrantyIfNeeded(orderDoc, activationDate = new Date()) {
+  if (!orderDoc.warranty) orderDoc.warranty = {};
+  if (!orderDoc.warranty.activated_at) {
+    orderDoc.warranty.activated_at = activationDate;
+  }
+  if (!orderDoc.warranty.expires_at) {
+    orderDoc.warranty.expires_at = addYears(orderDoc.warranty.activated_at, WARRANTY_YEARS);
+  }
+}
+
+function normalizeWarrantyHistoryRecord(record, orderDetailMap = new Map()) {
+  const servicedAt = record?.serviced_at ? new Date(record.serviced_at) : null;
+  const detail = orderDetailMap.get(String(record?.order_detail_id || "")) || null;
+  const imageUrl = String(record?.image_url || detail?.image_url || "").trim();
+  const variantName = String(record?.variant_name || detail?.variant_name || "").trim() || "-";
+  const productName = String(record?.product_name || detail?.product_name || "").trim() || "-";
+  const cost = Math.max(0, Number(record?.cost || 0));
+  const storedType = String(record?.type || "").trim().toLowerCase();
+  const activatedAt = detail?.warranty_activated_at ? new Date(detail.warranty_activated_at) : null;
+  const expiresAt = detail?.warranty_expires_at ? new Date(detail.warranty_expires_at) : null;
+  const inferredWithinWarranty = !!(
+    servicedAt
+    && activatedAt
+    && expiresAt
+    && !Number.isNaN(servicedAt.getTime())
+    && !Number.isNaN(activatedAt.getTime())
+    && !Number.isNaN(expiresAt.getTime())
+    && servicedAt.getTime() >= activatedAt.getTime()
+    && servicedAt.getTime() <= expiresAt.getTime()
+  );
+  const normalizedType = storedType === "warranty" || storedType === "maintenance"
+    ? storedType
+    : (inferredWithinWarranty ? "warranty" : "maintenance");
+
+  return {
+    _id: record?._id || null,
+    order_detail_id: record?.order_detail_id || detail?._id || null,
+    variant_id: record?.variant_id || detail?.variant_id || null,
+    product_name: productName,
+    variant_name: variantName,
+    image_url: imageUrl,
+    serviced_at: servicedAt,
+    type: normalizedType,
+    cost,
+    description: String(record?.description || "").trim(),
+    created_at: record?.created_at || record?.createdAt || null,
+  };
+}
+
+async function getWarrantyHistoryForOrder(orderId, orderDetailMap = new Map()) {
+  const records = await WarrantyRecord.find({ order_id: orderId })
+    .sort({ serviced_at: -1, createdAt: -1, _id: -1 })
+    .lean();
+
+  if (records.length > 0) {
+    return records.map((record) => normalizeWarrantyHistoryRecord(record, orderDetailMap));
+  }
+
+  return [];
 }
 
 function getConfirmedAt(order) {
@@ -88,6 +190,73 @@ async function resolveProfile(order, customerId) {
   }
 
   return null;
+}
+
+async function resolveCheckoutCustomer(accountId, safeName, safePhone) {
+  const normalizedAccountId = String(accountId || "").trim();
+
+  if (!normalizedAccountId || !mongoose.Types.ObjectId.isValid(normalizedAccountId)) {
+    const guestCustomer = await Customer.create({
+      customer_code: generateCustomerCode(),
+      full_name: safeName,
+      phone: safePhone,
+      customer_type: "guest",
+      status: "active",
+    });
+
+    return {
+      customerId: guestCustomer._id,
+      accountId: null,
+    };
+  }
+
+  const profile = await Profile.findById(normalizedAccountId);
+  if (!profile) {
+    const guestCustomer = await Customer.create({
+      customer_code: generateCustomerCode(),
+      full_name: safeName,
+      phone: safePhone,
+      customer_type: "guest",
+      status: "active",
+    });
+
+    return {
+      customerId: guestCustomer._id,
+      accountId: null,
+    };
+  }
+
+  let customer = null;
+  if (profile.customer_id && mongoose.Types.ObjectId.isValid(String(profile.customer_id))) {
+    customer = await Customer.findById(profile.customer_id);
+  }
+
+  if (!customer) {
+    customer = await Customer.create({
+      customer_code: generateCustomerCode(),
+      full_name: String(profile.full_name || safeName || "").trim() || safeName,
+      phone: String(profile.phone || safePhone || "").trim() || safePhone,
+      customer_type: "member",
+      status: "active",
+    });
+
+    profile.customer_id = customer._id;
+    await profile.save();
+  } else {
+    customer.customer_type = "member";
+    if (!String(customer.full_name || "").trim()) {
+      customer.full_name = String(profile.full_name || safeName || "").trim() || safeName;
+    }
+    if (!String(customer.phone || "").trim()) {
+      customer.phone = String(profile.phone || safePhone || "").trim() || safePhone;
+    }
+    await customer.save();
+  }
+
+  return {
+    customerId: customer._id,
+    accountId: profile._id,
+  };
 }
 
 function buildDisplay(order, customer, profile) {
@@ -172,9 +341,9 @@ function getPaymentSortWeight(paymentSummary, direction) {
 }
 
 function getStatusSortWeight(status, direction) {
-  const key = String(status || "").toLowerCase();
-  if (key === "cancelled") return 7;
-  if (key === "refunded") return 8;
+  const key = normalizeStoredOrderStatus(status);
+  if (key === "cancelled") return 8;
+  if (key === "exchanged") return 9;
   return direction === "desc"
     ? (NORMAL_STATUS_DESC_WEIGHT[key] || 99)
     : (NORMAL_STATUS_ASC_WEIGHT[key] || 99);
@@ -375,6 +544,7 @@ async function getOrders(req, res, next) {
 
       return {
         ...orderDoc,
+        status: normalizeStoredOrderStatus(orderDoc.status),
         display,
         payment_summary: buildPaymentSummary(orderDoc, orderPayments),
       };
@@ -404,7 +574,14 @@ async function getOrderById(req, res, next) {
       return res.status(400).json({ error: "Invalid id" });
     }
 
-    const order = await Order.findById(id).lean();
+    const orderDoc = await Order.findById(id).lean();
+    const order = orderDoc
+      ? {
+          ...orderDoc,
+          status: normalizeStoredOrderStatus(orderDoc.status),
+          warranty: ensureWarrantySummary(orderDoc),
+        }
+      : null;
     if (!order) return res.status(404).json({ error: "Order not found" });
 
     const customer = order.customer_id ? await Customer.findById(order.customer_id).lean() : null;
@@ -474,10 +651,27 @@ async function getOrderById(req, res, next) {
       });
     }
 
+    const warrantySummary = ensureWarrantySummary(order);
     const itemsWithReview = normalizedItems.map((item) => ({
       ...item,
       approved_review: approvedReviewMap.get(String(item._id || "")) || null,
+      warranty_activated_at: warrantySummary.activated_at,
+      warranty_expires_at: warrantySummary.expires_at,
     }));
+
+    const itemMap = new Map(itemsWithReview.map((item) => [String(item._id || ""), item]));
+    const collectionHistory = await getWarrantyHistoryForOrder(id, itemMap);
+    const legacyHistory = collectionHistory.length === 0
+      ? (Array.isArray(warrantySummary.history) ? warrantySummary.history : [])
+          .map((record) => normalizeWarrantyHistoryRecord(record, itemMap))
+          .sort((left, right) => {
+            const a = new Date(left.serviced_at || 0).getTime();
+            const b = new Date(right.serviced_at || 0).getTime();
+            if (a !== b) return b - a;
+            return String(right._id || "").localeCompare(String(left._id || ""));
+          })
+      : [];
+    const warrantyHistory = collectionHistory.length > 0 ? collectionHistory : legacyHistory;
 
     const itemsSubtotal = itemsWithReview.reduce((sum, item) => sum + Number(item.total || 0), 0);
     const orderTotal = Number(order.total_amount || 0);
@@ -495,6 +689,11 @@ async function getOrderById(req, res, next) {
         discount_amount: discountAmount,
         coupon_code: coupon?.code || "",
         grand_total: orderTotal,
+      },
+      warranty: {
+        activated_at: warrantySummary.activated_at,
+        expires_at: warrantySummary.expires_at,
+        history: warrantyHistory,
       },
     });
   } catch (err) {
@@ -563,7 +762,7 @@ async function patchOrderStatus(req, res, next) {
   try {
     const { id } = req.params;
     const nextStatus = normalizeStatus(req.body.status);
-    const cancelReason = String(req.body?.reason || "").trim();
+    const statusReason = String(req.body?.reason || "").trim();
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: "Invalid id" });
@@ -583,8 +782,12 @@ async function patchOrderStatus(req, res, next) {
       doc.confirmed_at = new Date();
     }
 
+    if (["completed", "exchanged"].includes(nextStatus)) {
+      activateWarrantyIfNeeded(doc, new Date());
+    }
+
     if (nextStatus === "cancelled") {
-      if (!cancelReason) {
+      if (!statusReason) {
         return res.status(400).json({ error: "LÃ½ do huá»· Ä‘Æ¡n lÃ  báº¯t buá»™c." });
       }
 
@@ -593,13 +796,25 @@ async function patchOrderStatus(req, res, next) {
         Number(doc.total_amount || 0) >= 10000000 && Number(doc.deposit_amount || 0) > 0;
 
       doc.cancellation_request = {
-        reason: cancelReason,
+        reason: statusReason,
         note: String(existingCancellation.note || "").trim(),
         phone: String(existingCancellation.phone || doc.shipping_phone || "").trim(),
         cancelled_by: "admin",
         requested_at: new Date(),
         previous_status: previousStatus,
         over_10m_with_deposit: over10mWithDeposit,
+      };
+    }
+
+    if (nextStatus === "exchanged") {
+      if (!statusReason) {
+        return res.status(400).json({ error: "LÃ½ do Ä‘á»•i hÃ ng lÃ  báº¯t buá»™c." });
+      }
+
+      doc.exchange_request = {
+        reason: statusReason,
+        requested_at: new Date(),
+        previous_status: previousStatus,
       };
     }
 
@@ -610,9 +825,113 @@ async function patchOrderStatus(req, res, next) {
   }
 }
 
+async function addWarrantyRecord(req, res, next) {
+  try {
+    const { id } = req.params;
+    const orderDetailId = String(req.body?.order_detail_id || "").trim();
+    const servicedAtRaw = req.body?.serviced_at;
+    const description = String(req.body?.description || "").trim();
+    const cost = Math.max(0, Number(req.body?.cost || 0));
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid id" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(orderDetailId)) {
+      return res.status(400).json({ error: "Sản phẩm bảo hành không hợp lệ." });
+    }
+
+    const servicedAt = new Date(servicedAtRaw || "");
+    if (Number.isNaN(servicedAt.getTime())) {
+      return res.status(400).json({ error: "Thời gian bảo hành không hợp lệ." });
+    }
+
+    if (!description) {
+      return res.status(400).json({ error: "Mô tả chi tiết là bắt buộc." });
+    }
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    const warrantySummary = ensureWarrantySummary(order);
+    if (!warrantySummary.activated_at || !warrantySummary.expires_at) {
+      return res.status(400).json({ error: "Đơn hàng chưa kích hoạt bảo hành." });
+    }
+
+    const withinWarranty = servicedAt.getTime() >= new Date(warrantySummary.activated_at).getTime()
+      && servicedAt.getTime() <= new Date(warrantySummary.expires_at).getTime();
+
+    const orderDetail = await OrderDetail.findOne({ _id: orderDetailId, order_id: id }).lean();
+    if (!orderDetail) {
+      return res.status(400).json({ error: "Sản phẩm không thuộc đơn hàng này." });
+    }
+
+    let imageUrl = "";
+    if (orderDetail.variant_id && mongoose.Types.ObjectId.isValid(String(orderDetail.variant_id))) {
+      const imageDoc = await ProductImage.findOne({ variant_id: orderDetail.variant_id })
+        .sort({ is_primary: -1, sort_order: 1, _id: 1 })
+        .lean();
+      imageUrl = String(imageDoc?.image_url || "").trim();
+    }
+
+    await WarrantyRecord.create({
+      order_id: order._id,
+      order_detail_id: orderDetail._id,
+      variant_id: orderDetail.variant_id || null,
+      product_name: String(orderDetail.product_name || "").trim(),
+      variant_name: String(orderDetail.variant_name || "").trim(),
+      image_url: imageUrl,
+      serviced_at: servicedAt,
+      type: withinWarranty ? "warranty" : "maintenance",
+      cost: withinWarranty ? 0 : cost,
+      description,
+    });
+
+    const freshOrder = await Order.findById(id).lean();
+    const normalizedWarranty = ensureWarrantySummary(freshOrder);
+    const orderItems = await OrderDetail.find({ order_id: id }).lean();
+    const variantIds = orderItems
+      .map((item) => String(item.variant_id || ""))
+      .filter((value) => mongoose.Types.ObjectId.isValid(value));
+    const images = variantIds.length
+      ? await ProductImage.find({ variant_id: { $in: variantIds } }).sort({ is_primary: -1, sort_order: 1, _id: 1 }).lean()
+      : [];
+    const imageMap = new Map();
+    for (const image of images) {
+      const key = String(image.variant_id || "");
+      if (!key || imageMap.has(key)) continue;
+      imageMap.set(key, String(image.image_url || "").trim());
+    }
+    const itemMap = new Map(
+      orderItems.map((item) => [
+        String(item._id || ""),
+        {
+          ...item,
+          image_url: imageMap.get(String(item.variant_id || "")) || "",
+          warranty_activated_at: normalizedWarranty.activated_at,
+          warranty_expires_at: normalizedWarranty.expires_at,
+        },
+      ])
+    );
+
+    const history = await getWarrantyHistoryForOrder(id, itemMap);
+
+    return res.status(201).json({
+      activated_at: normalizedWarranty.activated_at,
+      expires_at: normalizedWarranty.expires_at,
+      history,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function createCheckoutOrder(req, res, next) {
   try {
     const {
+      account_id,
       shipping_name,
       shipping_phone,
       shipping_email,
@@ -696,12 +1015,13 @@ async function createCheckoutOrder(req, res, next) {
       ? Math.max(0, Number(deposit_amount || Math.round(finalTotal * 0.1)))
       : 0;
 
+    const checkoutCustomer = await resolveCheckoutCustomer(account_id, safeName, safePhone);
     const orderCode = `UH${Date.now().toString().slice(-8)}${Math.floor(10 + Math.random() * 90)}`;
 
     const orderDoc = await Order.create({
       order_code: orderCode,
-      customer_id: null,
-      account_id: null,
+      customer_id: checkoutCustomer.customerId,
+      account_id: checkoutCustomer.accountId,
       coupon_id: String(coupon_code || '').trim() || null,
       shipping_name: safeName,
       shipping_phone: safePhone,
@@ -763,5 +1083,6 @@ module.exports = {
   patchOrderStatus,
   requestCancelOrder,
   createCheckoutOrder,
+  addWarrantyRecord,
 };
 

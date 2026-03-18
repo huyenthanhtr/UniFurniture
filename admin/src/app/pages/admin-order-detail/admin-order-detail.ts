@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AdminOrdersService } from '../../services/admin-orders';
+import { AdminInvoiceService } from '../../services/admin-invoice';
 
 @Component({
   selector: 'app-admin-order-detail',
@@ -13,6 +14,7 @@ import { AdminOrdersService } from '../../services/admin-orders';
 })
 export class AdminOrderDetail implements OnInit {
   private api = inject(AdminOrdersService);
+  private invoice = inject(AdminInvoiceService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
@@ -27,14 +29,21 @@ export class AdminOrderDetail implements OnInit {
   payments: any[] = [];
   display: any = null;
   pricing: any = null;
+  warranty: any = null;
 
   editableStatus = 'pending';
-  cancelReasonDraft = '';
+  statusReasonDraft = '';
+  warrantyError = '';
 
   showConfirm = false;
-  showCancelForm = false;
+  showStatusReasonForm = false;
+  showWarrantyForm = false;
+  showWarrantyDetail = false;
   confirmMessage = '';
+  confirmMode: 'status' | 'warranty' | '' = '';
   confirmAction: null | (() => void) = null;
+  selectedWarrantyRecord: any = null;
+  warrantyRecordDraft = this.createEmptyWarrantyDraft();
 
   readonly statuses = [
     'pending',
@@ -45,7 +54,7 @@ export class AdminOrderDetail implements OnInit {
     'delivered',
     'completed',
     'cancelled',
-    'refunded',
+    'exchanged',
   ];
 
   private readonly paidStatuses = new Set(['paid']);
@@ -72,8 +81,14 @@ export class AdminOrderDetail implements OnInit {
         this.payments = res?.payments ?? [];
         this.display = res?.display ?? null;
         this.pricing = res?.pricing ?? null;
+        this.warranty = res?.warranty ?? null;
         this.editableStatus = this.order?.status || 'pending';
-        this.cancelReasonDraft = '';
+        this.statusReasonDraft = '';
+        this.warrantyError = '';
+        this.showWarrantyForm = false;
+        this.showWarrantyDetail = false;
+        this.selectedWarrantyRecord = null;
+        this.resetWarrantyDraft();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -96,17 +111,31 @@ export class AdminOrderDetail implements OnInit {
     this.router.navigate(['/admin/products', productId]);
   }
 
+  exportInvoice(): void {
+    if (!this.order) return;
+    this.invoice.downloadInvoice({
+      order: this.order,
+      customer: this.customer,
+      profile: this.profile,
+      items: this.items,
+      payments: this.payments,
+      display: this.display,
+      pricing: this.pricing,
+    });
+  }
+
   askSaveStatus() {
     if (!this.order?._id || !this.editableStatus || this.editableStatus === this.order.status) return;
 
-    if (String(this.editableStatus).toLowerCase() === 'cancelled') {
-      this.cancelReasonDraft = '';
-      this.showCancelForm = true;
+    if (this.requiresStatusReason(this.editableStatus)) {
+      this.statusReasonDraft = '';
+      this.showStatusReasonForm = true;
       this.cdr.detectChanges();
       return;
     }
 
     this.confirmMessage = `Đổi trạng thái đơn hàng sang ${this.orderStatusLabel(this.editableStatus)}?`;
+    this.confirmMode = 'status';
     this.confirmAction = () => this.saveStatus();
     this.showConfirm = true;
     this.cdr.detectChanges();
@@ -120,6 +149,7 @@ export class AdminOrderDetail implements OnInit {
       next: (doc: any) => {
         this.order = { ...this.order, ...(doc || {}), status: doc?.status || this.editableStatus };
         this.editableStatus = this.order.status;
+        this.syncWarrantyFromOrder();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -130,18 +160,19 @@ export class AdminOrderDetail implements OnInit {
     });
   }
 
-  saveCancelledStatus(): void {
-    const reason = this.cancelReasonDraft.trim();
+  saveStatusWithReason(): void {
+    const reason = this.statusReasonDraft.trim();
     if (!reason || !this.order?._id) return;
 
-    this.showCancelForm = false;
+    this.showStatusReasonForm = false;
     this.isLoading = true;
 
     this.api.patchOrderStatus(String(this.order._id), this.editableStatus, reason).subscribe({
       next: (doc: any) => {
         this.order = { ...this.order, ...(doc || {}), status: doc?.status || this.editableStatus };
         this.editableStatus = this.order.status;
-        this.cancelReasonDraft = '';
+        this.statusReasonDraft = '';
+        this.syncWarrantyFromOrder();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -154,15 +185,28 @@ export class AdminOrderDetail implements OnInit {
 
   closeConfirm() {
     this.showConfirm = false;
-    this.showCancelForm = false;
+    this.showStatusReasonForm = false;
     this.confirmAction = null;
-    this.cancelReasonDraft = '';
+    if (this.confirmMode === 'warranty') {
+      this.showWarrantyForm = true;
+    }
+    this.confirmMode = '';
+    this.statusReasonDraft = '';
     this.editableStatus = this.order?.status || this.editableStatus;
     this.cdr.detectChanges();
   }
 
   runConfirm() {
     if (this.confirmAction) this.confirmAction();
+  }
+
+  syncWarrantyFromOrder(): void {
+    if (!this.order?.warranty) return;
+    this.warranty = {
+      activated_at: this.order?.warranty?.activated_at || this.warranty?.activated_at || null,
+      expires_at: this.order?.warranty?.expires_at || this.warranty?.expires_at || null,
+      history: Array.isArray(this.warranty?.history) ? this.warranty.history : [],
+    };
   }
 
   toNumber(value: any): number {
@@ -196,6 +240,18 @@ export class AdminOrderDetail implements OnInit {
 
   get hasOrderItems(): boolean {
     return this.items.length > 0;
+  }
+
+  get hasWarrantyHistory(): boolean {
+    return this.warrantyHistory.length > 0;
+  }
+
+  get warrantyHistory(): any[] {
+    return Array.isArray(this.warranty?.history) ? this.warranty.history : [];
+  }
+
+  get hasWarrantyActivation(): boolean {
+    return !!this.warranty?.activated_at && !!this.warranty?.expires_at;
   }
 
   get discountAmount(): number {
@@ -267,23 +323,246 @@ export class AdminOrderDetail implements OnInit {
     if (key === 'delivered') return 'Đã giao';
     if (key === 'completed') return 'Hoàn tất';
     if (key === 'cancelled') return 'Đã huỷ';
-    if (key === 'refunded') return 'Đã hoàn tiền';
+    if (key === 'exchanged') return 'Đã đổi hàng';
     return status || '-';
   }
 
   isCancelledOrder(): boolean {
-    return ['cancelled', 'refunded'].includes(String(this.order?.status || '').toLowerCase());
+    return String(this.order?.status || '').toLowerCase() === 'cancelled';
   }
 
-  hasCancellationReason(): boolean {
+  isExchangeOrder(): boolean {
+    return String(this.order?.status || '').toLowerCase() === 'exchanged';
+  }
+
+  hasStatusReason(): boolean {
+    if (this.isExchangeOrder()) return !!String(this.order?.exchange_request?.reason || '').trim();
     return this.isCancelledOrder() && !!String(this.order?.cancellation_request?.reason || '').trim();
   }
 
   getCancellationReasonLabel(): string {
     const cancelledBy = String(this.order?.cancellation_request?.cancelled_by || '').toLowerCase();
     if (cancelledBy === 'admin') return 'Lý do huỷ (shop)';
-    if (cancelledBy === 'customer' || this.hasCancellationReason()) return 'Lý do huỷ (khách)';
+    if (cancelledBy === 'customer' || !!String(this.order?.cancellation_request?.reason || '').trim()) return 'Lý do huỷ (khách)';
     return 'Lý do huỷ';
+  }
+
+  getStatusReasonLabel(): string {
+    return this.isExchangeOrder() ? 'Lý do đổi hàng' : this.getCancellationReasonLabel();
+  }
+
+  getStatusReasonValue(): string {
+    if (this.isExchangeOrder()) return String(this.order?.exchange_request?.reason || '').trim();
+    return String(this.order?.cancellation_request?.reason || '').trim();
+  }
+
+  requiresStatusReason(status: string): boolean {
+    return ['cancelled', 'exchanged'].includes(String(status || '').toLowerCase());
+  }
+
+  getStatusReasonTitle(status: string): string {
+    return String(status || '').toLowerCase() === 'exchanged' ? 'Lý do đổi hàng' : 'Lý do huỷ đơn';
+  }
+
+  getStatusReasonDialogTitle(status: string): string {
+    return String(status || '').toLowerCase() === 'exchanged' ? 'Xác nhận đổi hàng' : 'Xác nhận huỷ đơn';
+  }
+
+  getStatusReasonPlaceholder(status: string): string {
+    return String(status || '').toLowerCase() === 'exchanged' ? 'Nhập lý do đổi hàng' : 'Nhập lý do huỷ đơn';
+  }
+
+  getStatusReasonSubmitText(status: string): string {
+    return String(status || '').toLowerCase() === 'exchanged' ? 'Xác nhận đổi hàng' : 'Xác nhận huỷ đơn';
+  }
+
+  createEmptyWarrantyDraft() {
+    return {
+      order_detail_id: '',
+      serviced_at: '',
+      cost: 0,
+      description: '',
+    };
+  }
+
+  resetWarrantyDraft(): void {
+    this.warrantyRecordDraft = this.createEmptyWarrantyDraft();
+  }
+
+  openWarrantyForm(): void {
+    this.warrantyError = '';
+    this.resetWarrantyDraft();
+    const firstItemId = String(this.items[0]?._id || '').trim();
+    if (firstItemId) {
+      this.warrantyRecordDraft.order_detail_id = firstItemId;
+    }
+    this.warrantyRecordDraft.serviced_at = this.toDateTimeLocal(new Date());
+    this.showWarrantyForm = true;
+    this.cdr.detectChanges();
+  }
+
+  closeWarrantyForm(): void {
+    this.showWarrantyForm = false;
+    this.warrantyError = '';
+    this.resetWarrantyDraft();
+    this.cdr.detectChanges();
+  }
+
+  openWarrantyDetail(record: any): void {
+    this.selectedWarrantyRecord = record;
+    this.showWarrantyDetail = true;
+    this.cdr.detectChanges();
+  }
+
+  closeWarrantyDetail(): void {
+    this.selectedWarrantyRecord = null;
+    this.showWarrantyDetail = false;
+    this.cdr.detectChanges();
+  }
+
+  askCreateWarrantyRecord(): void {
+    if (!this.canSubmitWarrantyRecord) return;
+    this.showWarrantyForm = false;
+    this.confirmMessage = 'Xác nhận thêm đợt bảo hành/bảo trì này?';
+    this.confirmMode = 'warranty';
+    this.confirmAction = () => this.saveWarrantyRecord();
+    this.showConfirm = true;
+    this.cdr.detectChanges();
+  }
+
+  saveWarrantyRecord(): void {
+    if (!this.order?._id || !this.canSubmitWarrantyRecord) return;
+
+    this.showConfirm = false;
+    this.confirmMode = '';
+    this.isLoading = true;
+    this.warrantyError = '';
+
+    this.api.addWarrantyRecord(String(this.order._id), {
+      order_detail_id: String(this.warrantyRecordDraft.order_detail_id || '').trim(),
+      serviced_at: this.toIsoDate(this.warrantyRecordDraft.serviced_at),
+      cost: this.toNumber(this.warrantyRecordDraft.cost),
+      description: String(this.warrantyRecordDraft.description || '').trim(),
+    }).subscribe({
+      next: (res: any) => {
+        this.warranty = {
+          activated_at: res?.activated_at || this.warranty?.activated_at || null,
+          expires_at: res?.expires_at || this.warranty?.expires_at || null,
+          history: Array.isArray(res?.history) ? res.history : [],
+        };
+        this.isLoading = false;
+        this.closeWarrantyForm();
+      },
+      error: (err: any) => {
+        this.warrantyError = String(err?.error?.error || 'Không thể lưu đợt bảo hành này.');
+        this.showWarrantyForm = true;
+        this.confirmMode = '';
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  get canSubmitWarrantyRecord(): boolean {
+    return this.hasWarrantyActivation
+      && !!String(this.warrantyRecordDraft.order_detail_id || '').trim()
+      && !!String(this.warrantyRecordDraft.serviced_at || '').trim()
+      && !!String(this.warrantyRecordDraft.description || '').trim();
+  }
+
+  getWarrantyTypeLabel(record: any): string {
+    return String(record?.type || '').toLowerCase() === 'maintenance' ? 'Bảo trì' : 'Bảo hành';
+  }
+
+  getWarrantyTypeClass(record: any): string {
+    return String(record?.type || '').toLowerCase() === 'maintenance' ? 'warranty-maintenance' : 'warranty-covered';
+  }
+
+  formatWarrantyCost(record: any): string {
+    if (String(record?.type || '').toLowerCase() !== 'maintenance') return 'Miễn phí';
+    return new Intl.NumberFormat('vi-VN').format(this.toNumber(record?.cost));
+  }
+
+  getDraftWarrantyTypeLabel(): string {
+    const servicedAt = new Date(this.warrantyRecordDraft.serviced_at || '');
+    const activatedAt = new Date(this.warranty?.activated_at || '');
+    const expiresAt = new Date(this.warranty?.expires_at || '');
+
+    if (Number.isNaN(servicedAt.getTime())) return '-';
+    if (
+      !Number.isNaN(activatedAt.getTime())
+      && !Number.isNaN(expiresAt.getTime())
+      && servicedAt.getTime() >= activatedAt.getTime()
+      && servicedAt.getTime() <= expiresAt.getTime()
+    ) {
+      return 'Bảo hành';
+    }
+
+    return 'Bảo trì';
+  }
+
+  getWarrantyActivationText(): string {
+    return this.hasWarrantyActivation ? this.formatDateTime(this.warranty?.activated_at, 'dd/MM/yyyy') : 'Chưa kích hoạt';
+  }
+
+  getWarrantyExpiryText(): string {
+    return this.hasWarrantyActivation ? this.formatDateTime(this.warranty?.expires_at, 'dd/MM/yyyy') : 'Chưa có';
+  }
+
+  getWarrantyRemainingText(): string {
+    if (!this.hasWarrantyActivation) return 'Chưa bắt đầu';
+
+    const expires = new Date(this.warranty?.expires_at || '');
+    if (Number.isNaN(expires.getTime())) return 'Chưa xác định';
+
+    const now = new Date();
+    if (expires.getTime() < now.getTime()) return 'Đã hết hạn';
+
+    const diffMs = expires.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+    const years = Math.floor(diffDays / 365);
+    const months = Math.floor((diffDays % 365) / 30);
+    const days = diffDays - years * 365 - months * 30;
+    const parts = [
+      years > 0 ? `${years} năm` : '',
+      months > 0 ? `${months} tháng` : '',
+      days > 0 ? `${days} ngày` : '',
+    ].filter(Boolean);
+
+    return parts.length ? parts.join(' ') : 'Còn trong hạn';
+  }
+
+  getWarrantySelectedItem(): any | null {
+    const orderDetailId = String(this.warrantyRecordDraft.order_detail_id || '').trim();
+    return this.items.find((item) => String(item?._id || '') === orderDetailId) || null;
+  }
+
+  formatDateTime(value: any, pattern = 'dd/MM/yyyy HH:mm'): string {
+    const date = new Date(value || '');
+    if (Number.isNaN(date.getTime())) return '-';
+
+    const pad = (num: number) => String(num).padStart(2, '0');
+    const day = pad(date.getDate());
+    const month = pad(date.getMonth() + 1);
+    const year = date.getFullYear();
+    const hour = pad(date.getHours());
+    const minute = pad(date.getMinutes());
+
+    if (pattern === 'dd/MM/yyyy') return `${day}/${month}/${year}`;
+    return `${day}/${month}/${year} ${hour}:${minute}`;
+  }
+
+  toDateTimeLocal(value: Date): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+
+    const pad = (num: number) => String(num).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
+  toIsoDate(value: string): string {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '' : date.toISOString();
   }
 
   getItemReviewRating(item: any): string {
@@ -306,7 +585,7 @@ export class AdminOrderDetail implements OnInit {
     const key = String(status || '').toLowerCase();
     if (key === 'active') return 'Đang hoạt động';
     if (key === 'inactive') return 'Ngừng hoạt động';
-    if (key === 'blocked') return 'Đã khóa';
+    if (key === 'blocked') return 'Đã khoá';
     return status || '-';
   }
 

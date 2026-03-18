@@ -16,7 +16,7 @@ const OrderSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ["pending", "confirmed", "cancel_pending", "processing", "shipping", "delivered", "completed", "cancelled", "refunded"],
+      enum: ["pending", "confirmed", "cancel_pending", "processing", "shipping", "delivered", "completed", "cancelled", "exchanged"],
       default: "pending",
     },
     ordered_at: Date,
@@ -29,6 +29,15 @@ const OrderSchema = new mongoose.Schema(
       requested_at: { type: Date, default: null },
       previous_status: { type: String, default: "" },
       over_10m_with_deposit: { type: Boolean, default: false },
+    },
+    exchange_request: {
+      reason: { type: String, default: "" },
+      requested_at: { type: Date, default: null },
+      previous_status: { type: String, default: "" },
+    },
+    warranty: {
+      activated_at: { type: Date, default: null },
+      expires_at: { type: Date, default: null },
     },
   },
   { timestamps: true, collection: "orders" }

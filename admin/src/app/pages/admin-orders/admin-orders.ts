@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AdminOrdersService } from '../../services/admin-orders';
+import { AdminInvoiceService } from '../../services/admin-invoice';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -15,6 +16,7 @@ type SortDirection = 'asc' | 'desc';
 })
 export class AdminOrders implements OnInit, OnDestroy {
   private api = inject(AdminOrdersService);
+  private invoice = inject(AdminInvoiceService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
@@ -23,7 +25,7 @@ export class AdminOrders implements OnInit, OnDestroy {
 
   orders: any[] = [];
   pendingStatusChange: { order: any; newStatus: string; oldStatus: string } | null = null;
-  cancelReasonDraft = '';
+  statusReasonDraft = '';
 
   filter = {
     search: '',
@@ -45,9 +47,9 @@ export class AdminOrders implements OnInit, OnDestroy {
 
   showConfirmPopup = false;
   showResultPopup = false;
-  showCancelInfoPopup = false;
-  showCancelFormPopup = false;
-  cancelInfoOrder: any = null;
+  showStatusInfoPopup = false;
+  showStatusReasonFormPopup = false;
+  statusInfoOrder: any = null;
   confirmMessage = '';
   resultMessage = { title: '', message: '', type: 'success' as 'success' | 'error' };
 
@@ -158,9 +160,9 @@ export class AdminOrders implements OnInit, OnDestroy {
     order._selectedStatus = nextStatus;
     this.pendingStatusChange = { order, newStatus: nextStatus, oldStatus };
 
-    if (String(nextStatus).toLowerCase() === 'cancelled') {
-      this.cancelReasonDraft = '';
-      this.showCancelFormPopup = true;
+    if (this.requiresStatusReason(nextStatus)) {
+      this.statusReasonDraft = '';
+      this.showStatusReasonFormPopup = true;
       return;
     }
 
@@ -195,18 +197,18 @@ export class AdminOrders implements OnInit, OnDestroy {
     });
   }
 
-  executeCancelStatusChange(): void {
+  executeStatusReasonChange(): void {
     if (!this.pendingStatusChange) return;
 
     const { order, newStatus } = this.pendingStatusChange;
-    const reason = this.cancelReasonDraft.trim();
+    const reason = this.statusReasonDraft.trim();
 
     if (!reason) {
-      this.showResult('Thiếu thông tin', 'Vui lòng nhập lý do huỷ đơn.', 'error');
+      this.showResult('Thiếu thông tin', `Vui lòng nhập ${this.getStatusReasonTitle(newStatus).toLowerCase()}.`, 'error');
       return;
     }
 
-    this.showCancelFormPopup = false;
+    this.showStatusReasonFormPopup = false;
     this.isLoading = true;
 
     this.api.patchOrderStatus(String(order._id), newStatus, reason).subscribe({
@@ -215,17 +217,17 @@ export class AdminOrders implements OnInit, OnDestroy {
         order.status = doc?.status || newStatus;
         order._selectedStatus = order.status;
         this.pendingStatusChange = null;
-        this.cancelReasonDraft = '';
+        this.statusReasonDraft = '';
         this.isLoading = false;
-        this.showResult('Thành công', 'Đã huỷ đơn hàng và lưu lý do huỷ.', 'success');
+        this.showResult('Thành công', this.getStatusReasonSuccessMessage(newStatus), 'success');
         this.cdr.detectChanges();
       },
       error: (err: any) => {
         order._selectedStatus = order.status;
         this.pendingStatusChange = null;
-        this.cancelReasonDraft = '';
+        this.statusReasonDraft = '';
         this.isLoading = false;
-        this.showResult('Thất bại', err?.error?.error || 'Huỷ đơn hàng thất bại.', 'error');
+        this.showResult('Thất bại', err?.error?.error || 'Cập nhật trạng thái thất bại.', 'error');
         this.cdr.detectChanges();
       },
     });
@@ -238,8 +240,8 @@ export class AdminOrders implements OnInit, OnDestroy {
     }
     this.pendingStatusChange = null;
     this.showConfirmPopup = false;
-    this.showCancelFormPopup = false;
-    this.cancelReasonDraft = '';
+    this.showStatusReasonFormPopup = false;
+    this.statusReasonDraft = '';
   }
 
   showResult(title: string, message: string, type: 'success' | 'error'): void {
@@ -253,23 +255,46 @@ export class AdminOrders implements OnInit, OnDestroy {
     });
   }
 
+  exportInvoice(order: any): void {
+    const id = String(order?._id || '').trim();
+    if (!id) return;
+
+    this.isLoading = true;
+    this.api.getOrderById(id).subscribe({
+      next: (res: any) => {
+        this.isLoading = false;
+        this.invoice.downloadInvoice(res || {});
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.isLoading = false;
+        this.showResult('Thất bại', err?.error?.error || 'Xuất hoá đơn thất bại.', 'error');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   isCancelledOrder(order: any): boolean {
-    return ['cancelled', 'refunded'].includes(String(order?.status || '').toLowerCase());
+    return String(order?.status || '').toLowerCase() === 'cancelled';
   }
 
-  canShowCancelInfo(order: any): boolean {
-    return this.isCancelledOrder(order) && !!String(order?.cancellation_request?.reason || '').trim();
+  isExchangeOrder(order: any): boolean {
+    return String(order?.status || '').toLowerCase() === 'exchanged';
   }
 
-  openCancelInfo(order: any): void {
-    if (!this.canShowCancelInfo(order)) return;
-    this.cancelInfoOrder = order;
-    this.showCancelInfoPopup = true;
+  canShowStatusReason(order: any): boolean {
+    return !!this.getStatusReasonValue(order);
   }
 
-  closeCancelInfo(): void {
-    this.showCancelInfoPopup = false;
-    this.cancelInfoOrder = null;
+  openStatusReason(order: any): void {
+    if (!this.canShowStatusReason(order)) return;
+    this.statusInfoOrder = order;
+    this.showStatusInfoPopup = true;
+  }
+
+  closeStatusInfo(): void {
+    this.showStatusInfoPopup = false;
+    this.statusInfoOrder = null;
   }
 
   getCancellationReasonLabel(order: any): string {
@@ -279,6 +304,28 @@ export class AdminOrders implements OnInit, OnDestroy {
       return 'Lý do huỷ (khách)';
     }
     return 'Lý do huỷ';
+  }
+
+  getStatusReasonLabel(order: any): string {
+    return this.isExchangeOrder(order) ? 'Lý do đổi hàng' : this.getCancellationReasonLabel(order);
+  }
+
+  getStatusReasonValue(order: any): string {
+    if (this.isExchangeOrder(order)) {
+      return String(order?.exchange_request?.reason || '').trim();
+    }
+    if (this.isCancelledOrder(order)) {
+      return String(order?.cancellation_request?.reason || '').trim();
+    }
+    return '';
+  }
+
+  getStatusReasonButtonText(order: any): string {
+    return this.isExchangeOrder(order) ? 'Lý do đổi' : 'Lý do huỷ';
+  }
+
+  getStatusReasonIcon(order: any): string {
+    return this.isExchangeOrder(order) ? 'bi bi-arrow-left-right' : 'bi bi-ban';
   }
 
   goPrev(): void {
@@ -363,7 +410,7 @@ export class AdminOrders implements OnInit, OnDestroy {
     if (s === 'delivered') return 'Đã giao';
     if (s === 'completed') return 'Hoàn tất';
     if (s === 'cancelled') return 'Đã huỷ';
-    if (s === 'refunded') return 'Đã hoàn tiền';
+    if (s === 'exchanged') return 'Đã đổi hàng';
     return status || '-';
   }
 
@@ -372,6 +419,32 @@ export class AdminOrders implements OnInit, OnDestroy {
     if (key === 'member') return 'Thành viên';
     if (key === 'guest') return 'Khách vãng lai';
     return type || '-';
+  }
+
+  requiresStatusReason(status: string): boolean {
+    return ['cancelled', 'exchanged'].includes(String(status || '').toLowerCase());
+  }
+
+  getStatusReasonTitle(status: string): string {
+    return String(status || '').toLowerCase() === 'exchanged' ? 'Lý do đổi hàng' : 'Lý do huỷ đơn';
+  }
+
+  getStatusReasonDialogTitle(status: string): string {
+    return String(status || '').toLowerCase() === 'exchanged' ? 'Xác nhận đổi hàng' : 'Xác nhận huỷ đơn';
+  }
+
+  getStatusReasonPlaceholder(status: string): string {
+    return String(status || '').toLowerCase() === 'exchanged' ? 'Nhập lý do đổi hàng' : 'Nhập lý do huỷ đơn';
+  }
+
+  getStatusReasonSubmitText(status: string): string {
+    return String(status || '').toLowerCase() === 'exchanged' ? 'Xác nhận đổi hàng' : 'Xác nhận huỷ đơn';
+  }
+
+  getStatusReasonSuccessMessage(status: string): string {
+    return String(status || '').toLowerCase() === 'exchanged'
+      ? 'Đã chuyển đơn hàng sang trạng thái đã đổi hàng và lưu lý do.'
+      : 'Đã huỷ đơn hàng và lưu lý do huỷ.';
   }
 
   private getSortParams(): { sortBy?: string; order?: SortDirection } {
@@ -443,11 +516,15 @@ export class AdminOrders implements OnInit, OnDestroy {
       order:
         changes.order !== undefined
           ? (changes.order ? changes.order : null)
-          : (this.sortConfig.column ? this.sortConfig.direction : null),
+          : this.sortConfig.column ? this.sortConfig.direction : null,
       page:
         changes.page !== undefined
-          ? (changes.page && changes.page > 1 ? changes.page : null)
-          : (this.page > 1 ? this.page : null),
+          ? changes.page && changes.page > 1
+            ? changes.page
+            : null
+          : this.page > 1
+            ? this.page
+            : null,
     };
 
     this.router.navigate([], {
