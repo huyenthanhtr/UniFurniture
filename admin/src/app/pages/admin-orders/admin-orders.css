@@ -330,17 +330,14 @@ tbody tr:last-child td {
   border-color: #fdba74;
 }
 
-.th-actions,
-.actions-cell {
-  width: 120px;
-  white-space: nowrap;
-}
+.status-dropdown.exchanged{color:#1d4ed8;background:#eff6ff;border-color:#93c5fd}
 
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.th-actions,.actions-cell{width:164px;white-space:nowrap}
+
+.actions{display:flex;align-items:center;gap:8px}
+
+.btn-icon-only{width:38px;height:38px;padding:0}
+.btn-icon-only i{font-size:15px}
 
 .justify-content-center {
   justify-content: center;
@@ -513,16 +510,9 @@ tbody tr:last-child td {
 }
 
 
-.btn-cancel-info {
-  background: #fff1f2;
-  color: #be123c;
-  border-color: #fda4af;
-}
+.btn-cancel-info{background:#fff1f2;color:#be123c;border-color:#fda4af}
+.btn-cancel-info:hover{background:#ffe4e6;border-color:#fb7185}
 
-.btn-cancel-info:hover {
-  background: #ffe4e6;
-  border-color: #fb7185;
-}
 
 .cancel-info-box {
   background: #fff;

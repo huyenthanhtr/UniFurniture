@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+ï»¿const mongoose = require("mongoose");
 const Customer = require("../models/Customer");
 const Profile = require("../models/Profile");
 const CustomerAddress = require("../models/CustomerAddress");
@@ -6,8 +6,8 @@ const CustomerAddress = require("../models/CustomerAddress");
 function toBoolean(value) {
   if (typeof value === "boolean") return value;
   const raw = String(value || "").trim().toLowerCase();
-  if (["1", "true", "yes", "co", "có"].includes(raw)) return true;
-  if (["0", "false", "no", "khong", "không"].includes(raw)) return false;
+  if (["1", "true", "yes", "co", "cÃ³"].includes(raw)) return true;
+  if (["0", "false", "no", "khong", "khÃ´ng"].includes(raw)) return false;
   return null;
 }
 
@@ -111,22 +111,11 @@ async function getAdminCustomers(req, res, next) {
       {
         $lookup: {
           from: "profiles",
-          let: { customerId: "$_id", customerPhone: "$phone" },
+          let: { customerId: "$_id" },
           pipeline: [
             {
               $match: {
-                $expr: {
-                  $or: [
-                    { $eq: ["$customer_id", "$$customerId"] },
-                    {
-                      $and: [
-                        { $ne: ["$$customerPhone", null] },
-                        { $ne: ["$$customerPhone", ""] },
-                        { $eq: ["$phone", "$$customerPhone"] },
-                      ],
-                    },
-                  ],
-                },
+                $expr: { $eq: ["$customer_id", "$$customerId"] },
               },
             },
             { $sort: { updatedAt: -1, _id: -1 } },
@@ -242,11 +231,6 @@ async function findProfileForCustomer(customer) {
 
   const byCustomerId = await Profile.findOne({ customer_id: customer._id }).sort({ updatedAt: -1, _id: -1 }).lean();
   if (byCustomerId) return byCustomerId;
-
-  if (customer.phone) {
-    const byPhone = await Profile.findOne({ phone: customer.phone }).sort({ updatedAt: -1, _id: -1 }).lean();
-    if (byPhone) return byPhone;
-  }
 
   return null;
 }

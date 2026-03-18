@@ -430,7 +430,7 @@ export class AdminDashboard implements OnInit {
       'Hoàn thành',
       'Chờ hủy',
       'Đã hủy',
-      'Đã hoàn tiền'
+      'Đã đổi hàng'
     ];
     const data = [
       stats['pending'] || 0,
@@ -441,10 +441,10 @@ export class AdminDashboard implements OnInit {
       stats['completed'] || 0,
       stats['cancel_pending'] || 0,
       stats['cancelled'] || 0,
-      stats['refunded'] || 0
+      stats['exchanged'] || 0
     ];
     
-    const colors = ['#eab308', '#d4a373', '#a3b18a', '#908372', '#588157', '#166534', '#f87171', '#b42318', '#9ca3af'];
+    const colors = ['#eab308', '#d4a373', '#a3b18a', '#908372', '#588157', '#166534', '#f87171', '#b42318', '#475569'];
 
     this.statusChart = new Chart(canvas, {
       type: 'doughnut',
@@ -508,7 +508,7 @@ export class AdminDashboard implements OnInit {
     if (['completed', 'delivered'].includes(normalized)) return 'badge-success';
     if (['shipping', 'processing', 'confirmed'].includes(normalized)) return 'badge-primary';
     if (normalized === 'pending') return 'badge-warning';
-    if (['cancelled', 'cancel_pending', 'refunded'].includes(normalized)) return 'badge-danger';
+    if (['cancelled', 'cancel_pending', 'exchanged'].includes(normalized)) return 'badge-danger';
     return 'badge-secondary';
   }
 
@@ -522,7 +522,7 @@ export class AdminDashboard implements OnInit {
       completed: 'Hoàn thành',
       cancel_pending: 'Chờ hủy',
       cancelled: 'Đã hủy',
-      refunded: 'Đã hoàn tiền'
+      exchanged: 'Đã đổi hàng'
     };
 
     return map[this.normalizeStatus(status)] || status || 'N/A';

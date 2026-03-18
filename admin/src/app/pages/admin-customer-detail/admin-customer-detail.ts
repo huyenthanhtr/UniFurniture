@@ -59,6 +59,14 @@ export class AdminCustomerDetail implements OnInit {
     });
   }
 
+  get visibleAddresses(): any[] {
+    if (!Array.isArray(this.addresses) || this.addresses.length === 0) return [];
+    if (this.merged?.has_account && this.addresses.length > 1) {
+      return [this.addresses[0]];
+    }
+    return this.addresses;
+  }
+
   viewAddress(address: any) {
     this.router.navigate(['/admin/customers', this.id, 'addresses', address._id], {
       queryParams: this.route.snapshot.queryParams,
@@ -79,14 +87,6 @@ export class AdminCustomerDetail implements OnInit {
     return '-';
   }
 
-  accountStatusLabel(status: any): string {
-    const key = String(status || '').toLowerCase();
-    if (key === 'active') return '\u0110ang ho\u1ea1t \u0111\u1ed9ng';
-    if (key === 'inactive') return 'T\u1ea1m ng\u01b0ng';
-    if (key === 'banned') return 'B\u1ecb kh\u00f3a';
-    return 'Kh\u00f4ng c\u00f3 t\u00e0i kho\u1ea3n';
-  }
-
   genderLabel(gender: any): string {
     const key = String(gender || '').toLowerCase();
     if (key === 'male') return 'Nam';
@@ -95,10 +95,7 @@ export class AdminCustomerDetail implements OnInit {
     return '-';
   }
 
-  addressStatusLabel(status: any): string {
-    const key = String(status || '').toLowerCase();
-    if (key === 'active') return '\u0110ang s\u1eed d\u1ee5ng';
-    if (key === 'inactive') return 'Ng\u1eebng s\u1eed d\u1ee5ng';
-    return '-';
+  addressStatusLabel(): string {
+    return '\u0110ang s\u1eed d\u1ee5ng';
   }
 }

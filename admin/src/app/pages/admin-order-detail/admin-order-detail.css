@@ -27,6 +27,9 @@
   align-items: center;
 }
 
+.btn-icon-only{width:42px;height:42px;padding:0}
+.btn-icon-only i{font-size:16px}
+
 .body {
   display: grid;
   gap: 14px;
@@ -497,6 +500,133 @@ tbody tr:last-child td {
   box-shadow: 0 0 0 3px rgba(144, 131, 114, 0.12);
 }
 
+.form-select {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #ddd2c6;
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.section-head h3 {
+  margin: 0 0 4px;
+}
+
+.section-sub {
+  margin: 0;
+  color: #7a6a5a;
+  font-size: 13px;
+}
+
+.warranty-card {
+  border-color: #e4efe5;
+  background: linear-gradient(180deg, #fcfffc 0%, #ffffff 100%);
+}
+
+.warranty-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.warranty-box {
+  border: 1px solid #d9e7db;
+  border-radius: 14px;
+  background: #f9fdf9;
+  padding: 14px;
+}
+
+.warranty-note {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff8e8;
+  border: 1px solid #f1ddb0;
+  color: #7a5f1d;
+  margin-bottom: 14px;
+}
+
+.warranty-table-wrap {
+  border: 1px solid #ece6e0;
+  border-radius: 12px;
+  overflow: auto;
+}
+
+.warranty-table {
+  min-width: 980px;
+}
+
+.warranty-product,
+.warranty-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.warranty-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  border: 1px solid #ece6e0;
+  background: #fff;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.warranty-product-name {
+  font-weight: 700;
+  color: #2f2720;
+}
+
+.warranty-product-sub {
+  margin-top: 4px;
+  color: #7a6a5a;
+  font-size: 13px;
+}
+
+.warranty-description {
+  min-width: 240px;
+  white-space: normal;
+  line-height: 1.5;
+}
+
+.warranty-covered {
+  color: #166534;
+  background: #ecfdf3;
+  border-color: #86efac;
+}
+
+.warranty-maintenance {
+  color: #92400e;
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.inline-alert {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #f3c7c3;
+  background: #fff1f0;
+  color: #b42318;
+}
+
+.multiline {
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
 .required-mark {
   color: #b42318;
 }
@@ -516,6 +646,10 @@ tbody tr:last-child td {
 @media (max-width: 1100px) {
   .payment-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .warranty-summary {
+    grid-template-columns: 1fr;
   }
 }
 

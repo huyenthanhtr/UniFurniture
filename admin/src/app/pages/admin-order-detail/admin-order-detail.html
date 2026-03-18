@@ -7,6 +7,9 @@
 
     <div class="actions">
       <button class="btn btn-ghost" (click)="back()">← Quay lại</button>
+      <button class="btn btn-ghost btn-icon-only" (click)="exportInvoice()" title="Xuất hoá đơn" aria-label="Xuất hoá đơn">
+        <i class="bi bi-file-earmark-pdf"></i>
+      </button>
       <button class="btn btn-primary" (click)="askSaveStatus()" [disabled]="!order || editableStatus === order.status">
         Lưu
       </button>
@@ -51,9 +54,9 @@
           </select>
         </div>
 
-        <div class="field readonly full" *ngIf="hasCancellationReason()">
-          <label>{{ getCancellationReasonLabel() }}</label>
-          <div>{{ order.cancellation_request?.reason || '-' }}</div>
+        <div class="field readonly full" *ngIf="hasStatusReason()">
+          <label>{{ getStatusReasonLabel() }}</label>
+          <div>{{ getStatusReasonValue() || '-' }}</div>
         </div>
       </div>
     </section>
@@ -238,6 +241,97 @@
         <div class="empty">Chưa có giao dịch thanh toán cho đơn này.</div>
       </ng-template>
     </section>
+
+    <section class="card warranty-card">
+      <div class="section-head">
+        <div>
+          <h3>Thông tin bảo hành</h3>
+          <p class="section-sub">Bảo hành 5 năm được kích hoạt khi đơn chuyển sang trạng thái hoàn tất.</p>
+        </div>
+
+        <button
+          class="btn btn-ghost btn-icon-only"
+          (click)="openWarrantyForm()"
+          title="Thêm đợt bảo hành"
+          aria-label="Thêm đợt bảo hành"
+        >
+          <i class="bi bi-plus-lg"></i>
+        </button>
+      </div>
+
+      <div class="warranty-summary">
+        <div class="warranty-box">
+          <div class="summary-label">Ngày kích hoạt bảo hành</div>
+          <div class="summary-value">{{ getWarrantyActivationText() }}</div>
+        </div>
+
+        <div class="warranty-box">
+          <div class="summary-label">Ngày hết hạn bảo hành</div>
+          <div class="summary-value">{{ getWarrantyExpiryText() }}</div>
+        </div>
+
+        <div class="warranty-box">
+          <div class="summary-label">Thời hạn còn lại</div>
+          <div class="summary-value">{{ getWarrantyRemainingText() }}</div>
+        </div>
+      </div>
+
+      <div class="warranty-note" *ngIf="!hasWarrantyActivation">
+        Đơn này chưa được kích hoạt bảo hành. Hãy chuyển trạng thái đơn sang <strong>Hoàn tất</strong> trước khi thêm lịch sử.
+      </div>
+
+      <div class="table-wrap warranty-table-wrap" *ngIf="hasWarrantyHistory">
+        <table class="warranty-table">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Thời gian bảo hành</th>
+              <th>Sản phẩm</th>
+              <th>Loại</th>
+              <th>Chi phí</th>
+              <th>Mô tả chi tiết</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let record of warrantyHistory; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ record.serviced_at | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <div class="warranty-product">
+                  <img
+                    class="warranty-thumb"
+                    [src]="normalizeImageUrl(record.image_url)"
+                    [alt]="record.variant_name || record.product_name || 'Sản phẩm'"
+                  />
+                  <div>
+                    <div class="warranty-product-name">{{ record.variant_name || '-' }}</div>
+                    <div class="warranty-product-sub">{{ record.product_name || '-' }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="getWarrantyTypeClass(record)">
+                  {{ getWarrantyTypeLabel(record) }}
+                </span>
+              </td>
+              <td class="amount">{{ formatWarrantyCost(record) }}</td>
+              <td class="warranty-description">{{ record.description || '-' }}</td>
+              <td>
+                <button
+                  class="btn btn-ghost btn-icon-only"
+                  (click)="openWarrantyDetail(record)"
+                  title="Xem chi tiết"
+                  aria-label="Xem chi tiết"
+                >
+                  <i class="bi bi-eye"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </div>
 
   <div class="confirm-overlay" *ngIf="showConfirm">
@@ -251,10 +345,10 @@
     </div>
   </div>
 
-  <div class="confirm-overlay" *ngIf="showCancelForm && order">
+  <div class="confirm-overlay" *ngIf="showStatusReasonForm && order">
     <div class="cancel-form-box">
       <div class="cancel-form-header">
-        <h4>Xác nhận huỷ đơn</h4>
+        <h4>{{ getStatusReasonDialogTitle(editableStatus) }}</h4>
         <button class="close-btn" (click)="closeConfirm()" aria-label="Đóng">×</button>
       </div>
 
@@ -281,12 +375,12 @@
           </div>
 
           <div class="cancel-form-item full">
-            <label>Lý do huỷ đơn <span class="required-mark">*</span></label>
+            <label>{{ getStatusReasonTitle(editableStatus) }} <span class="required-mark">*</span></label>
             <textarea
-              [(ngModel)]="cancelReasonDraft"
+              [(ngModel)]="statusReasonDraft"
               class="cancel-reason-input"
               rows="4"
-              placeholder="Nhập lý do huỷ đơn"
+              [placeholder]="getStatusReasonPlaceholder(editableStatus)"
             ></textarea>
           </div>
         </div>
@@ -294,9 +388,140 @@
 
       <div class="cancel-form-footer">
         <button class="btn btn-ghost" (click)="closeConfirm()">Huỷ bỏ</button>
-        <button class="btn btn-primary" [disabled]="!cancelReasonDraft.trim()" (click)="saveCancelledStatus()">
-          Xác nhận huỷ đơn
+        <button class="btn btn-primary" [disabled]="!statusReasonDraft.trim()" (click)="saveStatusWithReason()">
+          {{ getStatusReasonSubmitText(editableStatus) }}
         </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" *ngIf="showWarrantyForm && order">
+    <div class="cancel-form-box">
+      <div class="cancel-form-header">
+        <h4>Thêm đợt bảo hành</h4>
+        <button class="close-btn" (click)="closeWarrantyForm()" aria-label="Đóng">×</button>
+      </div>
+
+      <div class="cancel-form-body">
+        <div class="cancel-form-grid">
+          <div class="cancel-form-item full" *ngIf="warrantyError">
+            <div class="inline-alert">{{ warrantyError }}</div>
+          </div>
+
+          <div class="cancel-form-item">
+            <label>Ngày kích hoạt</label>
+            <div>{{ getWarrantyActivationText() }}</div>
+          </div>
+
+          <div class="cancel-form-item">
+            <label>Ngày hết hạn</label>
+            <div>{{ getWarrantyExpiryText() }}</div>
+          </div>
+
+          <div class="cancel-form-item full">
+            <label>Sản phẩm <span class="required-mark">*</span></label>
+            <select [(ngModel)]="warrantyRecordDraft.order_detail_id" class="form-select">
+              <option *ngFor="let item of items" [value]="item._id">
+                {{ item.variant_name || item.product_name || '-' }}{{ item.sku ? ' • ' + item.sku : '' }}
+              </option>
+            </select>
+          </div>
+
+          <div class="cancel-form-item full" *ngIf="getWarrantySelectedItem() as selectedItem">
+            <label>Biến thể đã chọn</label>
+            <div class="warranty-preview">
+              <img class="warranty-thumb" [src]="normalizeImageUrl(selectedItem.image_url)" [alt]="selectedItem.variant_name || 'Biến thể'" />
+              <div>
+                <div class="warranty-product-name">{{ selectedItem.variant_name || '-' }}</div>
+                <div class="warranty-product-sub">{{ selectedItem.product_name || '-' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cancel-form-item">
+            <label>Thời gian bảo hành <span class="required-mark">*</span></label>
+            <input [(ngModel)]="warrantyRecordDraft.serviced_at" class="form-select" type="datetime-local" />
+          </div>
+
+          <div class="cancel-form-item">
+            <label>Chi phí</label>
+            <input [(ngModel)]="warrantyRecordDraft.cost" class="form-select" type="number" min="0" />
+          </div>
+
+          <div class="cancel-form-item full">
+            <label>Loại ghi nhận</label>
+            <div>{{ getDraftWarrantyTypeLabel() }}</div>
+          </div>
+
+          <div class="cancel-form-item full">
+            <label>Mô tả chi tiết <span class="required-mark">*</span></label>
+            <textarea
+              [(ngModel)]="warrantyRecordDraft.description"
+              class="cancel-reason-input"
+              rows="4"
+              placeholder="Nhập mô tả chi tiết đợt bảo hành hoặc bảo trì"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="cancel-form-footer">
+        <button class="btn btn-ghost" (click)="closeWarrantyForm()">Huỷ bỏ</button>
+        <button class="btn btn-primary" [disabled]="!canSubmitWarrantyRecord" (click)="askCreateWarrantyRecord()">
+          Lưu đợt bảo hành
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" *ngIf="showWarrantyDetail && selectedWarrantyRecord">
+    <div class="cancel-form-box">
+      <div class="cancel-form-header">
+        <h4>Chi tiết đợt bảo hành</h4>
+        <button class="close-btn" (click)="closeWarrantyDetail()" aria-label="Đóng">×</button>
+      </div>
+
+      <div class="cancel-form-body">
+        <div class="cancel-form-grid">
+          <div class="cancel-form-item full">
+            <label>Sản phẩm</label>
+            <div class="warranty-preview">
+              <img
+                class="warranty-thumb"
+                [src]="normalizeImageUrl(selectedWarrantyRecord.image_url)"
+                [alt]="selectedWarrantyRecord.variant_name || 'Biến thể'"
+              />
+              <div>
+                <div class="warranty-product-name">{{ selectedWarrantyRecord.variant_name || '-' }}</div>
+                <div class="warranty-product-sub">{{ selectedWarrantyRecord.product_name || '-' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cancel-form-item">
+            <label>Thời gian</label>
+            <div>{{ selectedWarrantyRecord.serviced_at | date:'dd/MM/yyyy HH:mm' }}</div>
+          </div>
+
+          <div class="cancel-form-item">
+            <label>Loại</label>
+            <div>{{ getWarrantyTypeLabel(selectedWarrantyRecord) }}</div>
+          </div>
+
+          <div class="cancel-form-item">
+            <label>Chi phí</label>
+            <div>{{ formatWarrantyCost(selectedWarrantyRecord) }}</div>
+          </div>
+
+          <div class="cancel-form-item full">
+            <label>Mô tả chi tiết</label>
+            <div class="multiline">{{ selectedWarrantyRecord.description || '-' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cancel-form-footer">
+        <button class="btn btn-primary" (click)="closeWarrantyDetail()">Đóng</button>
       </div>
     </div>
   </div>

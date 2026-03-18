@@ -29,7 +29,7 @@
           <option value="delivered">Đã giao</option>
           <option value="completed">Hoàn tất</option>
           <option value="cancelled">Đã huỷ</option>
-          <option value="refunded">Đã hoàn tiền</option>
+          <option value="exchanged">Đã đổi hàng</option>
         </select>
       </div>
 
@@ -130,18 +130,30 @@
               <option value="delivered">Đã giao</option>
               <option value="completed">Hoàn tất</option>
               <option value="cancelled">Đã huỷ</option>
-              <option value="refunded">Đã hoàn tiền</option>
+              <option value="exchanged">Đã đổi hàng</option>
             </select>
           </td>
           <td class="actions-cell">
             <div class="actions">
-              <button class="btn btn-ghost btn-sm" (click)="viewDetail(order)">Chi tiết</button>
+              <button class="btn btn-ghost btn-sm btn-icon-only" (click)="viewDetail(order)" title="Chi tiết" aria-label="Chi tiết">
+                <i class="bi bi-eye"></i>
+              </button>
               <button
-                *ngIf="canShowCancelInfo(order)"
-                class="btn btn-cancel-info btn-sm"
-                (click)="openCancelInfo(order)"
+                class="btn btn-ghost btn-sm btn-icon-only"
+                (click)="exportInvoice(order)"
+                title="Xuất hoá đơn"
+                aria-label="Xuất hoá đơn"
               >
-                Lý do huỷ
+                <i class="bi bi-file-earmark-pdf"></i>
+              </button>
+              <button
+                *ngIf="canShowStatusReason(order)"
+                class="btn btn-cancel-info btn-sm btn-icon-only"
+                (click)="openStatusReason(order)"
+                [attr.title]="getStatusReasonButtonText(order)"
+                [attr.aria-label]="getStatusReasonButtonText(order)"
+              >
+                <i [ngClass]="getStatusReasonIcon(order)"></i>
               </button>
             </div>
           </td>
@@ -178,49 +190,56 @@
     </div>
   </div>
 
-  <div class="confirm-overlay" *ngIf="showCancelFormPopup && pendingStatusChange">
+  <div class="confirm-overlay" *ngIf="showStatusReasonFormPopup && pendingStatusChange">
     <div class="cancel-info-box cancel-form-box">
       <div class="cancel-form-header">
-        <h4>Xác nhận huỷ đơn</h4>
-        <button class="close-btn" style="width:36px;height:36px;border:none;border-radius:50%;font-size:24px;line-height:1;cursor:pointer;" (click)="cancelConfirm()" aria-label="Đóng">×</button>
+        <h4>{{ getStatusReasonDialogTitle(pendingStatusChange.newStatus) }}</h4>
+        <button
+          class="close-btn"
+          style="width:36px;height:36px;border:none;border-radius:50%;font-size:24px;line-height:1;cursor:pointer;"
+          (click)="cancelConfirm()"
+          aria-label="Đóng"
+        >
+          ×
+        </button>
       </div>
 
       <div class="cancel-info-grid" style="padding: 20px 24px;">
         <div class="cancel-info-item">
-            <label>Mã đơn</label>
-            <p>{{ pendingStatusChange.order?.order_code || pendingStatusChange.order?._id }}</p>
+          <label>Mã đơn</label>
+          <p>{{ pendingStatusChange.order?.order_code || pendingStatusChange.order?._id }}</p>
         </div>
 
         <div class="cancel-info-item">
-            <label>Khách hàng</label>
-            <p>{{ pendingStatusChange.order?.display?.receiver_name || '-' }}</p>
+          <label>Khách hàng</label>
+          <p>{{ pendingStatusChange.order?.display?.receiver_name || '-' }}</p>
         </div>
 
         <div class="cancel-info-item">
-            <label>Số điện thoại</label>
-            <p>{{ pendingStatusChange.order?.display?.phone || '-' }}</p>
+          <label>Số điện thoại</label>
+          <p>{{ pendingStatusChange.order?.display?.phone || '-' }}</p>
         </div>
 
         <div class="cancel-info-item">
-            <label>Tổng tiền</label>
-            <p>{{ pendingStatusChange.order?.total_amount | number }}</p>
+          <label>Tổng tiền</label>
+          <p>{{ pendingStatusChange.order?.total_amount | number }}</p>
         </div>
 
         <div class="cancel-info-item full">
-            <label>Lý do huỷ đơn *</label>
-            <textarea
-              [(ngModel)]="cancelReasonDraft"
-              class="cancel-reason-input"
-              rows="4"
-              placeholder="Nhập lý do huỷ đơn"
-            ></textarea>
+          <label>{{ getStatusReasonTitle(pendingStatusChange.newStatus) }} *</label>
+          <textarea
+            [(ngModel)]="statusReasonDraft"
+            class="cancel-reason-input"
+            rows="4"
+            [placeholder]="getStatusReasonPlaceholder(pendingStatusChange.newStatus)"
+          ></textarea>
         </div>
       </div>
 
       <div class="cancel-form-footer">
         <button class="btn btn-ghost" (click)="cancelConfirm()">Huỷ bỏ</button>
-        <button class="btn btn-primary" [disabled]="!cancelReasonDraft.trim()" (click)="executeCancelStatusChange()">
-          Xác nhận huỷ đơn
+        <button class="btn btn-primary" [disabled]="!statusReasonDraft.trim()" (click)="executeStatusReasonChange()">
+          {{ getStatusReasonSubmitText(pendingStatusChange.newStatus) }}
         </button>
       </div>
     </div>
@@ -237,39 +256,45 @@
     </div>
   </div>
 
-  <div class="confirm-overlay" *ngIf="showCancelInfoPopup && cancelInfoOrder">
+  <div class="confirm-overlay" *ngIf="showStatusInfoPopup && statusInfoOrder">
     <div class="cancel-info-box">
-      <h4>Thông tin huỷ đơn - {{ cancelInfoOrder.order_code || cancelInfoOrder._id }}</h4>
+      <h4>Thông tin trạng thái - {{ statusInfoOrder.order_code || statusInfoOrder._id }}</h4>
 
       <div class="cancel-info-grid">
         <div class="cancel-info-item">
-          <label>{{ getCancellationReasonLabel(cancelInfoOrder) }}</label>
-          <p>{{ cancelInfoOrder.cancellation_request?.reason || '-' }}</p>
+          <label>{{ getStatusReasonLabel(statusInfoOrder) }}</label>
+          <p>{{ getStatusReasonValue(statusInfoOrder) || '-' }}</p>
         </div>
 
-        <div class="cancel-info-item">
+        <div class="cancel-info-item" *ngIf="isCancelledOrder(statusInfoOrder)">
           <label>SĐT xác nhận</label>
-          <p>{{ cancelInfoOrder.cancellation_request?.phone || '-' }}</p>
+          <p>{{ statusInfoOrder.cancellation_request?.phone || '-' }}</p>
         </div>
 
-        <div class="cancel-info-item full">
+        <div class="cancel-info-item full" *ngIf="isCancelledOrder(statusInfoOrder)">
           <label>Ghi chú</label>
-          <p>{{ cancelInfoOrder.cancellation_request?.note || '-' }}</p>
+          <p>{{ statusInfoOrder.cancellation_request?.note || '-' }}</p>
         </div>
 
         <div class="cancel-info-item">
           <label>Thời gian ghi nhận</label>
-          <p>{{ cancelInfoOrder.cancellation_request?.requested_at ? (cancelInfoOrder.cancellation_request?.requested_at | date:'dd/MM/yyyy HH:mm') : '-' }}</p>
+          <p>
+            {{
+              isExchangeOrder(statusInfoOrder)
+                ? (statusInfoOrder.exchange_request?.requested_at ? (statusInfoOrder.exchange_request?.requested_at | date:'dd/MM/yyyy HH:mm') : '-')
+                : (statusInfoOrder.cancellation_request?.requested_at ? (statusInfoOrder.cancellation_request?.requested_at | date:'dd/MM/yyyy HH:mm') : '-')
+            }}
+          </p>
         </div>
 
-        <div class="cancel-info-item">
+        <div class="cancel-info-item" *ngIf="isCancelledOrder(statusInfoOrder)">
           <label>Lưu ý cọc</label>
-          <p>{{ cancelInfoOrder.cancellation_request?.over_10m_with_deposit ? 'Đơn trên 10 triệu có cọc 10% (không hoàn cọc).' : 'Không có' }}</p>
+          <p>{{ statusInfoOrder.cancellation_request?.over_10m_with_deposit ? 'Đơn trên 10 triệu có cọc 10% (không hoàn cọc).' : 'Không có' }}</p>
         </div>
       </div>
 
       <div class="actions justify-content-center">
-        <button class="btn btn-primary" (click)="closeCancelInfo()">Đóng</button>
+        <button class="btn btn-primary" (click)="closeStatusInfo()">Đóng</button>
       </div>
     </div>
   </div>
