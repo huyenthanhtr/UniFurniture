@@ -54,6 +54,8 @@ export class AdminLayout implements OnInit {
     // Tạm thời log ra, sau này bạn gắn router.navigate hoặc window.location
     console.log("Navigating to Home Page...");
     this.showUserOptions = false;
+    const clientUrl = 'http://localhost:4200';
+    window.open(clientUrl, '_blank');
     // this.router.navigate(['/']); 
   }
 
