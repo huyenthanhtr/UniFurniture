@@ -1,11 +1,11 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { ShippingFormComponent } from './components/shipping-form/shipping-form';
-import { PaymentMethodComponent } from './components/payment-method/payment-method';
-import { OrderSummaryComponent } from './components/order-summary/order-summary';
+import { Router, RouterLink } from '@angular/router';
 import { UiStateService } from '../../shared/ui-state.service';
+import { OrderSummaryComponent } from './components/order-summary/order-summary';
+import { PaymentMethodComponent } from './components/payment-method/payment-method';
+import { ShippingFormComponent } from './components/shipping-form/shipping-form';
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -59,6 +59,8 @@ interface PlaceOrderResponse {
 export class CheckoutComponent implements OnInit {
   private readonly ui = inject(UiStateService);
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
+  private buyNowItem: CheckoutCartItem | null = null;
 
   form: CheckoutForm = {
     fullName: '',
@@ -82,6 +84,10 @@ export class CheckoutComponent implements OnInit {
   submitError = '';
 
   get cartItems(): CheckoutCartItem[] {
+    if (this.buyNowItem) {
+      return [this.buyNowItem];
+    }
+
     const selected = this.ui.selectedCartKeys();
     const source = this.ui.cartItems().filter((item) => selected.has(item.cartKey));
 
@@ -129,6 +135,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadBuyNowState();
     this.ensureDepositPaymentRule();
   }
 
@@ -151,11 +158,29 @@ export class CheckoutComponent implements OnInit {
   }
 
   onQuantityChange(payload: { cartKey: string; quantity: number }): void {
+    if (this.buyNowItem && this.buyNowItem.cartKey === payload.cartKey) {
+      const rawQty = Number.isFinite(payload.quantity) ? Math.floor(payload.quantity) : this.buyNowItem.quantity;
+      const minQty = 1;
+      const maxQty = typeof this.buyNowItem.maxStock === 'number'
+        ? Math.max(minQty, this.buyNowItem.maxStock)
+        : Number.POSITIVE_INFINITY;
+      const nextQty = Math.max(minQty, Math.min(rawQty, maxQty));
+      this.buyNowItem = { ...this.buyNowItem, quantity: nextQty };
+      this.ensureDepositPaymentRule();
+      return;
+    }
+
     this.ui.updateCartItemQuantity(payload.cartKey, payload.quantity);
     this.ensureDepositPaymentRule();
   }
 
   onRemoveItem(cartKey: string): void {
+    if (this.buyNowItem && this.buyNowItem.cartKey === cartKey) {
+      this.buyNowItem = null;
+      this.ensureDepositPaymentRule();
+      return;
+    }
+
     this.ui.removeFromCart(cartKey);
     this.ensureDepositPaymentRule();
   }
@@ -220,7 +245,11 @@ export class CheckoutComponent implements OnInit {
         this.isSubmitting = false;
         this.successOrderCode = String(res?.order_code || '').trim();
         this.showSuccessPopup = true;
-        this.ui.removeSelectedItems();
+        if (this.buyNowItem) {
+          this.buyNowItem = null;
+        } else {
+          this.ui.removeSelectedItems();
+        }
       },
       error: (err) => {
         this.isSubmitting = false;
@@ -240,5 +269,39 @@ export class CheckoutComponent implements OnInit {
     if (this.requireDeposit && this.form.paymentMethod !== 'CHUYEN_KHOAN') {
       this.form = { ...this.form, paymentMethod: 'CHUYEN_KHOAN', bankTransferConfirmed: false };
     }
+  }
+
+  private loadBuyNowState(): void {
+    const currentNavigation = this.router.getCurrentNavigation();
+    const candidate = (currentNavigation?.extras?.state as any)?.buyNowItem
+      || (window.history.state as any)?.buyNowItem;
+
+    if (!candidate || typeof candidate !== 'object') {
+      return;
+    }
+
+    if (!candidate.cartKey || !candidate.productId || !candidate.name) {
+      return;
+    }
+
+    const quantity = Math.max(1, Number(candidate.quantity) || 1);
+    const salePrice = typeof candidate.salePrice === 'number' ? candidate.salePrice : 0;
+    const originalPrice = typeof candidate.originalPrice === 'number'
+      ? Math.max(candidate.originalPrice, salePrice)
+      : salePrice;
+    const maxStock = typeof candidate.maxStock === 'number' ? candidate.maxStock : undefined;
+
+    this.buyNowItem = {
+      cartKey: String(candidate.cartKey),
+      productId: String(candidate.productId),
+      variantId: String(candidate.variantId || ''),
+      name: String(candidate.name),
+      imageUrl: String(candidate.imageUrl || ''),
+      variant: String(candidate.variant || 'Mặc định'),
+      quantity,
+      originalPrice,
+      salePrice,
+      maxStock,
+    };
   }
 }

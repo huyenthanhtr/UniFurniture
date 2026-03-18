@@ -179,6 +179,7 @@ function getColorHex(name: string): string {
 
 export interface ProductListItem {
   id: string;
+  slug: string;
   name: string;
   price: number | null;
   originalPrice: number | null;
@@ -267,8 +268,15 @@ export class ProductDataService {
     }
 
     const listFields =
-      options.fields || 'name,status,thumbnail,thumbnail_url,min_price,compare_at_price,sold,category_id,collection_id,size,material';
-    params = params.set('fields', listFields);
+      options.fields || 'name,slug,status,thumbnail,thumbnail_url,min_price,compare_at_price,sold,category_id,collection_id,size,material';
+    const fieldSet = new Set(
+      String(listFields)
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean),
+    );
+    fieldSet.add('slug');
+    params = params.set('fields', Array.from(fieldSet).join(','));
 
     return this.http
       .get<ApiListResponse<ProductDocument>>(`${this.apiBaseUrl}/products`, { params })
@@ -287,6 +295,7 @@ export class ProductDataService {
               const rawColors = Array.isArray((product as any).colors) ? (product as any).colors : [];
               return {
                 id: product._id,
+                slug: product.slug?.trim() || product._id,
                 name: product.name || 'San pham',
                 price,
                 originalPrice,
@@ -454,7 +463,7 @@ export class ProductDataService {
             return {
               id: product._id,
               name: product.name || 'Sản phẩm',
-              slug: product.slug,
+              slug: product.slug?.trim() || product._id,
               price,
               originalPrice,
               imageUrl: product.thumbnail?.trim() || product.thumbnail_url?.trim() || FALLBACK_IMAGE_URL,
@@ -475,65 +484,70 @@ export class ProductDataService {
       );
   }
 
-  getProductDetail(productId: string): Observable<ProductDetailData> {
-    return forkJoin({
-      product: this.http
-        .get<ProductDocument>(`${this.apiBaseUrl}/products/${productId}`)
-        .pipe(timeout(15000)),
-      images: this.http
-        .get<ApiListResponse<ProductImageDocument>>(`${this.apiBaseUrl}/product-images`, {
-          params: { product_id: productId, limit: '200', sort: 'sort_order' },
-        })
-        .pipe(
-          timeout(15000),
-          catchError(() => of(this.emptyListResponse<ProductImageDocument>())),
-        ),
-      variants: this.http
-        .get<ApiListResponse<ProductVariantDocument>>(`${this.apiBaseUrl}/product-variants`, {
-          params: { product_id: productId, limit: '200', sort: 'price' },
-        })
-        .pipe(
-          timeout(15000),
-          catchError(() => of(this.emptyListResponse<ProductVariantDocument>())),
-        ),
-    }).pipe(
-      map(({ product, images, variants }) => {
-        const preferredVariant = this.pickPreferredVariant(variants.items);
-        const mappedImages = this.sortImages(images.items)
-          .map((image) => ({ url: image.image_url?.trim() || '', variant_id: image.variant_id }))
-          .filter((img) => img.url.length > 0);
+  getProductDetail(productSlug: string): Observable<ProductDetailData> {
+    return this.http
+      .get<ProductDocument>(`${this.apiBaseUrl}/products/${productSlug}`)
+      .pipe(
+        timeout(15000),
+        switchMap((product) => {
+          const productId = String(product?._id || '').trim() || String(productSlug || '').trim();
+          return forkJoin({
+            product: of(product),
+            images: this.http
+              .get<ApiListResponse<ProductImageDocument>>(`${this.apiBaseUrl}/product-images`, {
+                params: { product_id: productId, limit: '200', sort: 'sort_order' },
+              })
+              .pipe(
+                timeout(15000),
+                catchError(() => of(this.emptyListResponse<ProductImageDocument>())),
+              ),
+            variants: this.http
+              .get<ApiListResponse<ProductVariantDocument>>(`${this.apiBaseUrl}/product-variants`, {
+                params: { product_id: productId, limit: '200', sort: 'price' },
+              })
+              .pipe(
+                timeout(15000),
+                catchError(() => of(this.emptyListResponse<ProductVariantDocument>())),
+              ),
+          });
+        }),
+        map(({ product, images, variants }) => {
+          const preferredVariant = this.pickPreferredVariant(variants.items);
+          const mappedImages = this.sortImages(images.items)
+            .map((image) => ({ url: image.image_url?.trim() || '', variant_id: image.variant_id }))
+            .filter((img) => img.url.length > 0);
 
-        // Ensure unique URLs while keeping the first associated variant_id
-        const uniqueImages: ImageWithVariant[] = [];
-        const seenUrls = new Set<string>();
-        for (const img of mappedImages) {
-          if (!seenUrls.has(img.url)) {
-            uniqueImages.push(img);
-            seenUrls.add(img.url);
+          // Ensure unique URLs while keeping the first associated variant_id
+          const uniqueImages: ImageWithVariant[] = [];
+          const seenUrls = new Set<string>();
+          for (const img of mappedImages) {
+            if (!seenUrls.has(img.url)) {
+              uniqueImages.push(img);
+              seenUrls.add(img.url);
+            }
           }
-        }
 
-        return {
-          id: product._id,
-          name: product.name || 'San pham',
-          slug: product.slug,
-          sku: preferredVariant?.sku?.trim() || product.sku?.trim() || '',
-          price: this.toNullableNumber(preferredVariant?.price) ?? this.toNullableNumber(product.min_price),
-          originalPrice:
-            this.toNullableNumber(preferredVariant?.compare_at_price) ??
-            this.toNullableNumber(product.compare_at_price),
-          stock_quantity: preferredVariant?.stock_quantity ?? (product as any).stock_quantity,
-          shortDescription: product.short_description || '',
-          description: product.description || '',
-          sizeText: this.valueToSizeText(product.size),
-          materialText: this.valueToText(product.material),
-          warrantyMonths: this.toNullableNumber(product.warranty_months),
-          colors: this.extractColors(variants.items, images.items, product),
-          variants: variants.items,
-          images: uniqueImages.length > 0 ? uniqueImages : [{ url: product.thumbnail?.trim() || FALLBACK_IMAGE_URL }],
-        };
-      }),
-    );
+          return {
+            id: product._id,
+            name: product.name || 'San pham',
+            slug: product.slug?.trim() || product._id,
+            sku: preferredVariant?.sku?.trim() || product.sku?.trim() || '',
+            price: this.toNullableNumber(preferredVariant?.price) ?? this.toNullableNumber(product.min_price),
+            originalPrice:
+              this.toNullableNumber(preferredVariant?.compare_at_price) ??
+              this.toNullableNumber(product.compare_at_price),
+            stock_quantity: preferredVariant?.stock_quantity ?? (product as any).stock_quantity,
+            shortDescription: product.short_description || '',
+            description: product.description || '',
+            sizeText: this.valueToSizeText(product.size),
+            materialText: this.valueToText(product.material),
+            warrantyMonths: this.toNullableNumber(product.warranty_months),
+            colors: this.extractColors(variants.items, images.items, product),
+            variants: variants.items,
+            images: uniqueImages.length > 0 ? uniqueImages : [{ url: product.thumbnail?.trim() || FALLBACK_IMAGE_URL }],
+          };
+        }),
+      );
   }
 
   getProductModels(productId: string): Observable<ProductModel3D[]> {
@@ -556,6 +570,37 @@ export class ProductDataService {
             items: [],
           }),
         ),
+      );
+  }
+
+  getProductStockFromApi(productId: string, variantId?: string): Observable<number | undefined> {
+    const normalizedVariantId = String(variantId || '').trim();
+
+    if (normalizedVariantId) {
+      return this.http
+        .get<ApiListResponse<ProductVariantDocument>>(`${this.apiBaseUrl}/product-variants`, {
+          params: { product_id: productId, limit: '200' },
+        })
+        .pipe(
+          timeout(10000),
+          map((response) => {
+            const variant = (response.items || []).find((item) => item._id === normalizedVariantId);
+            const stock = this.toNullableNumber(variant?.stock_quantity);
+            return stock === null ? undefined : stock;
+          }),
+          catchError(() => of(undefined)),
+        );
+    }
+
+    return this.http
+      .get<ProductDocument>(`${this.apiBaseUrl}/products/${productId}`)
+      .pipe(
+        timeout(10000),
+        map((product) => {
+          const stock = this.toNullableNumber((product as any).stock_quantity);
+          return stock === null ? undefined : stock;
+        }),
+        catchError(() => of(undefined)),
       );
   }
 

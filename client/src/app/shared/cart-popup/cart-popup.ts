@@ -32,13 +32,12 @@ export class CartPopup {
     }
 
     increaseQuantity(item: CartItem) {
-        const nextQty = item.quantity + 1;
-        if (typeof item.maxStock === 'number' && nextQty > item.maxStock) {
+        const result = this.ui.updateCartItemQuantity(item.cartKey, item.quantity + 1);
+        if (result.exceededStock) {
             this.setError(item.cartKey);
             return;
         }
         this.clearError(item.cartKey);
-        this.ui.updateCartItemQuantity(item.cartKey, nextQty);
     }
 
     onQuantityInput(event: Event, item: CartItem) {
@@ -49,15 +48,15 @@ export class CartPopup {
             value = 1;
         }
 
-        if (typeof item.maxStock === 'number' && value > item.maxStock) {
+        const result = this.ui.updateCartItemQuantity(item.cartKey, value);
+
+        if (result.exceededStock) {
             this.setError(item.cartKey);
-            value = item.maxStock;
-            input.value = String(value);
         } else {
             this.clearError(item.cartKey);
         }
 
-        this.ui.updateCartItemQuantity(item.cartKey, value);
+        input.value = String(result.quantity);
     }
 
     removeItem(item: CartItem) {

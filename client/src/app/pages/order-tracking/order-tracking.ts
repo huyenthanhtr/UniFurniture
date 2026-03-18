@@ -21,6 +21,7 @@ interface TrackingProduct {
   id: string;
   orderDetailId: string;
   productId: string;
+  productSlug?: string;
   variantId: string;
   imageUrl: string;
   name: string;
@@ -323,8 +324,8 @@ export class OrderTrackingComponent implements OnInit {
 
 
   viewProductFromHistory(product: TrackingProduct, target: 'top' | 'review' = 'top'): void {
-    const productId = String(product.productId || '').trim();
-    if (!productId) {
+    const productPath = String(product.productSlug || product.productId || '').trim();
+    if (!productPath) {
       this.infoMessage = 'Không tìm thấy liên kết sản phẩm để mở lại.';
       return;
     }
@@ -332,14 +333,14 @@ export class OrderTrackingComponent implements OnInit {
     this.persistTrackingState(window.scrollY);
 
     if (target === 'review') {
-      void this.router.navigate(['/products', productId], {
+      void this.router.navigate(['/products', productPath], {
         queryParams: { tab: 'review' },
         fragment: 'product-review-summary',
       });
       return;
     }
 
-    void this.router.navigate(['/products', productId], {
+    void this.router.navigate(['/products', productPath], {
       fragment: 'product-top',
     });
   }
@@ -669,6 +670,7 @@ export class OrderTrackingComponent implements OnInit {
       id: String(item?._id || item?.variant_id || `item-${index}`),
       orderDetailId: String(item?._id || ''),
       productId: String(item?.product_id || ''),
+      productSlug: String(item?.product_slug || item?.slug || '').trim(),
       variantId: String(item?.variant_id || ''),
       imageUrl: String(item?.image_url || 'assets/images/banner5.jpg'),
       name: String(item?.product_name || '-'),

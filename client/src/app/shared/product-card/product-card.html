@@ -1,4 +1,4 @@
-<a class="product-card" [routerLink]="['/products', product.id]">
+<a class="product-card" [routerLink]="['/products', product.slug]">
   <div class="image-wrapper">
     <img [src]="displayImageUrl()" [alt]="product.name" class="product-image" />
     <div class="badge" *ngIf="product.discountBadge">

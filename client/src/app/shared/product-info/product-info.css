@@ -173,6 +173,14 @@
     box-shadow: 0 4px 14px rgba(239, 104, 58, 0.18);
 }
 
+.qty-btn:disabled,
+.qty-btn--disabled {
+    border-color: #d9d9d9;
+    color: #b5b5b5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
 .qty-input {
     width: 72px;
     height: 40px;
@@ -188,6 +196,11 @@
 .qty-input:focus {
     border-color: #ef683a;
     box-shadow: 0 0 0 3px rgba(239, 104, 58, 0.15);
+}
+
+.qty-input--error {
+    border-color: #c2410c;
+    color: #c2410c;
 }
 
 .qty-input::-webkit-outer-spin-button,
@@ -233,8 +246,17 @@
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
 }
 
+.btn-buy:disabled,
+.btn-buy--disabled {
+    background: #b9b9b9;
+    color: #f7f7f7;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
 .add-message {
-    margin-top: 10px;
+    margin: 0 0 10px;
     color: #1f7a45;
     font-size: 14px;
     font-weight: 500;

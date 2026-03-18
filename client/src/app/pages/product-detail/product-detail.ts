@@ -43,7 +43,7 @@ export class ProductDetailComponent {
   readonly selectedVariant = signal<ProductVariantDocument | null>(null);
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
-  readonly currentProductId = signal<string | null>(null);
+  readonly currentProductSlug = signal<string | null>(null);
   readonly isDescriptionExpanded = signal(false);
   readonly reviews = signal<ProductReviewItem[]>([]);
   readonly isReviewsLoading = signal(false);
@@ -117,13 +117,13 @@ export class ProductDetailComponent {
 
   ngOnInit(): void {
     combineLatest([
-      this.route.paramMap.pipe(map((params) => params.get('id'))),
+      this.route.paramMap.pipe(map((params) => params.get('slug'))),
       this.route.queryParamMap,
       this.route.fragment,
     ])
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([productId, queryParams, fragment]) => {
-        if (!productId) {
+      .subscribe(([productSlug, queryParams, fragment]) => {
+        if (!productSlug) {
           this.errorMessage.set('Không tìm thấy mã sản phẩm.');
           this.isLoading.set(false);
           return;
@@ -141,11 +141,11 @@ export class ProductDetailComponent {
           this.pendingDeepLinkFragment = 'product-top';
         }
 
-        const previousProductId = this.currentProductId();
-        this.currentProductId.set(productId);
+        const previousProductSlug = this.currentProductSlug();
+        this.currentProductSlug.set(productSlug);
 
-        if (previousProductId !== productId || !this.product()) {
-          this.loadProduct(productId);
+        if (previousProductSlug !== productSlug || !this.product()) {
+          this.loadProduct(productSlug);
           return;
         }
 
@@ -166,9 +166,9 @@ export class ProductDetailComponent {
   }
 
   retry(): void {
-    const productId = this.currentProductId();
-    if (productId) {
-      this.loadProduct(productId);
+    const productSlug = this.currentProductSlug();
+    if (productSlug) {
+      this.loadProduct(productSlug);
     }
   }
 
@@ -310,7 +310,7 @@ export class ProductDetailComponent {
     }
   }
 
-  private loadProduct(productId: string): void {
+  private loadProduct(productSlug: string): void {
     this.isLoading.set(true);
     this.errorMessage.set('');
     this.product.set(null);
@@ -328,7 +328,7 @@ export class ProductDetailComponent {
     }, 12000);
 
     this.productDataService
-      .getProductDetail(productId)
+      .getProductDetail(productSlug)
       .pipe(
         catchError(() => {
           this.errorMessage.set('Không thể tải chi tiết sản phẩm.');
@@ -342,7 +342,7 @@ export class ProductDetailComponent {
       )
       .subscribe((product) => {
         this.product.set(product);
-        this.loadReviews(productId);
+        this.loadReviews(product.id);
         this.scrollToDeepLink(this.pendingDeepLinkFragment);
       });
   }

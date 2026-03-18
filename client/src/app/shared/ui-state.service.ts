@@ -1,4 +1,5 @@
-﻿import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
+import { getStockConstrainedQuantity, normalizeCartQuantity } from './cart-stock.util';
 
 export interface CartItem {
     cartKey: string;
@@ -12,6 +13,12 @@ export interface CartItem {
     price: number | null;
     originalPrice?: number | null;
     maxStock?: number;
+}
+
+export interface CartMutationResult {
+    quantity: number;
+    exceededStock: boolean;
+    changed: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -55,30 +62,47 @@ export class UiStateService {
     openCart() { this.isCartOpen.set(true); }
     closeCart() { this.isCartOpen.set(false); }
 
-    addToCart(item: Omit<CartItem, 'quantity'>, quantity = 1) {
-        let safeQuantity = Math.max(1, Math.floor(quantity || 1));
+    addToCart(item: Omit<CartItem, 'quantity'>, quantity = 1): CartMutationResult {
+        const safeQuantity = normalizeCartQuantity(quantity);
+        let mutationResult: CartMutationResult = {
+            quantity: 0,
+            exceededStock: false,
+            changed: false,
+        };
 
         this.cartItems.update((currentItems) => {
             const existingIndex = currentItems.findIndex((cartItem) => cartItem.cartKey === item.cartKey);
 
             if (existingIndex >= 0) {
                 const existingItem = currentItems[existingIndex];
-                let newTotalQty = existingItem.quantity + safeQuantity;
-                if (typeof item.maxStock === 'number' && newTotalQty > item.maxStock) {
-                    newTotalQty = item.maxStock;
+                const maxStock = item.maxStock ?? existingItem.maxStock;
+                const quantityState = getStockConstrainedQuantity(existingItem.quantity + safeQuantity, maxStock);
+
+                if (quantityState.exceededStock || quantityState.allowedQuantity < 1) {
+                    mutationResult = {
+                        quantity: existingItem.quantity,
+                        exceededStock: true,
+                        changed: false,
+                    };
+                    return currentItems;
                 }
 
                 const updatedItems = [...currentItems];
                 updatedItems[existingIndex] = {
                     ...existingItem,
-                    quantity: newTotalQty,
+                    quantity: quantityState.allowedQuantity,
                     price: item.price ?? existingItem.price,
                     imageUrl: item.imageUrl || existingItem.imageUrl,
                     variantId: item.variantId ?? existingItem.variantId,
                     variantLabel: item.variantLabel ?? existingItem.variantLabel,
                     colorName: item.colorName ?? existingItem.colorName,
-                    maxStock: item.maxStock ?? existingItem.maxStock,
+                    maxStock,
                     originalPrice: typeof item.originalPrice === 'number' ? item.originalPrice : existingItem.originalPrice ?? null,
+                };
+                mutationResult = {
+                    quantity: quantityState.allowedQuantity,
+                    exceededStock: false,
+                    changed: true,
                 };
                 this.persistCart(updatedItems);
                 
@@ -92,11 +116,23 @@ export class UiStateService {
                 return updatedItems;
             }
 
-            if (typeof item.maxStock === 'number' && safeQuantity > item.maxStock) {
-                safeQuantity = item.maxStock;
+            const quantityState = getStockConstrainedQuantity(safeQuantity, item.maxStock);
+
+            if (quantityState.exceededStock || quantityState.allowedQuantity < 1) {
+                mutationResult = {
+                    quantity: 0,
+                    exceededStock: true,
+                    changed: false,
+                };
+                return currentItems;
             }
 
-            const nextItems = [...currentItems, { ...item, quantity: safeQuantity }];
+            const nextItems = [...currentItems, { ...item, quantity: quantityState.allowedQuantity }];
+            mutationResult = {
+                quantity: quantityState.allowedQuantity,
+                exceededStock: false,
+                changed: true,
+            };
             this.persistCart(nextItems);
             
             this.selectedCartKeys.update(set => {
@@ -107,25 +143,52 @@ export class UiStateService {
             });
             return nextItems;
         });
+
+        return mutationResult;
     }
 
-    updateCartItemQuantity(cartKey: string, quantity: number) {
-        let safeQuantity = Math.max(1, Math.floor(quantity || 1));
+    updateCartItemQuantity(cartKey: string, quantity: number): CartMutationResult {
+        const safeQuantity = normalizeCartQuantity(quantity);
+        let mutationResult: CartMutationResult = {
+            quantity: safeQuantity,
+            exceededStock: false,
+            changed: false,
+        };
 
         this.cartItems.update((currentItems) => {
             const nextItems = currentItems.map((item) => {
-                if (item.cartKey === cartKey) {
-                    let finalQty = safeQuantity;
-                    if (typeof item.maxStock === 'number' && finalQty > item.maxStock) {
-                        finalQty = item.maxStock;
-                    }
-                    return { ...item, quantity: finalQty };
+                if (item.cartKey !== cartKey) {
+                    return item;
                 }
-                return item;
+
+                const quantityState = getStockConstrainedQuantity(safeQuantity, item.maxStock);
+
+                if (quantityState.allowedQuantity < 1) {
+                    mutationResult = {
+                        quantity: item.quantity,
+                        exceededStock: true,
+                        changed: false,
+                    };
+                    return item;
+                }
+
+                mutationResult = {
+                    quantity: quantityState.allowedQuantity,
+                    exceededStock: quantityState.exceededStock,
+                    changed: quantityState.allowedQuantity !== item.quantity,
+                };
+
+                if (!mutationResult.changed) {
+                    return item;
+                }
+
+                return { ...item, quantity: quantityState.allowedQuantity };
             });
             this.persistCart(nextItems);
             return nextItems;
         });
+
+        return mutationResult;
     }
 
     removeFromCart(cartKey: string) {
@@ -198,6 +261,10 @@ export class UiStateService {
     toggleMobileMenu() { this.isMobileMenuOpen.update(v => !v); }
     closeMobileMenu() { this.isMobileMenuOpen.set(false); }
 
+    getCartItemQuantity(cartKey: string): number {
+        return this.cartItems().find((item) => item.cartKey === cartKey)?.quantity ?? 0;
+    }
+
     private loadCartFromStorage(): CartItem[] {
         if (typeof window === 'undefined') {
             return [];
@@ -264,4 +331,3 @@ export class UiStateService {
         window.localStorage.setItem(this.cartStorageKey + '_selected', JSON.stringify(Array.from(keys)));
     }
 }
-

@@ -1,5 +1,6 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { getStockConstrainedQuantity } from '../../../../shared/cart-stock.util';
 import { CheckoutCartItem } from '../../checkout';
 import { CouponPickerComponent } from '../coupon-picker/coupon-picker';
 
@@ -65,12 +66,15 @@ export class OrderSummaryComponent {
     let nextQty = Number.isFinite(rawValue) ? Math.floor(rawValue) : item.quantity;
     if (nextQty < 1) nextQty = 1;
 
-    if (typeof item.maxStock === 'number' && nextQty > item.maxStock) {
+    const quantityState = getStockConstrainedQuantity(nextQty, item.maxStock, item.quantity);
+
+    if (quantityState.exceededStock) {
       this.setStockError(item.cartKey);
-      nextQty = item.maxStock;
     } else {
       this.clearStockError(item.cartKey);
     }
+
+    nextQty = quantityState.allowedQuantity < 1 ? item.quantity : quantityState.allowedQuantity;
 
     if (nextQty !== item.quantity) {
       this.quantityChange.emit({ cartKey: item.cartKey, quantity: nextQty });
@@ -95,4 +99,3 @@ export class OrderSummaryComponent {
     });
   }
 }
-

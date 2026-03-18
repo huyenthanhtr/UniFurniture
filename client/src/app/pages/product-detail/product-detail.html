@@ -1,8 +1,8 @@
 ﻿<div class="detail-page">
-  <p *ngIf="isLoading()" class="status-message">&#272;ang t&#7843;i chi ti&#7871;t s&#7843;n ph&#7849;m...</p>
+  <p *ngIf="isLoading()" class="status-message">Đang tải chi tiết sản phẩm...</p>
   <div *ngIf="!isLoading() && errorMessage()" class="status-block">
     <p class="status-message status-error">{{ errorMessage() }}</p>
-    <button class="retry-btn" (click)="retry()">T&#7843;i l&#7841;i</button>
+    <button class="retry-btn" (click)="retry()">Tải lại</button>
   </div>
 
   <ng-container *ngIf="!isLoading() && product() as productData">

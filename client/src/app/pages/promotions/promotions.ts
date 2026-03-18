@@ -7,7 +7,7 @@ import { ProductDataService, ProductListItem } from '../../services/product-data
 
 interface FlashDeal {
   id: string;
-  productId: string;
+  productSlug: string;
   title: string;
   category: string;
   imageUrl: string;
@@ -41,10 +41,10 @@ interface VoucherDeal {
 
 interface PromoCollection {
   id: string;
+  productSlug: string;
   title: string;
   subtitle: string;
   imageUrl: string;
-  route: string;
 }
 
 const API_BASE_URL = 'http://localhost:3000/api';
@@ -208,7 +208,7 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
 
         return {
           id: product.id,
-          productId: product.id,
+          productSlug: product.slug,
           title: product.name,
           category: this.inferCategoryFromName(product.name),
           imageUrl: product.imageUrl,
@@ -271,14 +271,14 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
 
   private mapCollections(products: ProductListItem[]): PromoCollection[] {
     return [...products]
-      .filter((product) => product.id && product.imageUrl)
+      .filter((product) => product.id && product.slug && product.imageUrl)
       .slice(0, 3)
       .map((product) => ({
         id: product.id,
+        productSlug: product.slug,
         title: product.name,
         subtitle: `Ưu đãi ${product.discountBadge || '-18%'}`,
         imageUrl: product.imageUrl,
-        route: `/products/${product.id}`,
       }));
   }
 
