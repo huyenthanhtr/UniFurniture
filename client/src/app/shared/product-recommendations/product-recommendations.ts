@@ -22,7 +22,17 @@ export class ProductRecommendations {
       const slug = this.productSlug();
       if (slug) {
         this.loading.set(true);
-        this.productService.getProductRecommendations(slug).subscribe((items) => {
+
+        let userId: string | undefined;
+        try {
+          const profile = localStorage.getItem('user_profile');
+          if (profile) {
+            const userData = JSON.parse(profile);
+            userId = userData._id || userData.id;
+          }
+        } catch (e) {}
+
+        this.productService.getProductRecommendations(slug, userId).subscribe((items) => {
           this.recommendations.set(items);
           this.loading.set(false);
         });

@@ -212,12 +212,13 @@ export interface TaxonomyItem {
 }
 
 export interface ProductQueryOptions {
-  sortBy?: 'createdAt' | 'bestSelling' | 'updatedAt';
+  sortBy?: 'suggested' | 'price' | 'createdAt' | 'bestSelling' | 'updatedAt' | 'min_price';
   order?: 'asc' | 'desc';
   categoryIds?: string[];
   collectionId?: string;
   search?: string;
   fields?: string;
+  userId?: string;
 }
 
 export interface TopColorOption {
@@ -246,8 +247,15 @@ export class ProductDataService {
     const resolvedSortBy = options.sortBy || 'createdAt';
     const resolvedOrder = options.order || 'desc';
     const sortPrefix = resolvedOrder === 'asc' ? '' : '-';
-    const sortField = resolvedSortBy === 'bestSelling' ? 'sold' : resolvedSortBy;
-    params = params.set('sort', `${sortPrefix}${sortField}`);
+    let sortField: string;
+    if (resolvedSortBy === 'bestSelling') {
+      sortField = 'sold';
+    } else if (resolvedSortBy === 'price') {
+      sortField = 'min_price';
+    } else {
+      sortField = resolvedSortBy;
+    }
+    params = params.set('sortBy', sortField).set('order', resolvedOrder);
 
     if (options.collectionId) {
       params = params.set('collection', options.collectionId);
@@ -258,6 +266,10 @@ export class ProductDataService {
       if (categoryParam) {
         params = params.set('categories', categoryParam).set('category', categoryParam);
       }
+    }
+
+    if (options.userId) {
+      params = params.set('user_id', options.userId);
     }
 
     if (options.search) {
@@ -450,9 +462,14 @@ export class ProductDataService {
       );
   }
 
-  getProductRecommendations(slug: string): Observable<ProductListItem[]> {
+  getProductRecommendations(slug: string, userId?: string): Observable<ProductListItem[]> {
+    let params = new HttpParams();
+    if (userId) {
+      params = params.set('user_id', userId);
+    }
+
     return this.http
-      .get<{ items: ProductDocument[] }>(`${this.apiBaseUrl}/products/${slug}/recommendations`)
+      .get<{ items: ProductDocument[] }>(`${this.apiBaseUrl}/products/${slug}/recommendations`, { params })
       .pipe(
         timeout(15000),
         map((response) => {

@@ -280,7 +280,7 @@ exports.getFeaturedReviews = async (req, res) => {
           select: 'image product_id',
           populate: {
             path: 'product_id',
-            select: 'thumbnail_url thumbnail'
+            select: 'thumbnail_url thumbnail slug'
           }
         }
       })
@@ -290,12 +290,22 @@ exports.getFeaturedReviews = async (req, res) => {
     const normalized = reviews.map((review) => {
       // Find a product image URL
       let productImageUrl = '';
+      let productSlug = '';
+      let productId = '';
+
       if (review.order_detail_id?.variant_id) {
-        if (review.order_detail_id.variant_id.image) {
-          productImageUrl = review.order_detail_id.variant_id.image;
-        } else if (review.order_detail_id.variant_id.product_id) {
-          const prod = review.order_detail_id.variant_id.product_id;
-          productImageUrl = prod.thumbnail_url || prod.thumbnail || '';
+        const variant = review.order_detail_id.variant_id;
+        if (variant.image) {
+          productImageUrl = variant.image;
+        }
+        
+        if (variant.product_id) {
+          const prod = variant.product_id;
+          productId = String(prod._id || '');
+          productSlug = prod.slug || '';
+          if (!productImageUrl) {
+            productImageUrl = prod.thumbnail_url || prod.thumbnail || '';
+          }
         }
       }
 
@@ -306,6 +316,8 @@ exports.getFeaturedReviews = async (req, res) => {
         customerName: review.customer_id?.full_name || 'Khách Hàng Ẩn Danh',
         productName: review.order_detail_id?.product_name || '',
         productImageUrl: toPublicAssetUrl(req, productImageUrl),
+        productSlug: productSlug,
+        productId: productId,
         images: Array.isArray(review.images) ? review.images.map((image) => toPublicAssetUrl(req, image)).filter(Boolean) : [],
         createdAt: review.createdAt,
       };

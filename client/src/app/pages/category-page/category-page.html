@@ -32,7 +32,7 @@
     <div class="banner-placeholder"></div>
   </div>
 
-  <div class="page-header">
+  <div class="page-header" #categorySectionRef>
     <h1 class="page-title">{{ category?.name || groupTitle || 'Sản phẩm' }}</h1>
     <span class="total-count" *ngIf="!loading">({{ totalItems }} sản phẩm)</span>
   </div>

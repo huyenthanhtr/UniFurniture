@@ -111,6 +111,7 @@ export class ProductComponent implements OnInit {
   readonly selectedSizes = signal<string[]>([]);
   readonly topColorOptions = signal<FilterSelectOption[]>([]);
   readonly selectedSort = signal<ProductSortValue>('best-selling');
+  readonly customTitle = signal<string>('');
   readonly currentBannerIndex = signal(0);
 
   readonly currentPage = signal(1);
@@ -133,6 +134,9 @@ export class ProductComponent implements OnInit {
   });
 
   readonly pageTitle = computed(() => {
+    if (this.customTitle()) {
+      return this.customTitle();
+    }
     if (this.searchQuery()) {
       return `K\u1ebft qu\u1ea3 t\u00ecm ki\u1ebfm cho: '${this.searchQuery()}'`;
     }
@@ -387,6 +391,7 @@ export class ProductComponent implements OnInit {
       this.selectedSort.set(nextSort);
       this.currentPage.set(nextPage);
       this.searchQuery.set(nextSearchQuery);
+      this.customTitle.set(String(params['title'] || '').trim());
 
       this.loadCollectionCategoryLinksIfNeeded();
       this.syncSelectedCategoryWithCollection();
@@ -847,8 +852,8 @@ export class ProductComponent implements OnInit {
   }
 
   private normalizeSortValue(value: string): ProductSortValue {
-    if (value === 'newest' || value === 'oldest' || value === 'best-selling') {
-      return value;
+    if (value === 'newest' || value === 'oldest' || value === 'best-selling' || value === 'suggested' || value === 'price') {
+      return value as ProductSortValue;
     }
     return 'best-selling';
   }
@@ -867,6 +872,12 @@ export class ProductComponent implements OnInit {
     }
     if (sortValue === 'oldest') {
       return { sortBy: 'createdAt', order: 'asc' };
+    }
+    if (sortValue === 'price') {
+      return { sortBy: 'min_price', order: 'asc' };
+    }
+    if (sortValue === 'suggested') {
+      return { sortBy: 'suggested', order: 'desc' };
     }
     return { sortBy: 'bestSelling', order: 'desc' };
   }

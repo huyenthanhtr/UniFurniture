@@ -174,7 +174,7 @@ async function getProducts(req, res, next) {
       query.$and = andConditions;
     }
 
-    const sortKey = ["createdAt", "updatedAt", "sold", "min_price", "name", "status", "category", "collection"].includes(String(sortBy))
+    const sortKey = ["createdAt", "updatedAt", "sold", "min_price", "name", "status", "category", "collection", "suggested"].includes(String(sortBy))
       ? String(sortBy)
       : "updatedAt";
     const projection = buildProjection(fields, exclude);
@@ -182,37 +182,72 @@ async function getProducts(req, res, next) {
 
     const pipeline = [
       { $match: query },
-      {
-        $lookup: {
-          from: "categories",
-          localField: "category_id",
-          foreignField: "_id",
-          as: "category_doc",
-        },
-      },
-      {
-        $lookup: {
-          from: "collections",
-          localField: "collection_id",
-          foreignField: "_id",
-          as: "collection_doc",
-        },
-      },
-      {
-        $addFields: {
-          category_name: { $ifNull: [{ $arrayElemAt: ["$category_doc.name", 0] }, ""] },
-          collection_name: { $ifNull: [{ $arrayElemAt: ["$collection_doc.name", 0] }, ""] },
-        },
-      },
-      {
-        $sort: {
-          [sortKey === "category" ? "category_name" : sortKey === "collection" ? "collection_name" : sortKey]: sortDirection,
-          _id: -1,
-        },
-      },
-      { $skip: skip },
-      { $limit: limitNum },
     ];
+
+    if (sortKey === 'suggested') {
+      const { user_id } = req.query;
+      if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
+        const UserRec = require('../models/UserRecommendation');
+        const userRecs = await UserRec.find({ user_id }).lean();
+        if (userRecs.length > 0) {
+          const slugs = userRecs.map(r => r.recommended_slug);
+          pipeline.push({
+            $addFields: {
+              rec_score: {
+                $cond: {
+                  if: { $in: ["$slug", slugs] },
+                  then: { $arrayElemAt: [userRecs.filter(r => slugs.includes(r.recommended_slug)).map(r => r.score), { $indexOfArray: [slugs, "$slug"] }] },
+                  else: 0
+                }
+              }
+            }
+          });
+          pipeline.push({ $sort: { rec_score: -1, sold: -1, _id: -1 } });
+        } else {
+          // Fallback if no specific user recs
+          pipeline.push({ $sort: { sold: -1, min_price: 1, _id: -1 } });
+        }
+      } else {
+        // Unauthenticated fallback: High sold and low price
+        pipeline.push({ $sort: { sold: -1, min_price: 1, _id: -1 } });
+      }
+    } else {
+      pipeline.push(
+        {
+          $lookup: {
+            from: "categories",
+            localField: "category_id",
+            foreignField: "_id",
+            as: "category_doc",
+          },
+        },
+        {
+          $lookup: {
+            from: "collections",
+            localField: "collection_id",
+            foreignField: "_id",
+            as: "collection_doc",
+          },
+        },
+        {
+          $addFields: {
+            category_name: { $ifNull: [{ $arrayElemAt: ["$category_doc.name", 0] }, ""] },
+            collection_name: { $ifNull: [{ $arrayElemAt: ["$collection_doc.name", 0] }, ""] },
+          },
+        },
+        {
+          $sort: {
+            [sortKey === "category" ? "category_name" : sortKey === "collection" ? "collection_name" : sortKey]: sortDirection,
+            _id: -1,
+          },
+        }
+      );
+    }
+
+    pipeline.push(
+      { $skip: skip },
+      { $limit: limitNum }
+    );
 
     if (projection && hasIncludeProjection) {
       pipeline.push({ $project: projection });
@@ -441,27 +476,49 @@ async function removeProduct(req, res, next) {
 async function getProductRecommendations(req, res, next) {
   try {
     const { slug } = req.params;
+    const { user_id } = req.query;
 
     const Recommendation = require('./../models/Recommendation');
-    const recs = await Recommendation
+    const UserRec = require('./../models/UserRecommendation');
+
+    // 1. Fetch item-based/content-based recommendations
+    const itemRecs = await Recommendation
       .find({ product_slug: slug })
       .sort({ score: -1 })
-      .limit(6)
+      .limit(10)
       .lean();
 
-    if (!recs || recs.length === 0) {
+    // 2. If user is logged in, fetch their personalized recommendations
+    let personalRecs = [];
+    if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
+      personalRecs = await UserRec.find({ user_id }).lean();
+    }
+
+    if ((!itemRecs || itemRecs.length === 0) && personalRecs.length === 0) {
       return res.json({ items: [] });
     }
 
-    const recommendedSlugs = recs.map(r => r.recommended_slug);
+    const recommendedSlugs = [
+      ...new Set([
+        ...itemRecs.map(r => r.recommended_slug),
+        ...personalRecs.map(r => r.recommended_slug)
+      ])
+    ];
 
     const products = await Product
       .find({ slug: { $in: recommendedSlugs }, status: 'active' })
       .select('name slug min_price compare_at_price thumbnail thumbnail_url sold category_id collection_id size material')
       .lean();
+
     const items = products.map((product) => {
-      // Find the score to keep them ordered by relevance
-      const recEntry = recs.find(r => r.recommended_slug === product.slug);
+      const itemRec = itemRecs.find(r => r.recommended_slug === product.slug);
+      const personalRec = personalRecs.find(r => r.recommended_slug === product.slug);
+
+      // Score combination: Item Similarity + (Personal affinity * 2)
+      let finalScore = (itemRec ? itemRec.score : 0);
+      if (personalRec) {
+        finalScore += (personalRec.score * 2);
+      }
 
       return {
         _id: product._id,
@@ -476,13 +533,13 @@ async function getProductRecommendations(req, res, next) {
         collection_id: product.collection_id,
         size: product.size,
         material: product.material,
-        score: recEntry ? recEntry.score : 0
+        score: finalScore
       };
     });
 
     items.sort((a, b) => b.score - a.score);
 
-    res.json({ items });
+    res.json({ items: items.slice(0, 8) });
   } catch (err) {
     next(err);
   }

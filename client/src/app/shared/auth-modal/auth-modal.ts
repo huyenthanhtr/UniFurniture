@@ -96,9 +96,6 @@ export class AuthModal {
         };
 
         if (this.registerData.email) payload.email = this.registerData.email;
-        if (this.registerData.gender) payload.gender = this.registerData.gender;
-        if (this.registerData.date_of_birth) payload.date_of_birth = this.registerData.date_of_birth;
-        if (this.registerData.address) payload.address = this.registerData.address;
 
         this.http.post('http://localhost:3000/api/auth/register', payload).subscribe({
             next: (res: any) => {

@@ -104,8 +104,12 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
       this.groupTitle = String(params['title'] || '').trim();
       this.categoryIds = String(params['categories'] || '').trim();
       const slug = String(params['slug'] || '').trim().toLowerCase();
+      const sort = params['sort'] || 'bestSelling';
+      const order = params['order'] || 'desc';
+      const q = params['q'] || '';
+
       this.currentSlug = slug;
-      this.keywordFilters = this.getKeywordFilters(slug, this.groupTitle);
+      this.keywordFilters = q ? [this.normalizeText(q)] : this.getKeywordFilters(slug, this.groupTitle);
       this.localFilteredProducts = null;
       this.scrollToCategorySection();
 
@@ -115,16 +119,16 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
 
       if (this.categoryIds) {
         this.loadMultiCategoryBanner(this.categoryIds);
-        this.loadProducts(this.categoryIds, 1, this.keywordFilters);
+        this.loadProducts(this.categoryIds, 1, this.keywordFilters, { sort, order, search: q });
         return;
       }
 
       if (slug) {
-        this.loadBySlug(slug);
+        this.loadBySlug(slug); // Note: loadBySlug might need internal updates for sort if we want precise sorting there too
         return;
       }
 
-      this.loadProducts('', 1);
+      this.loadProducts('', 1, this.keywordFilters, { sort, order, search: q });
     });
   }
 
@@ -240,15 +244,16 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
     this.slideSubscription = undefined;
   }
 
-  private loadProducts(categoryIds: string, page: number, fallbackKeywords: string[] = []): void {
+  private loadProducts(categoryIds: string, page: number, fallbackKeywords: string[] = [], sorting?: any): void {
     this.loading = true;
     this.localFilteredProducts = null;
     const parsedCategoryIds = this.parseCategoryIds(categoryIds);
 
     this.productDataService
       .getProducts(page, this.limit, {
-        sortBy: 'bestSelling',
-        order: 'desc',
+        sortBy: sorting?.sort || 'bestSelling',
+        order: sorting?.order || 'desc',
+        search: sorting?.search || '',
         categoryIds: parsedCategoryIds.length > 0 ? parsedCategoryIds : undefined,
       })
       .pipe(catchError(() => of({ items: [], total: 0, totalPages: 1, page: 1 })))
@@ -360,7 +365,12 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
     }
 
     const ids = this.category ? this.category._id : this.categoryIds;
-    this.loadProducts(ids, page, this.keywordFilters);
+    const params = this.route.snapshot.queryParams;
+    this.loadProducts(ids, page, this.keywordFilters, { 
+      sort: params['sort'], 
+      order: params['order'], 
+      search: params['q'] 
+    });
     this.scrollToCategorySection();
   }
 
@@ -386,13 +396,14 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
     }
 
     setTimeout(() => {
+      this.cdr.detectChanges(); // Ensure DOM is updated before measuring
       const section = this.categorySectionRef?.nativeElement;
       if (!section) {
         return;
       }
       const top = section.getBoundingClientRect().top + window.scrollY - this.getStickyHeaderOffset();
       window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-    }, 0);
+    }, 100); // Small delay to ensure layout is stable
   }
 
   private getStickyHeaderOffset(): number {

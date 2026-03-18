@@ -99,7 +99,7 @@ export class ArViewer implements OnInit, AfterViewInit {
                             name: p.name || 'Sản phẩm',
                             category: catName,
                             categorySlug: catSlug,
-                            desc: p.materialText || 'Khám phá sản phẩm trong không gian AR.',
+                            desc: p.materialText || 'Khám phá sản phẩm trong không gian 3D.',
                             price: p.price || p.min_price || 0,
                             dims: p.sizeText || 'Đang cập nhật',
                             src: this.productService.getModelFileUrl(m.file_id),

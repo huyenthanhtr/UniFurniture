@@ -35,6 +35,7 @@ export class Header {
   }
 
   logout() {
+    this.ui.clearCart();
     localStorage.removeItem('user_profile');
     this.userProfile = null;
     window.location.reload();
