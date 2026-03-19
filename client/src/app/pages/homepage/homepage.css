@@ -292,7 +292,7 @@
 
 /* ===== Reviews Section ===== */
 .reviews-section {
-  padding: 10px 0 60px;
+  padding: 0 0 60px; /* Reduced top padding from 10px to 0 */
   background: #fff;
   overflow: hidden;
 }
@@ -311,6 +311,10 @@
   animation: slide-reviews 60s linear infinite;
 }
 
+.reviews-container:hover .reviews-track {
+  animation-play-state: paused;
+}
+
 .reviews-track:hover {
   animation-play-state: paused;
 }
@@ -323,8 +327,16 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.review-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
 .review-image-wrap {
@@ -385,16 +397,16 @@
 
 @media (max-width: 1280px) {
   .reviews-section .section-title {
-    padding: 0 40px !important;
+    padding: 0 !important; /* Removed 40px padding to match other sections */
   }
 }
 
 @media (max-width: 768px) {
   .reviews-section {
-    padding: 40px 0;
+    padding: 20px 0 40px; /* Reduced top padding */
   }
   .reviews-section .section-title {
-    padding: 0 20px !important;
+    padding: 0 !important; /* Removed 20px padding */
     font-size: 1.1rem;
   }
   .reviews-track {

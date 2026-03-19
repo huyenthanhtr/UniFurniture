@@ -105,13 +105,21 @@ export class Homepage implements OnInit, OnDestroy {
   }
 
   onReviewClick(review: any): void {
-    const slug = review.productSlug || review.productId;
+    console.log('Review card clicked:', review);
+    // Grab slug or ID from any possible field name
+    const slug = review.productSlug || 
+                 review.productId || 
+                 review.product_slug || 
+                 review.product_id || 
+                 review._id || 
+                 review.id;
+
     if (slug) {
       this.ngZone.run(() => {
-        this.router.navigate(['/product', slug]).then(() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
+        this.router.navigate(['/products', slug], { fragment: 'product-top' });
       });
+    } else {
+      console.warn('Could not find slug or ID for review:', review);
     }
   }
 
