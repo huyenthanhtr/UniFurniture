@@ -11,18 +11,18 @@
   <div class="filter-bar card mb-4">
     <div class="filter-wrapper d-flex flex-wrap align-items-center gap-3">
       <div class="filter-item">
-        <input type="text" class="search-input" placeholder="Tìm theo mã, tên..." [(ngModel)]="searchTerm" (input)="applyFilters()">
+        <input type="text" class="search-input" placeholder="Tìm theo mã, tên..." [(ngModel)]="searchTerm" (input)="applyFilters(true)">
       </div>
 
       <div class="filter-item">
-        <select class="toolbar-select" [(ngModel)]="roomFilter" (change)="applyFilters()">
+        <select class="toolbar-select" [(ngModel)]="roomFilter" (change)="applyFilters(true)">
           <option value="all">-- Không gian --</option>
           <option *ngFor="let r of rooms" [value]="r">{{ r }}</option>
         </select>
       </div>
 
       <div class="filter-item">
-        <select class="toolbar-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+        <select class="toolbar-select" [(ngModel)]="statusFilter" (change)="applyFilters(true)">
           <option value="all">-- Trạng thái --</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
@@ -91,10 +91,16 @@
     </table>
   </div>
 
-  <div class="pagination" *ngIf="filteredCategories.length > itemsPerPage">
+<div class="pagination" *ngIf="totalPages > 1">
     <button class="pg pg-arrow" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">&#8249;</button>
-    <button class="pg active">{{ currentPage }}</button>
-    <button class="pg pg-arrow" (click)="changePage(currentPage + 1)" [disabled]="currentPage >= Math.ceil(filteredCategories.length / itemsPerPage)">&#8250;</button>
+    
+    <ng-container *ngFor="let p of visiblePages">
+      <button class="pg" [class.active]="p === currentPage" (click)="changePage(p)">
+        {{ p }}
+      </button>
+    </ng-container>
+
+    <button class="pg pg-arrow" (click)="changePage(currentPage + 1)" [disabled]="currentPage >= totalPages">&#8250;</button>
   </div>
 
   <div class="modal-overlay" *ngIf="showModal">

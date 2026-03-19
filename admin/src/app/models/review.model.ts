@@ -17,6 +17,7 @@ export interface Review {
     full_name: string;
     phone: string;
   };
+  productImageUrl?: string; // BỔ SUNG TRƯỜNG NÀY
   rating: number;
   content: string;
   status: 'pending' | 'approved' | 'rejected';

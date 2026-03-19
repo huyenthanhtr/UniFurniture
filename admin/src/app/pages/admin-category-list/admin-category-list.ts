@@ -55,8 +55,14 @@ export class AdminCategoryList implements OnInit {
     private router: Router // 2. THÊM DÒNG NÀY VÀO CONSTRUCTOR
   ) { }
 
-  ngOnInit(): void { this.loadCategories(); }
-
+ngOnInit(): void {
+    // 1. Đọc trang hiện tại từ sessionStorage
+    const savedPage = sessionStorage.getItem('adminCategoryPage');
+    if (savedPage) {
+      this.currentPage = parseInt(savedPage, 10);
+    }
+    this.loadCategories(); // Hàm gọi API lấy danh sách danh mục của bạn
+  }
   loadCategories() {
     this.categoryService.getAllCategories().subscribe(data => {
       this.categories = data;
@@ -65,31 +71,80 @@ export class AdminCategoryList implements OnInit {
     });
   }
 
-  applyFilters() {
-    let filtered = this.categories.filter(cat => {
-      const matchSearch = cat.name.toLowerCase().includes(this.searchTerm.toLowerCase()) || 
-                          cat.category_code.toLowerCase().includes(this.searchTerm.toLowerCase());
-      const matchStatus = this.statusFilter === 'all' || cat.status === this.statusFilter;
-      const matchRoom = this.roomFilter === 'all' || cat.room === this.roomFilter;
-      return matchSearch && matchStatus && matchRoom;
+applyFilters(resetPage: boolean = false): void {    
+  let filtered = this.categories.filter(cat => {
+    const matchSearch =
+      (cat.name || '').toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      (cat.category_code || '').toLowerCase().includes(this.searchTerm.toLowerCase());
+
+    const matchStatus = this.statusFilter === 'all' || cat.status === this.statusFilter;
+    const matchRoom = this.roomFilter === 'all' || cat.room === this.roomFilter;
+
+    return matchSearch && matchStatus && matchRoom;
+  });
+
+  if (this.sortColumn) {
+    filtered.sort((a: any, b: any) => {
+      let valA = a[this.sortColumn];
+      let valB = b[this.sortColumn];
+
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
     });
-
-    if (this.sortColumn) {
-      filtered.sort((a: any, b: any) => {
-        let valA = a[this.sortColumn];
-        let valB = b[this.sortColumn];
-        if (typeof valA === 'string') valA = valA.toLowerCase();
-        if (typeof valB === 'string') valB = valB.toLowerCase();
-        if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
-        if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
-    this.filteredCategories = filtered;
-    this.currentPage = 1;
   }
 
+  // QUAN TRỌNG: gán dữ liệu đã lọc cho filteredCategories
+  this.filteredCategories = filtered;
+
+  if (resetPage) {
+    this.currentPage = 1;
+    sessionStorage.setItem('adminCategoryPage', '1');
+  } else {
+    const maxPage = Math.max(1, this.totalPages);
+    if (this.currentPage > maxPage) {
+      this.currentPage = maxPage;
+      sessionStorage.setItem('adminCategoryPage', this.currentPage.toString());
+    }
+  }
+
+  this.cdr.detectChanges();
+}
+// 3. THÊM CÁC HÀM XỬ LÝ PHÂN TRANG MỚI
+  get totalPages(): number {
+    // Thay this.filteredCategories bằng mảng dữ liệu đã lọc của bạn
+    return Math.ceil(this.filteredCategories.length / this.itemsPerPage);
+  }
+
+  get visiblePages(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const pages: number[] = [];
+
+    if (total <= 5) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      if (current <= 3) {
+        pages.push(1, 2, 3, 4, 5);
+      } else if (current >= total - 2) {
+        pages.push(total - 4, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(current - 2, current - 1, current, current + 1, current + 2);
+      }
+    }
+    return pages;
+  }
+get paginatedCategories(): any[] {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    return this.filteredCategories.slice(startIndex, startIndex + this.itemsPerPage);
+  }
+  changePage(page: number): void {
+    this.currentPage = page;
+    sessionStorage.setItem('adminCategoryPage', page.toString());
+  }
   sortBy(column: string) {
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -114,12 +169,6 @@ export class AdminCategoryList implements OnInit {
     this.applyFilters();
   }
 
-  changePage(page: number) { this.currentPage = page; }
-  
-  get paginatedCategories() {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    return this.filteredCategories.slice(startIndex, startIndex + this.itemsPerPage);
-  }
 
   // GETTER KHÓA NÚT LƯU
   get isFormValid(): boolean {
@@ -269,35 +318,28 @@ export class AdminCategoryList implements OnInit {
   }
   // --- HÀM XỬ LÝ ---
 viewProducts(category: Category) {
-    this.selectedCategoryForProducts = category;
-    this.showProductsModal = true;
-    this.isLoadingProducts = true;
-    this.categoryProducts = [];
-    this.cdr.detectChanges();
+  if (!category._id) return;
 
-    // GỌI API THỰC TẾ ĐỂ LẤY SẢN PHẨM THEO ID DANH MỤC
-    // Lưu ý: Đổi tên hàm getProducts() hoặc truyền tham số sao cho khớp với API của bạn
-    const params = { category_id: category._id }; 
+  this.selectedCategoryForProducts = category;
+  this.showProductsModal = true;
+  this.isLoadingProducts = true;
+  this.categoryProducts = [];
+  this.cdr.detectChanges();
 
-this.productService.getProducts(params).subscribe({
-      next: (res: any) => {
-        // DÙNG SETTIMEOUT ĐỂ ÉP ANGULAR VẼ LẠI GIAO DIỆN NGAY LẬP TỨC
-        setTimeout(() => {
-          this.categoryProducts = res.items || res || []; 
-          this.isLoadingProducts = false;
-          this.cdr.detectChanges();
-        }, 0);
-      },
-      error: (err: any) => {
-        setTimeout(() => {
-          console.error('Lỗi tải sản phẩm của danh mục:', err);
-          this.categoryProducts = [];
-          this.isLoadingProducts = false;
-          this.cdr.detectChanges();
-        }, 0);
-      }
-    });
-  }
+  this.categoryService.getProductsByCategory(category._id).subscribe({
+    next: (products: any[]) => {
+      this.categoryProducts = Array.isArray(products) ? products : [];
+      this.isLoadingProducts = false;
+      this.cdr.detectChanges();
+    },
+    error: (err: any) => {
+      console.error('Lỗi tải sản phẩm của danh mục:', err);
+      this.categoryProducts = [];
+      this.isLoadingProducts = false;
+      this.cdr.detectChanges();
+    }
+  });
+}
 
   closeProductsModal() {
     this.showProductsModal = false;

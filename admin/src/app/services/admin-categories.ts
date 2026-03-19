@@ -30,6 +30,8 @@ updateCategory(id: string, data: any): Observable<any> {
   deleteCategory(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
-
+getProductsByCategory(categoryId: string): Observable<any[]> {
+  return this.http.get<any[]>(`${this.apiUrl}/${categoryId}/products`);
+}
 
 }

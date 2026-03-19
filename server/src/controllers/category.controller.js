@@ -1,6 +1,6 @@
 const Category = require('../models/Category');
 const slugify = require('slugify');
-
+const Product = require('../models/Product'); // Đảm bảo đã import Product model
 // Lấy tất cả danh mục
 exports.getAllCategories = async (req, res) => {
     try {
@@ -77,4 +77,20 @@ exports.deleteCategory = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
+};
+
+exports.getProductsByCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Tìm các sản phẩm có category_id khớp với id của danh mục
+        const products = await Product.find({ category_id: id })
+        .select('name sku brand thumbnail thumbnail_url price status slug')
+        .sort({ createdAt: -1 });
+
+    // Trả về một mảng products
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

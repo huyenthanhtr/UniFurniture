@@ -54,22 +54,36 @@ export class AdminReview implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Đọc trang hiện tại từ sessionStorage nếu có, giúp giữ state khi quay lại
+    const savedPage = sessionStorage.getItem('adminReviewPage');
+    if (savedPage) {
+      this.currentPage = parseInt(savedPage, 10);
+    }
     this.loadReviews();
   }
 
-  loadReviews(): void {
+loadReviews(): void {
     this.reviewService.getReviews().subscribe((data) => {
       this.reviews = data;
-      this.applyFilters();
+      this.applyFilters(false); // Không reset page khi vừa load dữ liệu
     });
   }
 
-  applyFilters(): void {
+applyFilters(resetPage: boolean = false): void {
     let filtered = this.reviews.filter((r) => {
       const customerName = r.order_detail_id?.order_id?.shipping_name || r.customer_id?.full_name || '';
       const content = String(r.content || '').toLowerCase();
+      // Thêm tên sản phẩm và mã đơn hàng vào logic tìm kiếm
+      const productName = r.order_detail_id?.product_name || '';
+      const orderCode = r.order_detail_id?.order_id?.order_code || '';
+      
       const keyword = this.searchTerm.toLowerCase();
-      const matchSearch = content.includes(keyword) || customerName.toLowerCase().includes(keyword);
+      const matchSearch = 
+        content.includes(keyword) || 
+        customerName.toLowerCase().includes(keyword) ||
+        productName.toLowerCase().includes(keyword) ||
+        orderCode.toLowerCase().includes(keyword);
+        
       const matchStatus = this.statusFilter === 'all' || r.status === this.statusFilter;
       const matchRating = this.ratingFilter === 'all' || String(r.rating) === this.ratingFilter;
       return matchSearch && matchStatus && matchRating;
@@ -115,8 +129,20 @@ export class AdminReview implements OnInit {
       });
     }
 
-    this.filteredReviews = filtered;
-    this.currentPage = 1;
+this.filteredReviews = filtered;
+    
+    // Xử lý việc nhớ trang hiện tại
+    if (resetPage) {
+      this.currentPage = 1;
+      sessionStorage.setItem('adminReviewPage', '1');
+    } else {
+      // Đảm bảo currentPage không bị vượt quá tổng số trang đang có
+      const maxPage = Math.max(1, this.totalPages);
+      if (this.currentPage > maxPage) {
+        this.currentPage = maxPage;
+        sessionStorage.setItem('adminReviewPage', this.currentPage.toString());
+      }
+    }
     this.cdr.detectChanges();
   }
 
@@ -127,7 +153,7 @@ export class AdminReview implements OnInit {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
-    this.applyFilters();
+    this.applyFilters(true);
   }
 
   getSortIcon(column: string): string {
@@ -141,16 +167,37 @@ export class AdminReview implements OnInit {
     this.ratingFilter = 'all';
     this.sortColumn = '';
     this.sortDirection = 'asc';
-    this.applyFilters();
+    this.applyFilters(true);
   }
-
+get totalPages(): number {
+    return Math.ceil(this.filteredReviews.length / this.itemsPerPage);
+  }
   get paginatedReviews(): Review[] {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     return this.filteredReviews.slice(startIndex, startIndex + this.itemsPerPage);
   }
+// Hiển thị tối đa 5 nút phân trang để UI không bị quá dài nếu có quá nhiều trang
+  get visiblePages(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const pages: number[] = [];
 
-  changePage(page: number): void {
+    if (total <= 5) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      if (current <= 3) {
+        pages.push(1, 2, 3, 4, 5);
+      } else if (current >= total - 2) {
+        pages.push(total - 4, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(current - 2, current - 1, current, current + 1, current + 2);
+      }
+    }
+    return pages;
+  }
+changePage(page: number): void {
     this.currentPage = page;
+    sessionStorage.setItem('adminReviewPage', page.toString()); // Lưu trạng thái
   }
 
   showResult(title: string, message: string, type: 'success' | 'error'): void {
