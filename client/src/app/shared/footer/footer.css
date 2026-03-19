@@ -3,7 +3,7 @@
 =========================== */
 .partner-section {
     background: #FFFFFF;
-    padding: 20px 0 10px;
+    padding: 0 0 10px;
     font-family: 'Montserrat', sans-serif;
 }
 
@@ -13,13 +13,22 @@
     padding: 0 15px;
 }
 
+.partner-header {
+    border-bottom: 2px solid #e53e3e;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+}
+
 .partner-heading {
     font-family: 'Montserrat', sans-serif;
-    font-weight: 500;
-    font-size: 25px;
-    line-height: 40px;
-    color: #000000;
-    margin: 0 0 24px 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #e53e3e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
 }
 
 .partner-logos {
