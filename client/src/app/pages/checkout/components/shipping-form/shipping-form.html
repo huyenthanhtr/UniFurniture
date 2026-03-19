@@ -1,4 +1,4 @@
-﻿<div class="card shadow-sm mb-4">
+<div class="card shadow-sm mb-4">
   <div class="card-body px-4 py-4">
     <h6 class="fw-bold mb-4">Thông tin giao hàng</h6>
 
@@ -12,7 +12,7 @@
         (input)="patch('fullName', $any($event.target).value)"
         (blur)="markTouched('fullName')"
       />
-      <div class="required-star">* Bắt buộc</div>
+      <div *ngIf="isInvalid('fullName')" class="required-star">* Bắt buộc</div>
     </div>
 
     <div class="mb-3">
@@ -21,24 +21,27 @@
         <input
           type="tel"
           class="form-control"
-          [class.required-invalid]="isInvalid('phone')"
+          [class.required-invalid]="isPhoneInvalid()"
           placeholder="Số điện thoại"
           [value]="form.phone"
           (input)="patch('phone', $any($event.target).value)"
           (blur)="markTouched('phone')"
         />
       </div>
-      <div class="required-star">* Bắt buộc</div>
+      <div *ngIf="isPhoneInvalid()" class="required-star">{{ phoneErrorMessage() }}</div>
     </div>
 
     <div class="mb-3">
       <input
         type="email"
         class="form-control"
+        [class.required-invalid]="isEmailInvalid()"
         placeholder="Email (tùy chọn)"
         [value]="form.email"
         (input)="patch('email', $any($event.target).value)"
+        (blur)="markTouched('email')"
       />
+      <div *ngIf="isEmailInvalid()" class="required-star">* Email không đúng định dạng</div>
     </div>
 
     <div class="address-row mb-3">
@@ -71,7 +74,7 @@
       </select>
     </div>
 
-    <div class="required-star mb-2">* Tỉnh/TP và Quận/Huyện là bắt buộc</div>
+    <div *ngIf="isInvalid('province') || isInvalid('district')" class="required-star mb-2">* Tỉnh/TP và Quận/Huyện là bắt buộc</div>
 
     <div class="mb-3">
       <input
@@ -83,7 +86,7 @@
         (input)="onAddressChange($any($event.target).value)"
         (blur)="markTouched('address')"
       />
-      <div class="required-star">* Bắt buộc</div>
+      <div *ngIf="isInvalid('address')" class="required-star">* Bắt buộc</div>
 
       <div *ngIf="addressTouched && shippingZone" class="zone-badge mt-2">
         <ng-container [ngSwitch]="shippingZone">
@@ -150,7 +153,7 @@
     <ul class="small text-muted mt-3 mb-0 shipping-policy-list">
       <li>Phí giao hàng đã tính trong giá sản phẩm trên website.</li>
       <li>Hỗ trợ dời lịch giao hàng tối đa 1 lần, vui lòng báo trước 24 giờ.</li>
-      <li>Lắp đặt theo tiêu chuẩn hãng, không nhận hạng mục ngoài tiêu chuẩn.</li>
+      <li>Lắp đặt theo tiêu chuẩn hãng, không nhận hàng mộc ngoài tiêu chuẩn.</li>
       <li>Hotline hỗ trợ: <strong>0123 456 789</strong>.</li>
     </ul>
   </div>
@@ -171,5 +174,3 @@
     </div>
   </div>
 </div>
-
-

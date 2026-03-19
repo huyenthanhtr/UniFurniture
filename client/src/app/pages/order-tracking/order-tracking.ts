@@ -89,6 +89,7 @@ const API_BASE_URL = 'http://localhost:3000/api';
 const TRACKING_STATE_KEY = 'unifurniture_tracking_state_v1';
 const MAX_REVIEW_IMAGES = 5;
 const MAX_REVIEW_VIDEOS = 5;
+const SHOP_ZALO_URL = 'https://zalo.me/0123456789';
 const CANCEL_REASONS = [
   'Đổi ý không muốn mua nữa',
   'Muốn đổi địa chỉ hoặc thời gian nhận',
@@ -113,6 +114,7 @@ export class OrderTrackingComponent implements OnInit {
   reviewSubmittingOrderId: string | null = null;
   private pendingRestoreScrollY: number | null = null;
   readonly cancelReasons = CANCEL_REASONS;
+  readonly shopZaloUrl = SHOP_ZALO_URL;
   readonly timelineSteps: TimelineStep[] = [
     { label: 'Đã đặt hàng' },
     { label: 'Đã xác nhận' },
@@ -237,6 +239,18 @@ export class OrderTrackingComponent implements OnInit {
 
   isCancelPending(order: TrackingOrder): boolean {
     return order.backendStatus === 'cancel_pending';
+  }
+
+  hasCancellationHistory(order: TrackingOrder): boolean {
+    const req = order.cancellationRequest;
+    if (!req) return false;
+
+    return Boolean(
+      String(req.reason || '').trim() ||
+      String(req.phone || '').trim() ||
+      String(req.note || '').trim() ||
+      String(req.requestedAt || '').trim(),
+    );
   }
 
   canRequestCancel(order: TrackingOrder): boolean {
@@ -735,16 +749,28 @@ export class OrderTrackingComponent implements OnInit {
       products,
       reviewSubmitted,
       confirmedAt: order?.confirmed_at ? String(order.confirmed_at) : '',
-      cancellationRequest: order?.cancellation_request
-        ? {
-            reason: String(order.cancellation_request.reason || ''),
-            note: String(order.cancellation_request.note || ''),
-            phone: String(order.cancellation_request.phone || ''),
-            requestedAt: order.cancellation_request.requested_at ? String(order.cancellation_request.requested_at) : '',
-            previousStatus: String(order.cancellation_request.previous_status || '') as BackendStatus | '',
-            over10mWithDeposit: Boolean(order.cancellation_request.over_10m_with_deposit),
-          }
-        : null,
+      cancellationRequest: (() => {
+        const raw = order?.cancellation_request;
+        if (!raw || typeof raw !== 'object') return null;
+
+        const mapped: CancellationRequestData = {
+          reason: String(raw.reason || ''),
+          note: String(raw.note || ''),
+          phone: String(raw.phone || ''),
+          requestedAt: raw.requested_at ? String(raw.requested_at) : '',
+          previousStatus: String(raw.previous_status || '') as BackendStatus | '',
+          over10mWithDeposit: Boolean(raw.over_10m_with_deposit),
+        };
+
+        const hasMeaningfulData = Boolean(
+          mapped.reason.trim() ||
+          mapped.phone.trim() ||
+          mapped.note.trim() ||
+          mapped.requestedAt.trim(),
+        );
+
+        return hasMeaningfulData ? mapped : null;
+      })(),
       cancelForm: {
         open: false,
         reason: '',

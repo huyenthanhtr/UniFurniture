@@ -64,6 +64,7 @@ export class ShippingFormComponent implements OnInit, OnChanges {
   touched = {
     fullName: false,
     phone: false,
+    email: false,
     province: false,
     district: false,
     address: false,
@@ -86,7 +87,10 @@ export class ShippingFormComponent implements OnInit, OnChanges {
   }
 
   get shouldShowShippingMethod(): boolean {
-    return this.isRequiredFilled('province') && this.isRequiredFilled('district') && this.isRequiredFilled('address') && !!this.shippingZone;
+    return this.isRequiredFilled('province') && 
+           this.isRequiredFilled('district') && 
+           this.isRequiredFilled('address') && 
+           !!this.shippingZone;
   }
 
   onProvinceChange(value: string): void {
@@ -128,17 +132,60 @@ export class ShippingFormComponent implements OnInit, OnChanges {
     this.formChange.emit({ [field]: value } as Partial<CheckoutForm>);
   }
 
-  markTouched(field: 'fullName' | 'phone' | 'province' | 'district' | 'address'): void {
+  markTouched(field: 'fullName' | 'phone' | 'email' | 'province' | 'district' | 'address'): void {
     this.touched[field] = true;
   }
 
-  isInvalid(field: 'fullName' | 'phone' | 'province' | 'district' | 'address'): boolean {
+  isInvalid(field: 'fullName' | 'province' | 'district' | 'address'): boolean {
     return this.touched[field] && !this.isRequiredFilled(field);
+  }
+
+  isPhoneInvalid(): boolean {
+    if (!this.touched.phone) {
+      return false;
+    }
+
+    const rawPhone = String(this.form?.phone || '').trim();
+    if (!rawPhone) {
+      return true;
+    }
+
+    return !this.isPhoneFormatValid(rawPhone);
+  }
+
+  phoneErrorMessage(): string {
+    const rawPhone = String(this.form?.phone || '').trim();
+    if (!rawPhone) {
+      return '* Bắt buộc';
+    }
+    return '* Số điện thoại không hợp lệ';
+  }
+
+  isEmailInvalid(): boolean {
+    if (!this.touched.email) {
+      return false;
+    }
+
+    const email = String(this.form?.email || '').trim();
+    if (!email) {
+      return false;
+    }
+
+    return !this.isEmailFormatValid(email);
   }
 
   private isRequiredFilled(field: 'fullName' | 'phone' | 'province' | 'district' | 'address'): boolean {
     const value = String(this.form?.[field] || '').trim();
     return value.length > 0;
+  }
+
+  private isPhoneFormatValid(value: string): boolean {
+    const normalized = value.replace(/[\s.-]/g, '');
+    return /^(0\d{9}|\+84\d{9})$/.test(normalized);
+  }
+
+  private isEmailFormatValid(value: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
   }
 
   private loadProvinces(): void {
@@ -156,7 +203,7 @@ export class ShippingFormComponent implements OnInit, OnChanges {
           this.provinces = mapped.map((item) => ({ value: item.name, label: item.name }));
         },
         error: () => {
-          // Giữ fallback, không chặn luồng đặt hàng.
+          // Giữ fallback mặc định
         },
       });
   }
@@ -242,7 +289,7 @@ export class ShippingFormComponent implements OnInit, OnChanges {
       province.includes('long an') ||
       province.includes('tay ninh') ||
       province.includes('ba ria') ||
-      province.includes('vũng tàu') ||
+      province.includes('vung tau') ||
       province.includes('tien giang')
     ) {
       this.shippingZone = 'GIAO_KHONG_LAP';
@@ -268,4 +315,3 @@ export class ShippingFormComponent implements OnInit, OnChanges {
       .trim();
   }
 }
-

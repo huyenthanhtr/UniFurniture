@@ -88,11 +88,14 @@
 }
 
 .order-head {
+  margin-bottom: 14px;
+}
+
+.order-head__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
 }
 
 .order-head h2 {
@@ -119,6 +122,13 @@
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 10px;
+}
+
+.timeline--inline {
+  margin-top: 14px;
+  margin-bottom: 0;
+  padding-top: 14px;
+  border-top: 1px solid #eee6db;
 }
 
 .timeline-step {
@@ -444,6 +454,20 @@
   .product-meta {
     text-align: left;
   }
+
+  .order-head__top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .order-action-buttons {
+    justify-content: stretch;
+  }
+
+  .order-action-buttons .history-btn {
+    width: 100%;
+    text-align: center;
+  }
 }
 
 
@@ -636,4 +660,92 @@
   .action-history-grid .full {
     grid-column: auto;
   }
+}
+
+.order-action-card {
+  margin-bottom: 14px;
+  border-color: #f4d6a3;
+  background: #fff8ee;
+}
+
+.order-action-note {
+  margin-bottom: 10px !important;
+  color: #7a4e1d !important;
+  font-size: 14px;
+}
+
+.order-action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.order-action-buttons .history-btn {
+  padding: 10px 16px;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.order-action-buttons .history-btn--contact {
+  border-color: #bfe3f6;
+  background: #eff8ff;
+  color: #0a6ea8;
+}
+
+.order-action-buttons .history-btn--contact:hover {
+  background: #dff1ff;
+}
+
+.order-action-buttons .history-btn--cancel {
+  border-color: #f0d2bf;
+  background: #fff5ee;
+  color: #a34d14;
+}
+
+.order-action-buttons .history-btn--cancel:hover {
+  background: #ffecdf;
+}
+
+.order-action-buttons .history-btn--disabled,
+.order-action-buttons .history-btn:disabled {
+  border-color: #d7d2cc;
+  background: #f0efed;
+  color: #9b948c;
+  cursor: not-allowed;
+}
+
+.cancel-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.cancel-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+}
+
+.cancel-modal__content {
+  position: relative;
+  width: min(560px, 96vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  border-color: #f4d6a3;
+  background: #fffdf9;
+}
+
+.order-action-inline {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #e9dccb;
+  background: #fff8ee;
+  border: 1px solid #f3dfc2;
+  border-radius: 12px;
+  padding: 12px;
 }
