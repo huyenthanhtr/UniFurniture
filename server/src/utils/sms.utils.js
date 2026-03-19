@@ -7,7 +7,6 @@ const vonage = new Vonage({
 
 async function sendOtpSms(toPhone, otp) {
     const from = "Vonage APIs";
-    // Format to 84 (Vietnam) if it starts with 0
     let toAreaCode = toPhone;
     if (toAreaCode.startsWith('0')) {
         toAreaCode = '84' + toAreaCode.substring(1);

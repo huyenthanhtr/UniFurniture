@@ -15,7 +15,6 @@ function hashValue(value) {
 function normalizePhone(phone) {
     if (!phone) return phone;
     let p = phone.replace(/\s+/g, '').replace('+', '');
-    // Vietnam: 84 -> 0
     if (p.startsWith('84') && p.length >= 11) {
         return '0' + p.substring(2);
     }
@@ -100,7 +99,6 @@ async function verifyOtp(req, res) {
         });
         await newProfile.save();
 
-        // Delete OTP record since it's used
         await Otp.findByIdAndDelete(otpRecord._id);
 
         return res.status(200).json({ message: "Đăng ký thành công! Đang chuyển sang màn hình OTP...", profile: newProfile });
@@ -120,7 +118,6 @@ async function login(req, res) {
             return res.status(400).json({ message: "Information required" });
         }
 
-        // Find profile by email or phone
         const profile = await Profile.findOne({
             $or: [{ phone: emailOrPhone }, { email: emailOrPhone }]
         });
@@ -133,7 +130,9 @@ async function login(req, res) {
             return res.status(403).json({ message: "Tài khoản hiện đang bị khóa hoặc vô hiệu hóa." });
         }
 
-        if (password !== profile.password_hash) {
+        const inputHash = hashValue(password);
+
+        if (inputHash !== profile.password_hash) {
             return res.status(401).json({ message: "Mật khẩu sai. Vui lòng thử lại." });
         }
 
@@ -144,7 +143,6 @@ async function login(req, res) {
         return res.status(500).json({ message: "Login failed", error: err.message });
     }
 }
-
 module.exports = {
     register,
     verifyOtp,
