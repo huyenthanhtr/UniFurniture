@@ -3,7 +3,7 @@
 .homepage {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 16px 40px;
+  padding: 0 16px 0;
   font-family: 'Montserrat', sans-serif;
   color: #222;
 }
@@ -292,7 +292,7 @@
 
 /* ===== Reviews Section ===== */
 .reviews-section {
-  padding: 0 0 60px; /* Reduced top padding from 10px to 0 */
+  padding: 0 0 20px; /* Reduced bottom padding */
   background: #fff;
   overflow: hidden;
 }
