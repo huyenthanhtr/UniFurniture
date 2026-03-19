@@ -87,7 +87,7 @@
               (click)="viewProductDetail(item)"
             >
               <td class="image-col">
-                <img class="item-thumb" [src]="normalizeImageUrl(item.image_url)" [alt]="item.product_name || item.variant_name || 'Sản phẩm'" />
+                <img class="item-thumb" [src]="normalizeImageUrl(getItemDisplayImage(item))" [alt]="item.product_name || item.variant_name || 'Sản phẩm'" />
               </td>
               <td>{{ item.sku || '-' }}</td>
               <td>{{ item.product_name || '-' }}</td>
@@ -301,7 +301,7 @@
                 <div class="warranty-product">
                   <img
                     class="warranty-thumb"
-                    [src]="normalizeImageUrl(record.image_url)"
+                    [src]="normalizeImageUrl(getItemDisplayImage(record))"
                     [alt]="record.variant_name || record.product_name || 'Sản phẩm'"
                   />
                   <div>
@@ -430,7 +430,7 @@
           <div class="cancel-form-item full" *ngIf="getWarrantySelectedItem() as selectedItem">
             <label>Biến thể đã chọn</label>
             <div class="warranty-preview">
-              <img class="warranty-thumb" [src]="normalizeImageUrl(selectedItem.image_url)" [alt]="selectedItem.variant_name || 'Biến thể'" />
+              <img class="warranty-thumb" [src]="normalizeImageUrl(getItemDisplayImage(selectedItem))" [alt]="selectedItem.variant_name || 'Biến thể'" />
               <div>
                 <div class="warranty-product-name">{{ selectedItem.variant_name || '-' }}</div>
                 <div class="warranty-product-sub">{{ selectedItem.product_name || '-' }}</div>
@@ -488,7 +488,7 @@
             <div class="warranty-preview">
               <img
                 class="warranty-thumb"
-                [src]="normalizeImageUrl(selectedWarrantyRecord.image_url)"
+                [src]="normalizeImageUrl(getItemDisplayImage(selectedWarrantyRecord))"
                 [alt]="selectedWarrantyRecord.variant_name || 'Biến thể'"
               />
               <div>

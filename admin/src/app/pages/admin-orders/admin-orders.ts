@@ -2,10 +2,19 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { AdminOrdersService } from '../../services/admin-orders';
 import { AdminInvoiceService } from '../../services/admin-invoice';
 
 type SortDirection = 'asc' | 'desc';
+type PaymentStateKey = 'unpaid' | 'pending' | 'deposit_paid' | 'settled' | 'refunded';
+
+function getExpectedDepositAmount(totalAmount: any, depositAmount: any): number {
+  const total = Math.max(Number(totalAmount || 0), 0);
+  const explicitDeposit = Math.max(Number(depositAmount || 0), 0);
+  if (explicitDeposit > 0) return explicitDeposit;
+  return total >= 10000000 ? Math.round(total * 0.1) : 0;
+}
 
 @Component({
   selector: 'app-admin-orders',
@@ -25,6 +34,7 @@ export class AdminOrders implements OnInit, OnDestroy {
 
   orders: any[] = [];
   pendingStatusChange: { order: any; newStatus: string; oldStatus: string } | null = null;
+  pendingPaymentChange: { order: any; newStatus: string; oldStatus: string } | null = null;
   statusReasonDraft = '';
 
   filter = {
@@ -49,9 +59,18 @@ export class AdminOrders implements OnInit, OnDestroy {
   showResultPopup = false;
   showStatusInfoPopup = false;
   showStatusReasonFormPopup = false;
+  showPaymentFormPopup = false;
   statusInfoOrder: any = null;
   confirmMessage = '';
+  confirmKind: 'status' | 'payment' | '' = '';
   resultMessage = { title: '', message: '', type: 'success' as 'success' | 'error' };
+  paymentEditor: {
+    order: any;
+    payments: any[];
+    paymentId: string;
+    nextStatus: string;
+  } | null = null;
+  readonly paymentStates: PaymentStateKey[] = ['pending', 'deposit_paid', 'settled', 'refunded'];
 
   private searchDebounceId: ReturnType<typeof setTimeout> | null = null;
 
@@ -93,14 +112,17 @@ export class AdminOrders implements OnInit, OnDestroy {
         this.orders = items.map((order: any) => ({
           ...order,
           _selectedStatus: order.status,
+          _selectedPaymentStatus: this.getPaymentStateKey(order),
         }));
         this.total = Number(res?.total ?? items.length ?? 0);
         this.totalPages = Math.max(1, Math.ceil(this.total / this.limit));
         this.isLoading = false;
+        this.confirmKind = '';
         this.cdr.detectChanges();
       },
       error: () => {
         this.isLoading = false;
+        this.confirmKind = '';
         this.cdr.detectChanges();
       },
     });
@@ -167,10 +189,38 @@ export class AdminOrders implements OnInit, OnDestroy {
     }
 
     this.confirmMessage = `Đổi trạng thái đơn hàng sang ${this.orderStatusLabel(nextStatus)}?`;
+    this.confirmKind = 'status';
     this.showConfirmPopup = true;
   }
 
+  askPaymentChange(order: any, nextStatus: string): void {
+    const oldStatus = String(order?._selectedPaymentStatus || this.getPaymentStateKey(order)).toLowerCase();
+
+    if (!order?._id || !nextStatus || nextStatus === oldStatus) {
+      order._selectedPaymentStatus = oldStatus;
+      return;
+    }
+
+    order._selectedPaymentStatus = nextStatus;
+    this.pendingPaymentChange = { order, newStatus: nextStatus, oldStatus };
+    this.confirmMessage = `Đổi trạng thái thanh toán sang ${this.getPaymentStateText(nextStatus)}?`;
+    this.confirmKind = 'payment';
+    this.showConfirmPopup = true;
+  }
+
+  executeConfirm(): void {
+    if (this.confirmKind === 'payment') {
+      this.executePaymentStatusChange();
+      return;
+    }
+    this.executeStatusChange();
+  }
+
   executeStatusChange(): void {
+    if (this.confirmKind === 'payment') {
+      this.executePaymentStatusChange();
+      return;
+    }
     if (!this.pendingStatusChange) return;
 
     const { order, newStatus } = this.pendingStatusChange;
@@ -238,7 +288,13 @@ export class AdminOrders implements OnInit, OnDestroy {
       const { order, oldStatus } = this.pendingStatusChange;
       order._selectedStatus = oldStatus;
     }
+    if (this.pendingPaymentChange) {
+      const { order, oldStatus } = this.pendingPaymentChange;
+      order._selectedPaymentStatus = oldStatus;
+    }
     this.pendingStatusChange = null;
+    this.pendingPaymentChange = null;
+    this.confirmKind = '';
     this.showConfirmPopup = false;
     this.showStatusReasonFormPopup = false;
     this.statusReasonDraft = '';
@@ -269,6 +325,100 @@ export class AdminOrders implements OnInit, OnDestroy {
       error: (err: any) => {
         this.isLoading = false;
         this.showResult('Thất bại', err?.error?.error || 'Xuất hoá đơn thất bại.', 'error');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  openPaymentEditor(order: any): void {
+    const id = String(order?._id || '').trim();
+    if (!id) return;
+
+    this.isLoading = true;
+    this.api.getOrderById(id).subscribe({
+      next: (res: any) => {
+        const payments = Array.isArray(res?.payments) ? res.payments : [];
+        if (!payments.length) {
+          this.isLoading = false;
+          this.showResult('KhÃ´ng cÃ³ giao dá»‹ch', 'ÄÆ¡n nÃ y chÆ°a cÃ³ giao dá»‹ch thanh toÃ¡n Ä‘á»ƒ cáº­p nháº­t.', 'error');
+          this.cdr.detectChanges();
+          return;
+        }
+
+        const firstPayment = payments[0];
+        this.paymentEditor = {
+          order,
+          payments,
+          paymentId: String(firstPayment?._id || ''),
+          nextStatus: String(firstPayment?.status || 'pending').toLowerCase(),
+        };
+        this.showPaymentFormPopup = true;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.isLoading = false;
+        this.showResult('Tháº¥t báº¡i', err?.error?.error || 'KhÃ´ng táº£i Ä‘Æ°á»£c thÃ´ng tin thanh toÃ¡n.', 'error');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  closePaymentEditor(): void {
+    this.showPaymentFormPopup = false;
+    this.paymentEditor = null;
+  }
+
+  get selectedPaymentRecord(): any | null {
+    if (!this.paymentEditor) return null;
+    return this.paymentEditor.payments.find((payment) => String(payment?._id || '') === this.paymentEditor?.paymentId) || null;
+  }
+
+  onPaymentRecordChange(): void {
+    const payment = this.selectedPaymentRecord;
+    if (!this.paymentEditor) return;
+    this.paymentEditor.nextStatus = String(payment?.status || 'pending').toLowerCase();
+  }
+
+  askPaymentStatusChange(): void {
+    const payment = this.selectedPaymentRecord;
+    const nextStatus = String(this.paymentEditor?.nextStatus || '').toLowerCase();
+    const currentStatus = String(payment?.status || '').toLowerCase();
+    if (!payment?._id || !nextStatus || nextStatus === currentStatus) return;
+
+    this.confirmMessage = `Äá»•i tráº¡ng thÃ¡i thanh toÃ¡n sang ${this.getPaymentStatusText(nextStatus)}?`;
+    this.confirmKind = 'payment';
+    this.showConfirmPopup = true;
+  }
+
+  executePaymentStatusChange(): void {
+    if (this.pendingPaymentChange) {
+      this.runPaymentStateChange();
+      return;
+    }
+
+    const payment = this.selectedPaymentRecord;
+    const nextStatus = String(this.paymentEditor?.nextStatus || '').toLowerCase();
+    if (!payment?._id || !nextStatus) return;
+
+    this.showConfirmPopup = false;
+    this.isLoading = true;
+
+    const payload: any = { status: nextStatus };
+    if (nextStatus === 'paid' || nextStatus === 'refunded') payload.paid_at = payment?.paid_at || new Date().toISOString();
+    else payload.paid_at = null;
+
+    this.api.patchPayment(String(payment._id), payload).subscribe({
+      next: () => {
+        this.closePaymentEditor();
+        this.confirmKind = '';
+        this.loadOrders(this.page);
+        this.showResult('Thành công', 'Đã cập nhật trạng thái thanh toán.', 'success');
+      },
+      error: (err: any) => {
+        this.isLoading = false;
+        this.confirmKind = '';
+        this.showResult('Thất bại', err?.error?.message || 'Không thể cập nhật trạng thái thanh toán.', 'error');
         this.cdr.detectChanges();
       },
     });
@@ -367,10 +517,144 @@ export class AdminOrders implements OnInit, OnDestroy {
     return this.sortConfig.direction === 'asc' ? 'fa-sort-up active' : 'fa-sort-down active';
   }
 
+  private async runPaymentStateChange(): Promise<void> {
+    if (!this.pendingPaymentChange) return;
+
+    const { order, newStatus, oldStatus } = this.pendingPaymentChange;
+    this.showConfirmPopup = false;
+    this.isLoading = true;
+
+    try {
+      const orderDetail = await firstValueFrom(this.api.getOrderById(String(order._id)));
+      await this.applyPaymentStateChange(orderDetail, newStatus as PaymentStateKey);
+      this.pendingPaymentChange = null;
+      this.confirmKind = '';
+      this.loadOrders(this.page);
+      this.showResult('Thành công', 'Đã cập nhật trạng thái thanh toán.', 'success');
+    } catch (err: any) {
+      order._selectedPaymentStatus = oldStatus;
+      this.pendingPaymentChange = null;
+      this.isLoading = false;
+      this.confirmKind = '';
+      this.showResult('Thất bại', err?.error?.message || err?.message || 'Không thể cập nhật trạng thái thanh toán.', 'error');
+      this.cdr.detectChanges();
+    }
+  }
+
+  private async applyPaymentStateChange(orderDetail: any, nextState: PaymentStateKey): Promise<void> {
+    const rootOrder = orderDetail?.order || orderDetail;
+    const orderId = String(rootOrder?._id || '').trim();
+    if (!orderId) {
+      throw new Error('Không xác định được đơn hàng cần cập nhật.');
+    }
+
+    const payments = Array.isArray(orderDetail?.payments) ? [...orderDetail.payments] : [];
+    const depositAmount = getExpectedDepositAmount(rootOrder?.total_amount, rootOrder?.deposit_amount);
+    const totalAmount = Math.max(Number(rootOrder?.total_amount || 0), 0);
+    const defaultMethod = String(payments[0]?.method || 'bank_transfer');
+
+    const patchPayment = async (payment: any, payload: any) => {
+      await firstValueFrom(this.api.patchPayment(String(payment._id), payload));
+    };
+
+    const createPayment = async (payload: any) => {
+      return await firstValueFrom(this.api.createPayment(payload));
+    };
+
+    const setAllPayments = async (status: 'pending' | 'refunded') => {
+      await Promise.all(
+        payments.map((payment) =>
+          patchPayment(payment, {
+            status,
+            paid_at: status === 'refunded' ? payment?.paid_at || new Date().toISOString() : null,
+          })
+        )
+      );
+    };
+
+    const upsertPayment = async (
+      type: 'deposit' | 'remaining' | 'full',
+      amount: number,
+      status: 'pending' | 'paid' | 'failed' | 'refunded',
+      method = defaultMethod
+    ) => {
+      const existing = payments.find((payment) => String(payment?.type || '').toLowerCase() === type);
+      const payload = {
+        type,
+        method,
+        amount,
+        status,
+        paid_at: status === 'paid' || status === 'refunded' ? new Date().toISOString() : null,
+      };
+
+      if (existing?._id) {
+        await patchPayment(existing, payload);
+        return;
+      }
+
+      await createPayment({
+        order_id: orderId,
+        ...payload,
+      });
+    };
+
+    switch (nextState) {
+      case 'pending':
+      case 'unpaid': {
+        if (!payments.length) {
+          await createPayment({
+            order_id: orderId,
+            type: depositAmount > 0 ? 'deposit' : 'full',
+            method: defaultMethod,
+            amount: depositAmount > 0 ? depositAmount : totalAmount,
+            status: 'pending',
+            paid_at: null,
+          });
+          return;
+        }
+        await setAllPayments('pending');
+        return;
+      }
+      case 'refunded': {
+        if (!payments.length) {
+          throw new Error('Đơn này chưa có giao dịch thanh toán để hoàn tiền.');
+        }
+        await setAllPayments('refunded');
+        return;
+      }
+      case 'deposit_paid': {
+        if (depositAmount <= 0) {
+          throw new Error('Đơn này không có khoản đặt cọc để cập nhật.');
+        }
+        await setAllPayments('pending');
+        await upsertPayment('deposit', depositAmount, 'paid');
+        return;
+      }
+      case 'settled': {
+        await setAllPayments('pending');
+
+        if (depositAmount > 0) {
+          await upsertPayment('deposit', depositAmount, 'paid');
+          const remainingAmount = Math.max(totalAmount - depositAmount, 0);
+          if (remainingAmount > 0) {
+            await upsertPayment('remaining', remainingAmount, 'paid');
+          }
+          return;
+        }
+
+        await upsertPayment('full', totalAmount, 'paid');
+        return;
+      }
+    }
+  }
+
   getPaymentBadge(order: any): { text: string; cls: string } {
     const total = Number(order?.payment_summary?.total_amount || order?.total_amount || 0);
     const paidTotal = Number(order?.payment_summary?.paid_total || 0);
-    const depositAmount = Number(order?.payment_summary?.deposit_amount || order?.deposit_amount || 0);
+    const depositAmount = getExpectedDepositAmount(
+      order?.payment_summary?.total_amount || order?.total_amount || 0,
+      order?.payment_summary?.deposit_amount || order?.deposit_amount || 0
+    );
     const depositPaidTotal = Number(order?.payment_summary?.deposit_paid_total || 0);
     const hasDepositPaid = depositAmount > 0 && depositPaidTotal >= depositAmount;
     const hasFullPaid = total > 0 && paidTotal >= total;
@@ -385,10 +669,6 @@ export class AdminOrders implements OnInit, OnDestroy {
       return { text: 'Đã cọc', cls: 'payment-deposit' };
     }
 
-    if (latestStatus === 'failed') {
-      return { text: 'Thanh toán lỗi', cls: 'payment-failed' };
-    }
-
     if (latestStatus === 'refunded') {
       return { text: 'Đã hoàn tiền', cls: 'payment-refunded' };
     }
@@ -398,6 +678,62 @@ export class AdminOrders implements OnInit, OnDestroy {
     }
 
     return { text: 'Chưa thanh toán', cls: 'payment-unpaid' };
+  }
+
+  getPaymentTypeText(type: any): string {
+    const key = String(type || '').toLowerCase();
+    if (key === 'deposit') return 'Đặt cọc';
+    if (key === 'remaining') return 'Thanh toán còn lại';
+    if (key === 'full') return 'Thanh toán một lần';
+    return '-';
+  }
+
+  getPaymentStatusText(status: any): string {
+    const key = String(status || '').toLowerCase();
+    if (key === 'paid') return 'Đã thanh toán';
+    if (key === 'pending') return 'Đang chờ';
+    if (key === 'failed') return 'Thất bại';
+    if (key === 'refunded') return 'Hoàn tiền';
+    return '-';
+  }
+
+  getPaymentStateKey(order: any): PaymentStateKey {
+    const total = Number(order?.payment_summary?.total_amount || order?.total_amount || 0);
+    const paidTotal = Number(order?.payment_summary?.paid_total || 0);
+    const depositAmount = getExpectedDepositAmount(
+      order?.payment_summary?.total_amount || order?.total_amount || 0,
+      order?.payment_summary?.deposit_amount || order?.deposit_amount || 0
+    );
+    const depositPaidTotal = Number(order?.payment_summary?.deposit_paid_total || 0);
+    const latestStatus = String(order?.payment_summary?.status || '').toLowerCase();
+    const paymentCount = Number(order?.payment_summary?.count || 0);
+
+    if (latestStatus === 'refunded') return 'refunded';
+    if (total > 0 && paidTotal >= total) return 'settled';
+    if (depositAmount > 0 && depositPaidTotal >= depositAmount) return 'deposit_paid';
+    if (paymentCount > 0) return 'pending';
+    return 'unpaid';
+  }
+
+  getPaymentStateText(state: any): string {
+    const key = String(state || '').toLowerCase();
+    if (key === 'settled') return 'Tất toán';
+    if (key === 'deposit_paid') return 'Đã cọc';
+    if (key === 'pending') return 'Đang chờ thanh toán';
+    if (key === 'unpaid') return 'Chưa thanh toán';
+    if (key === 'refunded') return 'Hoàn tiền';
+    return '-';
+  }
+
+  getPaymentStateOptions(order: any): PaymentStateKey[] {
+    const options: PaymentStateKey[] = ['pending'];
+    const depositAmount = getExpectedDepositAmount(
+      order?.payment_summary?.total_amount || order?.total_amount || 0,
+      order?.payment_summary?.deposit_amount || order?.deposit_amount || 0
+    );
+    if (depositAmount > 0) options.push('deposit_paid');
+    options.push('settled', 'refunded');
+    return options;
   }
 
   orderStatusLabel(status: string): string {

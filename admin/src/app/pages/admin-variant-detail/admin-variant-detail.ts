@@ -25,6 +25,7 @@ export class AdminVariantDetail implements OnInit {
   variant: any = null;
   product: any = null;
   images: any[] = [];
+  variantImages: any[] = [];
   thumbnail = '';
 
   showConfirm = false;
@@ -88,6 +89,7 @@ export class AdminVariantDetail implements OnInit {
     this.variant = null;
     this.product = null;
     this.images = [];
+    this.variantImages = [];
     this.thumbnail = '';
 
     this.api.getVariantById(this.id).subscribe({
@@ -115,8 +117,9 @@ export class AdminVariantDetail implements OnInit {
             this.product = res.product;
             this.images = this.sortImages(res.images?.items ?? res.images ?? []);
             const own = this.images.filter((img: any) => String(img.variant_id || '') === String(this.variant._id));
+            this.variantImages = own.length ? own : this.getFallbackImages();
             this.thumbnail =
-              own[0]?.image_url ||
+              this.variantImages[0]?.image_url ||
               this.product?.thumbnail ||
               this.product?.thumbnail_url ||
               this.images[0]?.image_url ||
@@ -141,6 +144,40 @@ export class AdminVariantDetail implements OnInit {
   backToProduct() {
     if (this.variant?.product_id) this.router.navigate(['/admin/products', this.variant.product_id]);
     else this.router.navigate(['/admin/products']);
+  }
+
+  private getFallbackImages(): any[] {
+    const fallbackUrl =
+      this.sortImages(this.images.filter((img: any) => !img.variant_id))[0]?.image_url ||
+      this.product?.thumbnail ||
+      this.product?.thumbnail_url ||
+      this.images[0]?.image_url ||
+      '';
+
+    return fallbackUrl
+      ? [
+          {
+            _id: `fallback-${this.id}`,
+            image_url: fallbackUrl,
+            alt_text: this.variant?.variant_name || this.variant?.name || 'Bien the',
+            is_primary: true,
+            is_fallback: true,
+          },
+        ]
+      : [];
+  }
+
+  selectThumbnail(imageUrl: string): void {
+    this.thumbnail = String(imageUrl || '').trim();
+  }
+
+  normalizeImageUrl(value: any): string {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (/^https?:\/\//i.test(raw) || raw.startsWith('data:')) return raw;
+    if (raw.startsWith('//')) return `https:${raw}`;
+    if (raw.startsWith('/assets/upload/') || raw.startsWith('/uploads/')) return `http://localhost:3000${raw}`;
+    return raw;
   }
 
   askSave() {

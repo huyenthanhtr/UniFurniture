@@ -25,6 +25,7 @@ const profilesRoutes = require("./src/routes/profiles.routes");
 const authRoutes = require("./src/routes/auth.routes");
 const productModels3dRoutes = require("./src/routes/product-model-3d.routes");
 const reviewRoutes = require('./src/routes/review.routes');
+const { normalizeSystemCodes } = require("./src/utils/normalize-system-codes");
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "20mb" }));
@@ -57,7 +58,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/product-models-3d", productModels3dRoutes);
 app.use('/api/reviews', reviewRoutes);
 
-connectDB().then(() => {
+connectDB().then(async () => {
+  await normalizeSystemCodes();
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     const url = `http://localhost:${PORT}`;

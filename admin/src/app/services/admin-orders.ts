@@ -31,4 +31,12 @@ export class AdminOrdersService {
   }): Observable<any> {
     return this.http.post<any>(`${this.base}/orders/${id}/warranty-records`, payload);
   }
+
+  patchPayment(id: string, payload: any): Observable<any> {
+    return this.http.patch<any>(`${this.base}/payment/${id}`, payload);
+  }
+
+  createPayment(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.base}/payment`, payload);
+  }
 }

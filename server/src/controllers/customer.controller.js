@@ -2,6 +2,7 @@
 const Customer = require("../models/Customer");
 const Profile = require("../models/Profile");
 const CustomerAddress = require("../models/CustomerAddress");
+const Order = require("../models/Order");
 
 function toBoolean(value) {
   if (typeof value === "boolean") return value;
@@ -235,6 +236,52 @@ async function findProfileForCustomer(customer) {
   return null;
 }
 
+function deriveAddressFromOrder(order) {
+  const shippingAddress = String(order?.shipping_address || "").trim();
+  if (!shippingAddress) return null;
+
+  const segments = shippingAddress
+    .split(",")
+    .map((part) => String(part || "").trim())
+    .filter(Boolean);
+
+  const province = segments.length >= 1 ? segments[segments.length - 1] : "-";
+  const district = segments.length >= 2 ? segments[segments.length - 2] : "-";
+  const addressLine = segments.length >= 3 ? segments.slice(0, segments.length - 2).join(", ") : shippingAddress;
+
+  return {
+    _id: `fallback-${String(order?._id || "")}`,
+    customer_id: order?.customer_id || null,
+    customer_address_name: String(order?.shipping_name || "").trim(),
+    address_phone: String(order?.shipping_phone || "").trim(),
+    address_line: addressLine || shippingAddress,
+    ward: "-",
+    district: district || "-",
+    province: province || "-",
+    status: "active",
+    full_address: [addressLine || shippingAddress, district || "-", province || "-"].filter(Boolean).join(", "),
+    createdAt: order?.createdAt || null,
+    updatedAt: order?.updatedAt || null,
+  };
+}
+
+async function ensureCustomerAddressesFromOrders(customerId) {
+  if (!customerId) return [];
+
+  const existingAddresses = await CustomerAddress.find({ customer_id: customerId }).sort({ updatedAt: -1, _id: -1 }).lean();
+  if (existingAddresses.length > 0) return existingAddresses;
+
+  const latestOrder = await Order.findOne({ customer_id: customerId })
+    .sort({ ordered_at: -1, createdAt: -1, _id: -1 })
+    .lean();
+
+  const shippingAddress = String(latestOrder?.shipping_address || "").trim();
+  if (!shippingAddress) return [];
+
+  const fallbackAddress = deriveAddressFromOrder(latestOrder);
+  return fallbackAddress ? [fallbackAddress] : [];
+}
+
 function mapAddress(address) {
   return {
     _id: address._id,
@@ -263,10 +310,13 @@ async function getAdminCustomerDetail(req, res, next) {
 
     const [profile, addresses] = await Promise.all([
       findProfileForCustomer(customer),
-      CustomerAddress.find({ customer_id: customerId }).sort({ updatedAt: -1, _id: -1 }).lean(),
+      ensureCustomerAddressesFromOrders(customerId),
     ]);
 
     const merged = mergeCustomerAndProfile(customer, profile);
+    if (!merged.merged.address && addresses.length > 0) {
+      merged.merged.address = addresses[0]?.full_address || addresses[0]?.address_line || null;
+    }
 
     return res.json({
       ...merged,
@@ -286,7 +336,7 @@ async function getAdminCustomerAddresses(req, res, next) {
     const customer = await Customer.findById(customerId).lean();
     if (!customer) return res.status(404).json({ message: "Customer not found" });
 
-    const addresses = await CustomerAddress.find({ customer_id: customerId }).sort({ updatedAt: -1, _id: -1 }).lean();
+    const addresses = await ensureCustomerAddressesFromOrders(customerId);
 
     return res.json({
       customer_id: id,

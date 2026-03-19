@@ -2,8 +2,10 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { AdminOrdersService } from '../../services/admin-orders';
 import { AdminInvoiceService } from '../../services/admin-invoice';
+import { AdminProductsService } from '../../services/admin-products';
 
 @Component({
   selector: 'app-admin-order-detail',
@@ -15,6 +17,7 @@ import { AdminInvoiceService } from '../../services/admin-invoice';
 export class AdminOrderDetail implements OnInit {
   private api = inject(AdminOrdersService);
   private invoice = inject(AdminInvoiceService);
+  private productsApi = inject(AdminProductsService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
@@ -30,19 +33,23 @@ export class AdminOrderDetail implements OnInit {
   display: any = null;
   pricing: any = null;
   warranty: any = null;
+  private productImagesMap = new Map<string, any[]>();
 
   editableStatus = 'pending';
   statusReasonDraft = '';
   warrantyError = '';
+  editablePaymentId = '';
+  editablePaymentStatus = '';
 
   showConfirm = false;
   showStatusReasonForm = false;
   showWarrantyForm = false;
   showWarrantyDetail = false;
   confirmMessage = '';
-  confirmMode: 'status' | 'warranty' | '' = '';
+  confirmMode: 'status' | 'warranty' | 'payment' | '' = '';
   confirmAction: null | (() => void) = null;
   selectedWarrantyRecord: any = null;
+  selectedPayment: any = null;
   warrantyRecordDraft = this.createEmptyWarrantyDraft();
 
   readonly statuses = [
@@ -59,6 +66,7 @@ export class AdminOrderDetail implements OnInit {
 
   private readonly paidStatuses = new Set(['paid']);
   private readonly pendingStatuses = new Set(['pending']);
+  readonly paymentStatuses = ['pending', 'paid', 'failed', 'refunded'];
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((pm) => {
@@ -89,14 +97,84 @@ export class AdminOrderDetail implements OnInit {
         this.showWarrantyDetail = false;
         this.selectedWarrantyRecord = null;
         this.resetWarrantyDraft();
-        this.isLoading = false;
-        this.cdr.detectChanges();
+        this.loadProductImagesForItems();
       },
       error: () => {
         this.isLoading = false;
         this.cdr.detectChanges();
       },
     });
+  }
+
+  private loadProductImagesForItems(): void {
+    const productIds = Array.from(
+      new Set(
+        this.items
+          .map((item) => String(item?.product_id || '').trim())
+          .filter(Boolean)
+      )
+    );
+
+    if (!productIds.length) {
+      this.productImagesMap.clear();
+      this.isLoading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const requests = productIds.map((productId) =>
+      this.productsApi.getImages({ product_id: productId, limit: 500 })
+    );
+
+    forkJoin(requests).subscribe({
+      next: (responses: any[]) => {
+        this.productImagesMap.clear();
+        responses.forEach((res, index) => {
+          const productId = productIds[index];
+          const images = this.sortImages(res?.items ?? res ?? []);
+          this.productImagesMap.set(productId, images);
+        });
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.productImagesMap.clear();
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private sortImages(arr: any[]): any[] {
+    return [...arr].sort((a, b) => {
+      if (!!a?.is_primary !== !!b?.is_primary) return a?.is_primary ? -1 : 1;
+      const ao = Number(a?.sort_order || 0);
+      const bo = Number(b?.sort_order || 0);
+      if (ao !== bo) return ao - bo;
+      const at = new Date(a?.createdAt || 0).getTime();
+      const bt = new Date(b?.createdAt || 0).getTime();
+      return at - bt;
+    });
+  }
+
+  getItemDisplayImage(item: any): string {
+    const directImage =
+      String(item?.image_url || '').trim() ||
+      String(item?.thumbnail || '').trim() ||
+      String(item?.thumbnail_url || '').trim();
+    if (directImage) return directImage;
+
+    const productId = String(item?.product_id || '').trim();
+    const variantId = String(item?.variant_id || '').trim();
+    const images = this.productImagesMap.get(productId) || [];
+
+    const variantImage = images.find((img) => String(img?.variant_id || '') === variantId)?.image_url;
+    if (variantImage) return variantImage;
+
+    const sharedImage = images.find((img) => !img?.variant_id)?.image_url;
+    if (sharedImage) return sharedImage;
+
+    return images[0]?.image_url || '';
   }
 
   back() {
@@ -311,6 +389,66 @@ export class AdminOrderDetail implements OnInit {
     if (key === 'failed') return 'payment-failed';
     if (key === 'refunded') return 'payment-refunded';
     return 'payment-unknown';
+  }
+
+  private syncEditablePayment(): void {
+    const firstPayment = this.payments[0] || null;
+    this.editablePaymentId = String(firstPayment?._id || '');
+    this.editablePaymentStatus = String(firstPayment?.status || 'pending');
+  }
+
+  get selectedEditablePayment(): any | null {
+    return this.payments.find((payment) => String(payment?._id || '') === this.editablePaymentId) || null;
+  }
+
+  onEditablePaymentChange(): void {
+    const payment = this.selectedEditablePayment;
+    this.editablePaymentStatus = String(payment?.status || 'pending');
+  }
+
+  askSavePaymentStatus(): void {
+    const payment = this.selectedEditablePayment;
+    const nextStatus = String(this.editablePaymentStatus || '').toLowerCase();
+    const currentStatus = String(payment?.status || '').toLowerCase();
+
+    if (!payment?._id || !nextStatus || nextStatus === currentStatus) return;
+
+    this.selectedPayment = payment;
+    this.confirmMessage = `Đổi trạng thái thanh toán sang ${this.getPaymentStatusText(nextStatus)}?`;
+    this.confirmMode = 'payment';
+    this.confirmAction = () => this.savePaymentStatus();
+    this.showConfirm = true;
+    this.cdr.detectChanges();
+  }
+
+  savePaymentStatus(): void {
+    const payment = this.selectedPayment;
+    const nextStatus = String(this.editablePaymentStatus || '').toLowerCase();
+    if (!payment?._id || !nextStatus) return;
+
+    this.showConfirm = false;
+    this.isLoading = true;
+
+    const payload: any = { status: nextStatus };
+    if (nextStatus === 'paid' || nextStatus === 'refunded') {
+      payload.paid_at = payment?.paid_at || new Date().toISOString();
+    } else {
+      payload.paid_at = null;
+    }
+
+    this.api.patchPayment(String(payment._id), payload).subscribe({
+      next: () => {
+        this.selectedPayment = null;
+        this.confirmMode = '';
+        this.load();
+      },
+      error: () => {
+        this.selectedPayment = null;
+        this.confirmMode = '';
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   orderStatusLabel(status: any): string {

@@ -28,6 +28,7 @@ export class AdminProductDetail implements OnInit {
   selectedImageUrl = '';
   selectedImage: any = null;
   selectedVariant: any = null;
+  selectedVariantImageUrl = '';
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((pm) => {
@@ -56,12 +57,13 @@ export class AdminProductDetail implements OnInit {
     });
   }
 
-  dedupeImagesByUrl(arr: any[]) {
+  dedupeImagesByScopeAndUrl(arr: any[]) {
     const map = new Map<string, any>();
 
     for (const img of this.sortImages(arr)) {
-      const key = String(img.image_url || '').trim();
-      if (!key) continue;
+      const imageUrl = String(img.image_url || '').trim();
+      if (!imageUrl) continue;
+      const key = `${String(img.variant_id || '')}::${imageUrl}`;
       if (!map.has(key)) map.set(key, img);
     }
 
@@ -77,6 +79,7 @@ export class AdminProductDetail implements OnInit {
     this.selectedImageUrl = '';
     this.selectedImage = null;
     this.selectedVariant = null;
+    this.selectedVariantImageUrl = '';
 
     forkJoin({
       product: this.api.getProductById(id),
@@ -86,7 +89,7 @@ export class AdminProductDetail implements OnInit {
       next: (res: any) => {
         this.product = res.product;
         this.images = this.sortImages(res.images?.items ?? res.images ?? []);
-        this.galleryImages = this.dedupeImagesByUrl(this.images);
+        this.galleryImages = this.dedupeImagesByScopeAndUrl(this.images);
         this.variants = res.variants?.items ?? res.variants ?? [];
 
         this.selectedImageUrl =
@@ -136,9 +139,32 @@ export class AdminProductDetail implements OnInit {
   }
 
   getVariantThumbnail(v: any): string {
+    return this.getVariantGalleryImages(v)[0]?.image_url || '';
+  }
+
+  getVariantGalleryImages(v: any): any[] {
     const own = this.sortImages(this.images.filter((img) => String(img.variant_id || '') === String(v._id)));
-    if (own.length) return own[0].image_url;
-    return this.product?.thumbnail || this.product?.thumbnail_url || this.galleryImages[0]?.image_url || '';
+    if (own.length) return own;
+
+    const fallbackUrl =
+      this.sortImages(this.images.filter((img) => !img.variant_id))[0]?.image_url ||
+      this.product?.thumbnail ||
+      this.product?.thumbnail_url ||
+      this.galleryImages[0]?.image_url ||
+      this.images[0]?.image_url ||
+      '';
+
+    return fallbackUrl
+      ? [
+          {
+            _id: `fallback-${String(v?._id || '')}`,
+            image_url: fallbackUrl,
+            alt_text: this.getVariantLabel(v),
+            is_primary: true,
+            is_fallback: true,
+          },
+        ]
+      : [];
   }
 
   normalizeImageUrl(value: any): string {
@@ -178,6 +204,16 @@ export class AdminProductDetail implements OnInit {
 
   viewVariant(v: any) {
     this.selectedVariant = { ...v };
+    this.selectedVariantImageUrl = this.getVariantThumbnail(v);
+  }
+
+  selectVariantImage(img: any): void {
+    this.selectedVariantImageUrl = String(img?.image_url || '').trim();
+  }
+
+  closeVariantDetail(): void {
+    this.selectedVariant = null;
+    this.selectedVariantImageUrl = '';
   }
 
   activeStatusLabel(status: string): string {

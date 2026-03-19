@@ -111,9 +111,14 @@
           <td>{{ order.total_amount | number }}</td>
           <td>{{ (order.ordered_at || order.createdAt) | date:'dd/MM/yyyy HH:mm' }}</td>
           <td class="payment-col">
-            <span class="badge" [ngClass]="getPaymentBadge(order).cls">
-              {{ getPaymentBadge(order).text }}
-            </span>
+            <select
+              class="status-dropdown payment-dropdown"
+              [class]="'status-dropdown payment-dropdown ' + getPaymentBadge(order).cls"
+              [ngModel]="order._selectedPaymentStatus || getPaymentStateKey(order)"
+              (ngModelChange)="askPaymentChange(order, $event)"
+            >
+              <option *ngFor="let status of getPaymentStateOptions(order)" [value]="status">{{ getPaymentStateText(status) }}</option>
+            </select>
           </td>
           <td>
             <select
@@ -185,7 +190,7 @@
       <p>{{ confirmMessage }}</p>
       <div class="actions justify-content-center">
         <button class="btn btn-ghost" (click)="cancelConfirm()">Huỷ</button>
-        <button class="btn btn-primary" (click)="executeStatusChange()">Đồng ý lưu</button>
+        <button class="btn btn-primary" (click)="executeConfirm()">Đồng ý lưu</button>
       </div>
     </div>
   </div>
