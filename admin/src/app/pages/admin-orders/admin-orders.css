@@ -222,8 +222,17 @@ tbody tr:last-child td {
   line-height: 1;
 }
 
-.payment-col {
+th.payment-col,
+td.payment-col {
   text-align: center;
+}
+
+td.payment-col {
+  position: relative;
+}
+
+td.payment-col::after {
+  content: none;
 }
 
 .payment-deposit {
@@ -260,6 +269,7 @@ tbody tr:last-child td {
 .status-dropdown {
   appearance: none;
   -webkit-appearance: none;
+  -moz-appearance: none;
   border: 1px solid transparent;
   min-width: 144px;
   padding: 4px 30px 4px 14px;
@@ -274,6 +284,11 @@ tbody tr:last-child td {
   background-repeat: no-repeat;
   background-position: right 8px center;
   transition: all 0.2s;
+}
+
+.status-dropdown.payment-dropdown {
+  padding-right: 14px;
+  background-image: none;
 }
 
 .status-dropdown.pending {

@@ -269,6 +269,38 @@
   overflow: hidden;
 }
 
+.payment-action-bar {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid #ece6e0;
+  border-radius: 12px;
+  background: #fffdfb;
+}
+
+.payment-action-field {
+  min-width: 220px;
+  flex: 1 1 220px;
+}
+
+.payment-action-field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.payment-select {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #ddd2c6;
+  border-radius: 12px;
+  background: #fff;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

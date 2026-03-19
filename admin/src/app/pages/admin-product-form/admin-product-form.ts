@@ -42,6 +42,7 @@ type DraftVariant = {
   styleUrls: ['./admin-product-form.css'],
 })
 export class AdminProductForm implements OnInit, AfterViewInit {
+  private static readonly SAVE_CONCURRENCY = 3;
   private fb = inject(FormBuilder);
   private api = inject(AdminProductsService);
   private route = inject(ActivatedRoute);
@@ -650,12 +651,14 @@ export class AdminProductForm implements OnInit, AfterViewInit {
   private async syncVariants(productId: string): Promise<Map<string, string>> {
     const variantIdMap = new Map<string, string>();
 
-    for (const removedId of this.removedVariantIds) {
-      await firstValueFrom(this.api.deleteVariant(removedId));
-    }
+    await this.runWithConcurrency(
+      [...this.removedVariantIds],
+      AdminProductForm.SAVE_CONCURRENCY,
+      (removedId) => firstValueFrom(this.api.deleteVariant(removedId))
+    );
     this.removedVariantIds.clear();
 
-    for (const variant of this.variants) {
+    await this.runWithConcurrency(this.variants, AdminProductForm.SAVE_CONCURRENCY, async (variant) => {
       const payload = {
         product_id: productId,
         name: variant.variant_name,
@@ -677,18 +680,20 @@ export class AdminProductForm implements OnInit, AfterViewInit {
       const finalId = String(doc?._id || variant._id || '');
       variant._id = finalId;
       variantIdMap.set(variant.localId, finalId);
-    }
+    });
 
     return variantIdMap;
   }
 
   private async syncImages(productId: string, variantIdMap: Map<string, string>): Promise<void> {
-    for (const removedId of this.removedImageIds) {
-      await firstValueFrom(this.api.deleteImage(removedId));
-    }
+    await this.runWithConcurrency(
+      [...this.removedImageIds],
+      AdminProductForm.SAVE_CONCURRENCY,
+      (removedId) => firstValueFrom(this.api.deleteImage(removedId))
+    );
     this.removedImageIds.clear();
 
-    for (const image of this.images) {
+    await this.runWithConcurrency(this.images, AdminProductForm.SAVE_CONCURRENCY, async (image) => {
       let imageUrl = String(image.image_url || '').trim();
 
       if (image.file) {
@@ -697,7 +702,7 @@ export class AdminProductForm implements OnInit, AfterViewInit {
         imageUrl = String(uploaded?.image_url || '').trim();
       }
 
-      if (!imageUrl) continue;
+      if (!imageUrl) return;
 
       const resolvedVariantId = image.variant_id
         ? variantIdMap.get(image.variant_id) || image.variant_id
@@ -720,7 +725,28 @@ export class AdminProductForm implements OnInit, AfterViewInit {
       image.image_url = imageUrl;
       image.preview_url = this.normalizeImageUrl(imageUrl);
       image.file = null;
-    }
+    });
+  }
+
+  private async runWithConcurrency<T>(
+    items: readonly T[],
+    concurrency: number,
+    worker: (item: T, index: number) => Promise<void>
+  ): Promise<void> {
+    if (!items.length) return;
+
+    let nextIndex = 0;
+    const workerCount = Math.min(Math.max(concurrency, 1), items.length);
+
+    await Promise.all(
+      Array.from({ length: workerCount }, async () => {
+        while (nextIndex < items.length) {
+          const currentIndex = nextIndex;
+          nextIndex += 1;
+          await worker(items[currentIndex], currentIndex);
+        }
+      })
+    );
   }
 
   private readFileAsDataUrl(file: File): Promise<string> {

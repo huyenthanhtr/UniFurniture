@@ -23,6 +23,34 @@
   border:1px solid #ddd2c6;
 }
 
+.variant-thumbs {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap:10px;
+  margin-top:12px;
+}
+
+.variant-thumb {
+  border:1px solid #ddd2c6;
+  border-radius:12px;
+  padding:0;
+  overflow:hidden;
+  background:#fff;
+  cursor:pointer;
+}
+
+.variant-thumb img {
+  width:100%;
+  aspect-ratio:1 / 1;
+  object-fit:cover;
+  display:block;
+}
+
+.variant-thumb-active {
+  border-color:#908372;
+  box-shadow:0 0 0 2px rgba(144,131,114,.14);
+}
+
 .grid {
   display:grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

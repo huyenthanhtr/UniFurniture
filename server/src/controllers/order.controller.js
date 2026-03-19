@@ -3,14 +3,18 @@ const Order = require("../models/Order");
 const OrderDetail = require("../models/OrderDetail");
 const Customer = require("../models/Customer");
 const Profile = require("../models/Profile");
+const CustomerAddress = require("../models/CustomerAddress");
 const Payment = require("../models/Payment");
 const ProductVariant = require("../models/ProductVariant");
 const ProductImage = require("../models/ProductImage");
 const Coupon = require("../models/Coupon");
 const Review = require("../models/Review");
 const WarrantyRecord = require("../models/WarrantyRecord");
+const { recalculateProductAggregates } = require("../utils/product-aggregate");
+const { generateCustomerCode, generateUniqueOrderCode } = require("../utils/code-generator");
 
 const ORDER_STATUSES = ["pending", "confirmed", "cancel_pending", "processing", "shipping", "delivered", "completed", "cancelled", "exchanged"];
+const INVENTORY_DEDUCT_STATUSES = new Set(["confirmed", "processing", "shipping", "delivered", "completed"]);
 const NORMAL_STATUS_ASC_WEIGHT = {
   pending: 1,
   confirmed: 2,
@@ -32,8 +36,11 @@ const NORMAL_STATUS_DESC_WEIGHT = {
 const CANCELLATION_GRACE_HOURS = 24;
 const WARRANTY_YEARS = 5;
 
-function generateCustomerCode() {
-  return `CUS${Date.now().toString().slice(-8)}${Math.floor(10 + Math.random() * 90)}`;
+function getExpectedDepositAmount(totalAmount, depositAmount) {
+  const total = Math.max(Number(totalAmount || 0), 0);
+  const explicitDeposit = Math.max(Number(depositAmount || 0), 0);
+  if (explicitDeposit > 0) return explicitDeposit;
+  return total >= 10000000 ? Math.round(total * 0.1) : 0;
 }
 
 function normalizeStatus(value) {
@@ -45,6 +52,80 @@ function normalizeStoredOrderStatus(value) {
   const status = String(value || "").trim().toLowerCase();
   if (status === "refunded") return "cancelled";
   return ORDER_STATUSES.includes(status) ? status : status;
+}
+
+async function getOrderInventoryItems(orderId) {
+  const details = await OrderDetail.find({ order_id: orderId }).lean();
+  return details.map((detail) => ({
+    variantId: String(detail.variant_id || "").trim(),
+    quantity: Math.max(0, Number(detail.quantity || 0)),
+    sku: String(detail.sku || "").trim(),
+    productName: String(detail.product_name || "").trim(),
+    variantName: String(detail.variant_name || "").trim(),
+  }));
+}
+
+async function deductInventoryForOrder(orderId) {
+  const items = await getOrderInventoryItems(orderId);
+
+  for (const item of items) {
+    if (!mongoose.Types.ObjectId.isValid(item.variantId) || item.quantity <= 0) continue;
+
+    const variant = await ProductVariant.findById(item.variantId);
+    if (!variant) {
+      throw new Error(`Không tìm thấy biến thể để trừ kho: ${item.variantName || item.sku || item.productName || item.variantId}`);
+    }
+
+    const currentStock = Math.max(0, Number(variant.stock_quantity || 0));
+    if (currentStock < item.quantity) {
+      throw new Error(
+        `Tồn kho không đủ cho ${item.variantName || item.productName || variant.sku || "biến thể"}. Còn ${currentStock}, cần ${item.quantity}.`
+      );
+    }
+
+    variant.stock_quantity = currentStock - item.quantity;
+    await variant.save();
+  }
+}
+
+async function restoreInventoryForOrder(orderId) {
+  const items = await getOrderInventoryItems(orderId);
+
+  for (const item of items) {
+    if (!mongoose.Types.ObjectId.isValid(item.variantId) || item.quantity <= 0) continue;
+
+    const variant = await ProductVariant.findById(item.variantId);
+    if (!variant) continue;
+
+    variant.stock_quantity = Math.max(0, Number(variant.stock_quantity || 0)) + item.quantity;
+    await variant.save();
+  }
+}
+
+async function adjustSoldCountForOrder(orderId, direction = 1) {
+  const items = await getOrderInventoryItems(orderId);
+  const affectedProductIds = new Set();
+
+  for (const item of items) {
+    if (!mongoose.Types.ObjectId.isValid(item.variantId) || item.quantity <= 0) continue;
+
+    const variant = await ProductVariant.findById(item.variantId);
+    if (!variant) continue;
+
+    const currentSold = Math.max(0, Number(variant.sold || 0));
+    variant.sold = direction > 0
+      ? currentSold + item.quantity
+      : Math.max(0, currentSold - item.quantity);
+    await variant.save();
+
+    if (variant.product_id) {
+      affectedProductIds.add(String(variant.product_id));
+    }
+  }
+
+  for (const productId of affectedProductIds) {
+    await recalculateProductAggregates(productId);
+  }
 }
 
 function addYears(dateInput, years) {
@@ -197,7 +278,7 @@ async function resolveCheckoutCustomer(accountId, safeName, safePhone) {
 
   if (!normalizedAccountId || !mongoose.Types.ObjectId.isValid(normalizedAccountId)) {
     const guestCustomer = await Customer.create({
-      customer_code: generateCustomerCode(),
+      customer_code: await generateCustomerCode(),
       full_name: safeName,
       phone: safePhone,
       customer_type: "guest",
@@ -213,7 +294,7 @@ async function resolveCheckoutCustomer(accountId, safeName, safePhone) {
   const profile = await Profile.findById(normalizedAccountId);
   if (!profile) {
     const guestCustomer = await Customer.create({
-      customer_code: generateCustomerCode(),
+      customer_code: await generateCustomerCode(),
       full_name: safeName,
       phone: safePhone,
       customer_type: "guest",
@@ -233,7 +314,7 @@ async function resolveCheckoutCustomer(accountId, safeName, safePhone) {
 
   if (!customer) {
     customer = await Customer.create({
-      customer_code: generateCustomerCode(),
+      customer_code: await generateCustomerCode(),
       full_name: String(profile.full_name || safeName || "").trim() || safeName,
       phone: String(profile.phone || safePhone || "").trim() || safePhone,
       customer_type: "member",
@@ -296,7 +377,7 @@ function buildPaymentSummary(orderDoc, orderPayments) {
   const paidPayments = orderPayments.filter((x) => String(x.status || "").toLowerCase() === "paid");
   const paidTotal = paidPayments.reduce((sum, x) => sum + Number(x.amount || 0), 0);
   const latestPayment = orderPayments[0] || null;
-  const depositAmount = Math.max(Number(orderDoc.deposit_amount || 0), 0);
+  const depositAmount = getExpectedDepositAmount(orderDoc.total_amount, orderDoc.deposit_amount);
   const totalAmount = Math.max(Number(orderDoc.total_amount || 0), 0);
   const depositPaidTotal = paidPayments
     .filter((x) => String(x.type || "").toLowerCase() === "deposit")
@@ -776,6 +857,31 @@ async function patchOrderStatus(req, res, next) {
     if (!doc) return res.status(404).json({ error: "Order not found" });
 
     const previousStatus = String(doc.status || "").toLowerCase();
+
+    if (INVENTORY_DEDUCT_STATUSES.has(nextStatus) && !doc.inventory_deducted) {
+      await deductInventoryForOrder(doc._id);
+      doc.inventory_deducted = true;
+      doc.inventory_deducted_at = new Date();
+    }
+
+    if (nextStatus === "cancelled" && doc.inventory_deducted) {
+      await restoreInventoryForOrder(doc._id);
+      doc.inventory_deducted = false;
+      doc.inventory_deducted_at = null;
+    }
+
+    if (nextStatus === "completed" && !doc.sold_counted) {
+      await adjustSoldCountForOrder(doc._id, 1);
+      doc.sold_counted = true;
+      doc.sold_counted_at = new Date();
+    }
+
+    if (nextStatus === "cancelled" && doc.sold_counted) {
+      await adjustSoldCountForOrder(doc._id, -1);
+      doc.sold_counted = false;
+      doc.sold_counted_at = null;
+    }
+
     doc.status = nextStatus;
 
     if (nextStatus === "confirmed" && !doc.confirmed_at) {
@@ -821,6 +927,9 @@ async function patchOrderStatus(req, res, next) {
     await doc.save();
     res.json(doc.toObject());
   } catch (err) {
+    if (err instanceof Error) {
+      return res.status(400).json({ error: err.message || "Không thể cập nhật trạng thái đơn hàng." });
+    }
     next(err);
   }
 }
@@ -990,6 +1099,13 @@ async function createCheckoutOrder(req, res, next) {
         });
       }
 
+      const currentStock = Math.max(0, Number(variantDoc.stock_quantity || 0));
+      if (currentStock < quantity) {
+        return res.status(400).json({
+          error: `Sản phẩm ${item?.variant_name || item?.name || variantDoc.variant_name || variantDoc.name || 'này'} chỉ còn ${currentStock} trong kho.`,
+        });
+      }
+
       const unitPrice = Math.max(0, Number(item?.unit_price ?? item?.salePrice ?? item?.price ?? variantDoc.price ?? 0));
       const lineTotal = unitPrice * quantity;
 
@@ -1016,7 +1132,7 @@ async function createCheckoutOrder(req, res, next) {
       : 0;
 
     const checkoutCustomer = await resolveCheckoutCustomer(account_id, safeName, safePhone);
-    const orderCode = `UH${Date.now().toString().slice(-8)}${Math.floor(10 + Math.random() * 90)}`;
+    const orderCode = await generateUniqueOrderCode(new Date());
 
     const orderDoc = await Order.create({
       order_code: orderCode,
@@ -1064,6 +1180,28 @@ async function createCheckoutOrder(req, res, next) {
       status: paymentStatus,
       paid_at: paymentStatus === 'paid' ? new Date() : null,
     });
+
+    const fullShippingAddress = `${safeAddress}, ${safeDistrict}, ${safeProvince}`;
+    const existingAddress = await CustomerAddress.findOne({
+      customer_id: checkoutCustomer.customerId,
+      address_line: safeAddress,
+      district: safeDistrict,
+      province: safeProvince,
+      address_phone: safePhone,
+    }).lean();
+
+    if (!existingAddress) {
+      await CustomerAddress.create({
+        customer_id: checkoutCustomer.customerId,
+        customer_address_name: safeName,
+        address_phone: safePhone,
+        address_line: safeAddress,
+        ward: "-",
+        district: safeDistrict,
+        province: safeProvince,
+        status: "active",
+      });
+    }
 
     return res.status(201).json({
       message: 'Đặt hàng thành công.',

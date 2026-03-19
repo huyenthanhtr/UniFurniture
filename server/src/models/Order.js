@@ -21,6 +21,10 @@ const OrderSchema = new mongoose.Schema(
     },
     ordered_at: Date,
     confirmed_at: { type: Date, default: null },
+    inventory_deducted: { type: Boolean, default: false },
+    inventory_deducted_at: { type: Date, default: null },
+    sold_counted: { type: Boolean, default: false },
+    sold_counted_at: { type: Date, default: null },
     cancellation_request: {
       reason: { type: String, default: "" },
       note: { type: String, default: "" },

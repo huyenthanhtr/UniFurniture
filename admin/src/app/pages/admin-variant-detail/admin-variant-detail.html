@@ -26,7 +26,18 @@
 
   <div class="body" *ngIf="!isLoading && variant">
     <section class="card preview">
-      <img [src]="thumbnail || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'" [alt]="variant?.variant_name || variant?.name" />
+      <img [src]="normalizeImageUrl(thumbnail) || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'" [alt]="variant?.variant_name || variant?.name" />
+      <div class="variant-thumbs" *ngIf="variantImages.length > 0">
+        <button
+          class="variant-thumb"
+          type="button"
+          *ngFor="let img of variantImages"
+          [class.variant-thumb-active]="img.image_url===thumbnail"
+          (click)="selectThumbnail(img.image_url)"
+        >
+          <img [src]="normalizeImageUrl(img.image_url)" [alt]="img.alt_text || variant?.variant_name || variant?.name" />
+        </button>
+      </div>
     </section>
 
     <section class="card">

@@ -145,6 +145,24 @@
   <div class="confirm-overlay" *ngIf="selectedVariant">
     <div class="confirm-box variant-box">
       <h3>Chi tiết biến thể</h3>
+      <div class="variant-gallery" *ngIf="selectedVariantImageUrl">
+        <div class="variant-main-image">
+          <img [src]="normalizeImageUrl(selectedVariantImageUrl)" [alt]="getVariantLabel(selectedVariant)" />
+        </div>
+
+        <div class="variant-thumbs">
+          <button
+            class="variant-thumb"
+            type="button"
+            *ngFor="let img of getVariantGalleryImages(selectedVariant)"
+            [class.variant-thumb-active]="img.image_url===selectedVariantImageUrl"
+            (click)="selectVariantImage(img)"
+          >
+            <img [src]="normalizeImageUrl(img.image_url)" [alt]="img.alt_text || getVariantLabel(selectedVariant)" />
+          </button>
+        </div>
+      </div>
+
       <div class="variant-detail-grid">
         <div class="readonly-field">
           <label>Tên biến thể</label>
@@ -180,7 +198,7 @@
         </div>
       </div>
       <div class="confirm-actions">
-        <button class="btn btn-primary" (click)="selectedVariant = null">Đóng</button>
+        <button class="btn btn-primary" (click)="closeVariantDetail()">Đóng</button>
       </div>
     </div>
   </div>
