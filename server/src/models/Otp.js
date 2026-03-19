@@ -9,7 +9,8 @@ const OtpSchema = new mongoose.Schema(
         gender: { type: String, enum: ["male", "female", "other"] },
         date_of_birth: { type: Date },
         address: { type: String },
-        otp_hash: { type: String, required: true },
+        otp_hash: { type: String, required: false }, // Make optional for Verify API
+        requestId: { type: String }, // For Vonage Verify API
         expireAt: { type: Date, required: true, expires: 0 },
     },
     { timestamps: true, collection: "otps" }

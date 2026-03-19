@@ -37,32 +37,39 @@ async function register(req, res) {
             return res.status(400).json({ message: "Phone or email already registered." });
         }
 
-        // Generate OTP
+        // Generate OTP and OTP Hash
         const otp = generateOTP();
         const otp_hash = hashValue(otp);
+        
+        console.log(`[DEV] Generated OTP for ${phone}: ${otp}`);
 
-        // Save registration payload directly into OTP table (Expires in 5 mins)
+        // HASH the password before saving to Otp
+        const p_hash = password_hash ? hashValue(password_hash) : undefined;
+
+        // Save registration payload into OTP table (Expires in 5 mins)
         await Otp.deleteMany({ phone });
 
         await Otp.create({
             phone,
             email: email || undefined,
-            password_hash: password_hash || undefined,
+            password_hash: p_hash,
             full_name,
             gender: gender || undefined,
             date_of_birth: date_of_birth || undefined,
             address: address || undefined,
-            otp_hash,
+            otp_hash, // Save OTP hash for local verification
             expireAt: new Date(Date.now() + 5 * 60 * 1000)
         });
 
-        // Send SMS
+        // Send OTP via basic Vonage SMS API
         const smsSent = await sendOtpSms(phone, otp);
+        
         if (!smsSent) {
             console.error("SMS failed to send for phone:", phone);
+            // We still return 201 but log the failure
         }
 
-        return res.status(201).json({ message: "Registration initiated. Please verify the OTP sent to your phone." });
+        return res.status(201).json({ message: "Yêu cầu đăng ký đã được gửi. Vui lòng nhập mã OTP gửi tới điện thoại của bạn." });
 
     } catch (err) {
         console.error(err);
@@ -76,17 +83,19 @@ async function verifyOtp(req, res) {
         phone = normalizePhone(phone);
 
         if (!phone || !otp) {
-            return res.status(400).json({ message: "Phone and OTP are required" });
+            return res.status(400).json({ message: "Số điện thoại và mã OTP là bắt buộc" });
         }
 
-        const otp_hash = hashValue(otp);
+        // Hash incoming OTP for comparison
+        const incoming_otp_hash = hashValue(otp);
 
-        // Find OTP record
-        const otpRecord = await Otp.findOne({ phone, otp_hash });
+        // Find OTP record by phone and hashed OTP
+        const otpRecord = await Otp.findOne({ phone, otp_hash: incoming_otp_hash });
 
         if (!otpRecord) {
             return res.status(400).json({ message: "Lỗi: Mã OTP không hợp lệ hoặc đã hết hạn." });
         }
+
         let newProfile = new Profile({
             phone: otpRecord.phone,
             email: otpRecord.email || undefined,
@@ -133,8 +142,21 @@ async function login(req, res) {
             return res.status(403).json({ message: "Tài khoản hiện đang bị khóa hoặc vô hiệu hóa." });
         }
 
-        if (password !== profile.password_hash) {
+        // Hash incoming password for comparison
+        const incoming_hash = hashValue(password);
+
+        // Check against both hashed and plain text (for old users)
+        const isMatch = (incoming_hash === profile.password_hash) || (password === profile.password_hash);
+
+        if (!isMatch) {
             return res.status(401).json({ message: "Mật khẩu sai. Vui lòng thử lại." });
+        }
+
+        // Optional: Auto-upgrade plain text passwords to hash
+        if (password === profile.password_hash && incoming_hash !== profile.password_hash) {
+            profile.password_hash = incoming_hash;
+            await profile.save();
+            console.log(`Auto-upgraded password to hash for user: ${emailOrPhone}`);
         }
 
         return res.status(200).json({ message: "Đăng nhập thành công", profile });
