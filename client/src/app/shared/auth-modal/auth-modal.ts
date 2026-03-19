@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { UiStateService } from '../ui-state.service';
-import { API_URL } from '../../api-config';
 
 @Component({
     selector: 'app-auth-modal',
@@ -49,7 +48,7 @@ export class AuthModal {
             password: this.loginData.password
         };
 
-        this.http.post(`${API_URL}/auth/login`, payload).subscribe({
+        this.http.post(`http://localhost:3000/api/auth/login`, payload).subscribe({
             next: (res: any) => {
                 this.isLoading = false;
                 this.successMessage = res.message || 'Đăng nhập thành công!';
