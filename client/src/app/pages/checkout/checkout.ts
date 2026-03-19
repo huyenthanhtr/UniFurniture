@@ -1,7 +1,7 @@
-import { CommonModule } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { UiStateService } from '../../shared/ui-state.service';
 import { OrderSummaryComponent } from './components/order-summary/order-summary';
 import { PaymentMethodComponent } from './components/payment-method/payment-method';
@@ -47,9 +47,7 @@ interface PlaceOrderResponse {
   selector: 'app-checkout',
   standalone: true,
   imports: [
-    CommonModule,
-    RouterLink,
-    ShippingFormComponent,
+    CommonModule,    ShippingFormComponent,
     PaymentMethodComponent,
     OrderSummaryComponent,
   ],
@@ -60,6 +58,7 @@ export class CheckoutComponent implements OnInit {
   private readonly ui = inject(UiStateService);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+
   private buyNowItem: CheckoutCartItem | null = null;
 
   form: CheckoutForm = {
@@ -78,9 +77,6 @@ export class CheckoutComponent implements OnInit {
   };
 
   isSubmitting = false;
-  orderSuccess = false;
-  showSuccessPopup = false;
-  successOrderCode = '';
   submitError = '';
 
   get cartItems(): CheckoutCartItem[] {
@@ -95,6 +91,7 @@ export class CheckoutComponent implements OnInit {
       const unitPrice = typeof item.price === 'number' ? item.price : 0;
       const unitOriginalPrice = typeof item.originalPrice === 'number' ? item.originalPrice : unitPrice;
       const variantParts = [item.colorName, item.variantLabel].filter(Boolean);
+
       return {
         cartKey: item.cartKey,
         productId: item.productId,
@@ -187,6 +184,12 @@ export class CheckoutComponent implements OnInit {
 
   canSubmit(): boolean {
     const phone = this.form.phone.trim();
+    const normalizedPhone = phone.replace(/[\s.-]/g, '');
+    const email = this.form.email.trim();
+
+    const isPhoneValid = /^(0\d{9}|\+84\d{9})$/.test(normalizedPhone);
+    const isEmailValid = !email || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+
     const paymentReady = this.form.paymentMethod === 'CHUYEN_KHOAN'
       ? this.form.bankTransferConfirmed
       : !!this.form.paymentMethod;
@@ -195,7 +198,8 @@ export class CheckoutComponent implements OnInit {
       this.cartItems.length > 0 &&
       !!this.form.fullName.trim() &&
       !!phone &&
-      /^[0-9+\s-]{9,15}$/.test(phone) &&
+      isPhoneValid &&
+      isEmailValid &&
       !!this.form.province.trim() &&
       !!this.form.district.trim() &&
       !!this.form.address.trim() &&
@@ -253,13 +257,17 @@ export class CheckoutComponent implements OnInit {
     this.http.post<PlaceOrderResponse>(`${API_BASE_URL}/orders`, payload).subscribe({
       next: (res) => {
         this.isSubmitting = false;
-        this.successOrderCode = String(res?.order_code || '').trim();
-        this.showSuccessPopup = true;
+        const orderCode = String(res?.order_code || '').trim();
+
         if (this.buyNowItem) {
           this.buyNowItem = null;
         } else {
           this.ui.removeSelectedItems();
         }
+
+        void this.router.navigate(['/checkout-success'], {
+          queryParams: { code: orderCode || null },
+        });
       },
       error: (err) => {
         this.isSubmitting = false;
@@ -268,11 +276,6 @@ export class CheckoutComponent implements OnInit {
           'Không thể tạo đơn hàng. Vui lòng thử lại.';
       },
     });
-  }
-
-  closeSuccessPopup(): void {
-    this.showSuccessPopup = false;
-    this.orderSuccess = true;
   }
 
   private ensureDepositPaymentRule(): void {
@@ -315,3 +318,4 @@ export class CheckoutComponent implements OnInit {
     };
   }
 }
+

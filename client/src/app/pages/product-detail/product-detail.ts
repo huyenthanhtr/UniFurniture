@@ -1,4 +1,4 @@
-import { Component, DestroyRef, HostListener, effect, inject, signal, computed } from '@angular/core';
+﻿import { Component, DestroyRef, HostListener, effect, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -53,8 +53,16 @@ export class ProductDetailComponent {
   readonly reviewStars = [1, 2, 3, 4, 5];
   readonly reviewMediaLimit = 8;
   readonly reviewViewerOpen = signal(false);
+  readonly initialReviewLimit = 3;
+  readonly showAllReviews = signal(false);
   readonly reviewViewerItems = signal<ReviewMediaItem[]>([]);
   readonly reviewViewerIndex = signal(0);
+
+  readonly visibleReviews = computed(() => (
+    this.showAllReviews() ? this.reviews() : this.reviews().slice(0, this.initialReviewLimit)
+  ));
+
+  readonly hiddenReviewCount = computed(() => Math.max(0, this.reviews().length - this.initialReviewLimit));
 
   readonly displayImages = computed(() => {
     const current = this.product();
@@ -96,7 +104,7 @@ export class ProductDetailComponent {
 
   readonly normalizedDescriptionHtml = computed(() => {
     const current = this.product();
-    const rawDescription = current?.description || current?.shortDescription || 'Thông tin đang cập nhật.';
+    const rawDescription = current?.description || current?.shortDescription || 'ThÃ´ng tin Ä‘ang cáº­p nháº­t.';
     return this.normalizeDescriptionMedia(rawDescription);
   });
 
@@ -124,7 +132,7 @@ export class ProductDetailComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(([productSlug, queryParams, fragment]) => {
         if (!productSlug) {
-          this.errorMessage.set('Không tìm thấy mã sản phẩm.');
+          this.errorMessage.set('KhÃ´ng tÃ¬m tháº¥y mÃ£ sáº£n pháº©m.');
           this.isLoading.set(false);
           return;
         }
@@ -163,6 +171,14 @@ export class ProductDetailComponent {
 
   onVariantChanged(variant: ProductVariantDocument | null): void {
     this.selectedVariant.set(variant);
+  }
+
+  showMoreReviews(): void {
+    this.showAllReviews.set(true);
+  }
+
+  showLessReviews(): void {
+    this.showAllReviews.set(false);
   }
 
   retry(): void {
@@ -324,14 +340,14 @@ export class ProductDetailComponent {
     this.clearLoadingGuard();
     this.loadingGuard = setTimeout(() => {
       this.isLoading.set(false);
-      this.errorMessage.set('Tải chi tiết sản phẩm quá lâu. Vui lòng thử lại.');
+      this.errorMessage.set('Táº£i chi tiáº¿t sáº£n pháº©m quÃ¡ lÃ¢u. Vui lÃ²ng thá»­ láº¡i.');
     }, 12000);
 
     this.productDataService
       .getProductDetail(productSlug)
       .pipe(
         catchError(() => {
-          this.errorMessage.set('Không thể tải chi tiết sản phẩm.');
+          this.errorMessage.set('KhÃ´ng thá»ƒ táº£i chi tiáº¿t sáº£n pháº©m.');
           return EMPTY;
         }),
         finalize(() => {
@@ -362,12 +378,14 @@ export class ProductDetailComponent {
           this.reviews.set(response.items || []);
           this.averageRating.set(response.averageRating || 0);
           this.reviewCount.set(response.totalReviews || 0);
+          this.showAllReviews.set(false);
         },
         error: () => {
           this.reviews.set([]);
           this.averageRating.set(0);
           this.reviewCount.set(0);
-          this.reviewsError.set('Không thể tải đánh giá sản phẩm');
+          this.showAllReviews.set(false);
+          this.reviewsError.set('KhÃ´ng thá»ƒ táº£i Ä‘Ã¡nh giÃ¡ sáº£n pháº©m');
         },
       });
   }
@@ -633,3 +651,4 @@ export class ProductDetailComponent {
     });
   }
 }
+

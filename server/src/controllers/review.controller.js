@@ -215,8 +215,8 @@ exports.getApprovedReviewsByProduct = async (req, res) => {
           : null,
         createdAt: review.createdAt,
         customerName:
-          review.customer_id?.full_name ||
           review.order_detail_id?.order_id?.shipping_name ||
+          review.customer_id?.full_name ||
           'Khach hang da mua',
         productName: review.order_detail_id?.product_name || '',
       }));

@@ -1,0 +1,39 @@
+﻿<div class="checkout-success-page">
+  <div class="checkout-success-card">
+    <div class="success-check-wrapper">
+      <div class="check-circle">
+        <span aria-hidden="true">✓</span>
+      </div>
+    </div>
+
+    <div class="success-content">
+      <h1 class="success-title">Đặt hàng thành công!</h1>
+      <p class="success-subtitle">Cảm ơn bạn đã tin tưởng lựa chọn <strong>U-HOME FURNI</strong></p>
+      
+      <div class="order-info-pill">
+        <span>Mã đơn hàng:</span>
+        <strong class="order-code">{{ orderCode }}</strong>
+      </div>
+
+      <div class="info-steps">
+        <div class="step-item">
+          <i class="bi bi-telephone-outbound"></i>
+          <span>Nhân viên sẽ gọi xác nhận trong 15-30 phút</span>
+        </div>
+        <div class="step-item">
+          <i class="bi bi-envelope-check"></i>
+          <span>Thông tin vận đơn đã được gửi qua Email/SMS</span>
+        </div>
+      </div>
+
+      <p class="support-text">Cần hỗ trợ gấp? Gọi ngay <span class="hotline">0123 456 789</span></p>
+
+      <div class="success-actions">
+        <a class="btn-primary-luxe" routerLink="/products">Tiếp tục mua sắm</a>
+        <a class="btn-outline-luxe" [routerLink]="['/tra-cuu-van-don']" [queryParams]="{ code: orderCode }">
+          <i class="bi bi-search me-2"></i>Tra cứu đơn hàng
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

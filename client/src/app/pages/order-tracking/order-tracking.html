@@ -27,12 +27,27 @@
     <div class="alert error" *ngIf="errorMessage">{{ errorMessage }}</div>
 
     <div class="order-wrap" *ngFor="let order of orders">
+
       <div class="order-head card">
-        <div>
-          <h2>Đơn hàng {{ order.orderCode }}</h2>
-          <p>Ngày đặt: {{ order.orderedAt }}</p>
+        <div class="order-head__top">
+          <div>
+            <h2>Đơn hàng {{ order.orderCode }}</h2>
+            <p>Ngày đặt: {{ order.orderedAt }}</p>
+          </div>
+          <div class="status-pill">{{ order.statusLabel }}</div>
         </div>
-        <div class="status-pill">{{ order.statusLabel }}</div>
+
+        <div class="timeline timeline--inline" *ngIf="!isCancelledOrRefunded(order)">
+          <div
+            class="timeline-step"
+            *ngFor="let step of timelineSteps; let i = index"
+            [class.active]="i === currentStepIndex(order)"
+            [class.done]="i < currentStepIndex(order)"
+          >
+            <div class="timeline-dot"></div>
+            <div class="timeline-label">{{ step.label }}</div>
+          </div>
+        </div>
       </div>
 
       <div class="alert warning" *ngIf="order.backendStatus === 'cancelled'">
@@ -42,19 +57,6 @@
       <div class="alert info" *ngIf="order.backendStatus === 'refunded'">
         Đơn hàng đã được hoàn tiền. Vui lòng kiểm tra lại giao dịch tại phương thức thanh toán.
       </div>
-
-      <div class="timeline card" *ngIf="!isCancelledOrRefunded(order)">
-        <div
-          class="timeline-step"
-          *ngFor="let step of timelineSteps; let i = index"
-          [class.active]="i === currentStepIndex(order)"
-          [class.done]="i < currentStepIndex(order)"
-        >
-          <div class="timeline-dot"></div>
-          <div class="timeline-label">{{ step.label }}</div>
-        </div>
-      </div>
-
       <div class="complete-box" *ngIf="order.backendStatus === 'delivered'">
         <button type="button" (click)="completeOrder(order)">Hoàn tất đơn hàng</button>
       </div>
@@ -66,14 +68,14 @@
         </div>
       </div>
 
-      <div class="card action-history-card" *ngIf="order.cancellationRequest">
+      <div class="card action-history-card" *ngIf="hasCancellationHistory(order)">
         <h3>Lịch sử yêu cầu hủy của bạn</h3>
         <div class="action-history-grid">
-          <p><strong>Lý do hủy:</strong> {{ order.cancellationRequest.reason || '-' }}</p>
-          <p><strong>SĐT xác nhận:</strong> {{ order.cancellationRequest.phone || '-' }}</p>
-          <p><strong>Thời gian gửi:</strong> {{ order.cancellationRequest.requestedAt ? (order.cancellationRequest.requestedAt | date:'dd/MM/yyyy HH:mm') : '-' }}</p>
+          <p><strong>Lý do hủy:</strong> {{ order.cancellationRequest?.reason || '-' }}</p>
+          <p><strong>SĐT xác nhận:</strong> {{ order.cancellationRequest?.phone || '-' }}</p>
+          <p><strong>Thời gian gửi:</strong> {{ order.cancellationRequest?.requestedAt ? (order.cancellationRequest?.requestedAt | date:'dd/MM/yyyy HH:mm') : '-' }}</p>
           <p><strong>Trạng thái:</strong> {{ order.statusLabel }}</p>
-          <p class="full"><strong>Ghi chú:</strong> {{ order.cancellationRequest.note || '-' }}</p>
+          <p class="full"><strong>Ghi chú:</strong> {{ order.cancellationRequest?.note || '-' }}</p>
         </div>
       </div>
 
@@ -112,42 +114,54 @@
             <strong>{{ formatCurrency(product.unitPrice) }}</strong>
           </div>
         </div>
+
+        <div class="order-action-inline" *ngIf="canRequestCancel(order) || order.cancelForm.open">
+          <p class="order-action-note">Chỉ áp dụng hủy đơn với trạng thái Chờ xác nhận hoặc Đã xác nhận trong vòng 24 giờ.</p>
+          <div class="order-action-buttons">
+            <a class="history-btn history-btn--contact" [href]="shopZaloUrl" target="_blank" rel="noopener">Liên hệ Shop</a>
+            <button
+              type="button"
+              class="history-btn history-btn--cancel"
+              (click)="toggleCancelForm(order)"
+            >
+              {{ canRequestCancel(order) ? 'Yêu cầu hủy đơn' : 'Không thể hủy đơn' }}
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div class="card cancel-card" *ngIf="canRequestCancel(order) || order.cancelForm.open">
-        <h3>Yêu cầu hủy đơn hàng</h3>
-        <p class="review-note">Chỉ áp dụng với đơn Chờ xác nhận hoặc Đã xác nhận trong vòng 24 giờ.</p>
+      <div class="cancel-modal" *ngIf="order.cancelForm.open">
+        <div class="cancel-modal__backdrop" (click)="toggleCancelForm(order)"></div>
+        <div class="card cancel-modal__content">
+          <h3>Yêu cầu hủy đơn hàng</h3>
 
-        <div class="cancel-action" *ngIf="!order.cancelForm.open">
-          <button type="button" (click)="toggleCancelForm(order)">Yêu cầu hủy đơn</button>
-        </div>
+          <div class="cancel-form">
+            <label>
+              Lý do hủy
+              <select [(ngModel)]="order.cancelForm.reason">
+                <option value="">-- Chọn lý do --</option>
+                <option *ngFor="let reason of cancelReasons" [value]="reason">{{ reason }}</option>
+              </select>
+            </label>
 
-        <div class="cancel-form" *ngIf="order.cancelForm.open">
-          <label>
-            Lý do hủy
-            <select [(ngModel)]="order.cancelForm.reason">
-              <option value="">-- Chọn lý do --</option>
-              <option *ngFor="let reason of cancelReasons" [value]="reason">{{ reason }}</option>
-            </select>
-          </label>
+            <label>
+              Ghi chú thêm (tùy chọn)
+              <textarea rows="3" [(ngModel)]="order.cancelForm.note" placeholder="Nhập thêm thông tin nếu cần..."></textarea>
+            </label>
 
-          <label>
-            Ghi chú thêm (tùy chọn)
-            <textarea rows="3" [(ngModel)]="order.cancelForm.note" placeholder="Nhập thêm thông tin nếu cần..."></textarea>
-          </label>
+            <label>
+              SĐT xác nhận
+              <input type="text" [(ngModel)]="order.cancelForm.phone" placeholder="Nhập số điện thoại để admin gọi lại" />
+            </label>
 
-          <label>
-            SĐT xác nhận
-            <input type="text" [(ngModel)]="order.cancelForm.phone" placeholder="Nhập số điện thoại để admin gọi lại" />
-          </label>
+            <div class="cancel-note">Lưu ý: Đơn trên 10 triệu đã đặt cọc 10% sẽ không được hoàn lại.</div>
 
-          <div class="cancel-note">Lưu ý: Đơn trên 10 triệu đã đặt cọc 10% sẽ không được hoàn lại.</div>
-
-          <div class="cancel-form__actions">
-            <button type="button" class="btn-secondary" (click)="toggleCancelForm(order)" [disabled]="order.cancelForm.submitting">Đóng</button>
-            <button type="button" (click)="submitCancelRequest(order)" [disabled]="order.cancelForm.submitting">
-              {{ order.cancelForm.submitting ? 'Đang gửi...' : 'Gửi yêu cầu hủy' }}
-            </button>
+            <div class="cancel-form__actions">
+              <button type="button" class="btn-secondary" (click)="toggleCancelForm(order)" [disabled]="order.cancelForm.submitting">Đóng</button>
+              <button type="button" (click)="submitCancelRequest(order)" [disabled]="order.cancelForm.submitting">
+                {{ order.cancelForm.submitting ? 'Đang gửi...' : 'Gửi yêu cầu hủy' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -248,7 +262,7 @@
               <div class="history-actions">
                 <button type="button" class="history-btn" (click)="viewProductFromHistory(product, 'top')">Xem lại sản phẩm</button>
                 <button type="button" class="history-btn history-btn--green" (click)="buyAgain(product)">Mua lại</button>
-                <button type="button" class="history-btn" (click)="viewProductFromHistory(product, 'review')">Xem cmt</button>
+                <button type="button" class="history-btn" (click)="viewProductFromHistory(product, 'review')">Xem bình luận</button>
               </div>
             </div>
 

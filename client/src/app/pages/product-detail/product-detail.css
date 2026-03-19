@@ -567,3 +567,24 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
+
+.review-list__actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.review-list__toggle {
+  border: 1px solid #e8e0d8;
+  border-radius: 999px;
+  background: #fff;
+  color: #1f2937;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.review-list__toggle:hover {
+  border-color: #c8923a;
+  color: #c8923a;
+}

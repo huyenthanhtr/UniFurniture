@@ -56,7 +56,7 @@
           <div class="review-list" *ngIf="!isReviewsLoading() && !reviewsError()">
             <div class="review-empty" *ngIf="reviews().length === 0">Chưa có đánh giá nào được duyệt.</div>
 
-            <article class="review-card" *ngFor="let review of reviews()">
+            <article class="review-card" *ngFor="let review of visibleReviews()">
               <div class="review-card__head">
                 <div class="review-card__meta-line">
                   <h3>{{ review.customerName }}</h3>
@@ -88,8 +88,17 @@
                 <p class="review-reply__content">{{ review.reply?.content }}</p>
               </div>
             </article>
-          </div>
 
+            <div class="review-list__actions" *ngIf="hiddenReviewCount() > 0 || showAllReviews()">
+              <button type="button" class="review-list__toggle" *ngIf="!showAllReviews()" (click)="showMoreReviews()">
+                Xem thêm
+              </button>
+              <button type="button" class="review-list__toggle" *ngIf="showAllReviews() && reviews().length > initialReviewLimit" (click)="showLessReviews()">
+                Thu gọn
+              </button>
+            </div>
+
+          </div>
 
           <div class="review-media-viewer" *ngIf="reviewViewerOpen()">
             <div class="review-media-viewer__backdrop" (click)="closeReviewMediaViewer()"></div>
@@ -116,6 +125,7 @@
 
   </ng-container>
 </div>
+
 
 
 
