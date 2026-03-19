@@ -53,8 +53,14 @@ export class AdminCollections implements OnInit {
     private cdr: ChangeDetectorRef
   ) { }
 
-  ngOnInit(): void { this.loadCollections(); }
-
+ngOnInit(): void {
+    // 1. Đọc trang hiện tại từ sessionStorage để giữ state khi quay lại
+    const savedPage = sessionStorage.getItem('adminCollectionsPage');
+    if (savedPage) {
+      this.currentPage = parseInt(savedPage, 10);
+    }
+    this.loadCollections(); // Gọi hàm load dữ liệu của bạn
+  }
   loadCollections() {
     this.collectionService.getAllCollections().subscribe({
       next: (data: any) => {
@@ -66,8 +72,7 @@ export class AdminCollections implements OnInit {
     });
   }
 
-  applyFilters() {
-    let filtered = this.collections.filter(col => {
+applyFilters(resetPage: boolean = false): void {    let filtered = this.collections.filter(col => {
       const matchSearch = col.name?.toLowerCase().includes(this.searchTerm.toLowerCase());
       const matchStatus = this.statusFilter === 'all' || col.status === this.statusFilter;
       return matchSearch && matchStatus;
@@ -84,11 +89,41 @@ export class AdminCollections implements OnInit {
         return 0;
       });
     }
-
+  if (resetPage) {
+      this.currentPage = 1;
+      sessionStorage.setItem('adminCollectionsPage', '1');
+    } else {
+      // Đảm bảo currentPage không bị vượt quá tổng số trang đang có
+      const maxPage = Math.max(1, this.totalPages);
+      if (this.currentPage > maxPage) {
+        this.currentPage = maxPage;
+        sessionStorage.setItem('adminCollectionsPage', this.currentPage.toString());
+      }
+    }
     this.filteredCollections = filtered;
-    this.currentPage = 1;
+    this.cdr.detectChanges()
   }
+get totalPages(): number {
+    return Math.ceil(this.filteredCollections.length / this.itemsPerPage);
+  }
+  get visiblePages(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const pages: number[] = [];
 
+    if (total <= 5) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      if (current <= 3) {
+        pages.push(1, 2, 3, 4, 5);
+      } else if (current >= total - 2) {
+        pages.push(total - 4, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(current - 2, current - 1, current, current + 1, current + 2);
+      }
+    }
+    return pages;
+  }
   sortBy(column: string) {
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -112,8 +147,10 @@ export class AdminCollections implements OnInit {
     this.applyFilters();
   }
 
-  changePage(page: number) { this.currentPage = page; }
-  
+changePage(page: number): void {
+    this.currentPage = page;
+    sessionStorage.setItem('adminCollectionsPage', page.toString()); // Lưu trạng thái
+  }  
   get paginatedCollections() {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     return this.filteredCollections.slice(startIndex, startIndex + this.itemsPerPage);

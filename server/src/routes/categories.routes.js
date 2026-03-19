@@ -7,6 +7,7 @@ const uploadImage = require('../middlewares/upload-image');
 
 // GET không cần upload ảnh
 router.get('/', categoryController.getAllCategories);
+router.get('/:id/products', categoryController.getProductsByCategory);
 
 // POST và PUT phải kẹp uploadImage.single('image') VÀO GIỮA như thế này:
 router.post('/', uploadImage.single('image'), categoryController.createCategory);

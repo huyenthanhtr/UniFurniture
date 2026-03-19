@@ -244,23 +244,48 @@ exports.getAllReviews = async (req, res) => {
       .populate('customer_id', 'customer_code full_name phone')
       .populate({
         path: 'order_detail_id',
-        select: 'product_name order_id',
-        populate: {
-          path: 'order_id',
-          select: 'order_code shipping_name shipping_email',
-        },
+        select: 'product_name order_id variant_id', // Thêm variant_id để lấy ảnh
+        populate: [
+          {
+            path: 'order_id',
+            select: 'order_code shipping_name shipping_email',
+          },
+          {
+            path: 'variant_id',
+            select: 'image product_id',
+            populate: {
+              path: 'product_id',
+              select: 'thumbnail_url thumbnail'
+            }
+          }
+        ]
       })
       .sort({ createdAt: -1 });
 
-    const normalized = reviews.map((review) => ({
-      ...review.toObject(),
-      images: Array.isArray(review.images)
-        ? review.images.map((image) => toPublicAssetUrl(req, image)).filter(Boolean)
-        : [],
-      videos: Array.isArray(review.videos)
-        ? review.videos.map((video) => toPublicAssetUrl(req, video)).filter(Boolean)
-        : [],
-    }));
+    const normalized = reviews.map((review) => {
+      // Tìm ảnh sản phẩm từ biến thể (variant) hoặc sản phẩm gốc (product)
+      let productImageUrl = '';
+      if (review.order_detail_id?.variant_id) {
+        const variant = review.order_detail_id.variant_id;
+        if (variant.image) {
+          productImageUrl = variant.image;
+        } else if (variant.product_id) {
+          const prod = variant.product_id;
+          productImageUrl = prod.thumbnail_url || prod.thumbnail || '';
+        }
+      }
+
+      return {
+        ...review.toObject(),
+        productImageUrl: toPublicAssetUrl(req, productImageUrl), // Trả về frontend
+        images: Array.isArray(review.images)
+          ? review.images.map((image) => toPublicAssetUrl(req, image)).filter(Boolean)
+          : [],
+        videos: Array.isArray(review.videos)
+          ? review.videos.map((video) => toPublicAssetUrl(req, video)).filter(Boolean)
+          : [],
+      };
+    });
 
     res.status(200).json(normalized);
   } catch (error) {

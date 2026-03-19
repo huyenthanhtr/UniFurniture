@@ -33,13 +33,13 @@
     <table style="width: 100%; table-layout: fixed; border-collapse: collapse; min-width: 900px;">
       <thead>
         <tr>
-          <th style="width: 100px; text-align: center;">Banner</th>
+          <th style="width: 150px; text-align: center;">Banner</th>
           
-          <th style="width: 25%;" class="cell-title sortable" (click)="sortBy('name')">
+          <th style="width: 20%;" class="cell-title sortable text-center" (click)="sortBy('name')">
             Tên bộ sưu tập <i class="fas" [ngClass]="getSortIcon('name')"></i>
           </th>
           
-          <th style="width: 35%;">Mô tả</th>
+          <th style="width: 40%;" class="text-center">Mô tả</th>
           
           <th style="width: 15%; text-align: center;">Trạng thái</th>
           
@@ -57,7 +57,7 @@
             <img [src]="item.banner || item.banner_url || item.image_url" alt="" class="img-thumbnail-custom">
           </td>
           
-          <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" [title]="item.name">
+          <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; " [title]="item.name" class="text-center">
             <strong>{{ item.name }}</strong>
           </td>
           
@@ -87,10 +87,16 @@
     </table>
   </div>
 
-  <div class="pagination" *ngIf="filteredCollections.length > itemsPerPage">
+<div class="pagination" *ngIf="totalPages > 1">
     <button class="pg pg-arrow" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">&#8249;</button>
-    <button class="pg active">{{ currentPage }}</button>
-    <button class="pg pg-arrow" (click)="changePage(currentPage + 1)" [disabled]="currentPage >= Math.ceil(filteredCollections.length / itemsPerPage)">&#8250;</button>
+    
+    <ng-container *ngFor="let p of visiblePages">
+      <button class="pg" [class.active]="p === currentPage" (click)="changePage(p)">
+        {{ p }}
+      </button>
+    </ng-container>
+
+    <button class="pg pg-arrow" (click)="changePage(currentPage + 1)" [disabled]="currentPage >= totalPages">&#8250;</button>
   </div>
 
   <div class="modal-overlay" *ngIf="showModal">

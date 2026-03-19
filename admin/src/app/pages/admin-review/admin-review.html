@@ -1,17 +1,17 @@
 ﻿<div class="page">
   <div class="page-header">
     <div>
-      <h1>Quản lý đánh giá</h1>
+      <h1>Quản lý Đánh giá</h1>
     </div>
   </div>
 
   <div class="filter-bar card mb-4">
     <div class="filter-wrapper d-flex flex-wrap align-items-center gap-3">
       <div class="filter-item">
-        <input type="text" class="search-input" placeholder="Tìm tên khách, nội dung..." [(ngModel)]="searchTerm" (input)="applyFilters()">
+        <input type="text" class="search-input" placeholder="Tìm tên SP, mã đơn, tên khách, nội dung..." [(ngModel)]="searchTerm" (input)="applyFilters()">
       </div>
       <div class="filter-item">
-        <select class="toolbar-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+        <select class="toolbar-select" [(ngModel)]="statusFilter" (change)="applyFilters(true)">
           <option value="all">-- Trạng thái --</option>
           <option value="pending">Chờ duyệt</option>
           <option value="approved">Đã duyệt</option>
@@ -19,7 +19,7 @@
         </select>
       </div>
       <div class="filter-item">
-        <select class="toolbar-select" [(ngModel)]="ratingFilter" (change)="applyFilters()">
+        <select class="toolbar-select" [(ngModel)]="ratingFilter" (change)="applyFilters(true)">
           <option value="all">-- Số sao --</option>
           <option *ngFor="let s of [5,4,3,2,1]" [value]="s">{{ s }} Sao</option>
         </select>
@@ -34,6 +34,7 @@
     <table>
       <thead>
         <tr>
+          <th style="width: 70px;" class="text-center">Ảnh</th>
           <th style="width: 25%;" class="cell-title sortable" (click)="sortBy('product_name')">Sản phẩm <i class="fas" [ngClass]="getSortIcon('product_name')"></i></th>
           <th style="width: 15%;" class="cell-title sortable" (click)="sortBy('order_code')">Đơn hàng <i class="fas" [ngClass]="getSortIcon('order_code')"></i></th>
           <th style="width: 15%;" class="cell-title sortable" (click)="sortBy('customer_name')">Khách hàng <i class="fas" [ngClass]="getSortIcon('customer_name')"></i></th>
@@ -48,6 +49,13 @@
           <td colspan="7" class="state">Không tìm thấy đánh giá nào.</td>
         </tr>
         <tr *ngFor="let item of paginatedReviews">
+          <td class="text-center">
+            <img 
+              [src]="item.productImageUrl || 'assets/images/placeholder.png'" 
+              alt="Ảnh SP" 
+              style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd2c6;"
+            >
+          </td>
           <td>
             <div style="font-weight: 600; color: #444; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" [title]="item.order_detail_id?.product_name">
               {{ item.order_detail_id?.product_name || 'N/A' }}
@@ -67,7 +75,7 @@
             </small>
           </td>
           <td class="text-center">
-            <span class="badge-rating">{{ item.rating }} ⭐</span>
+            <div class="badge-rating">{{ item.rating }}⭐</div>
           </td>
           <td>
             <div class="text-truncate" style="max-width: 150px;" [title]="item.content">{{ item.content }}</div>
@@ -94,10 +102,16 @@
     </table>
   </div>
 
-  <div class="pagination" *ngIf="filteredReviews.length > itemsPerPage">
+<div class="pagination" *ngIf="totalPages > 1">
     <button class="pg pg-arrow" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">&#8249;</button>
-    <button class="pg active">{{ currentPage }}</button>
-    <button class="pg pg-arrow" (click)="changePage(currentPage + 1)" [disabled]="currentPage >= Math.ceil(filteredReviews.length / itemsPerPage)">&#8250;</button>
+    
+    <ng-container *ngFor="let p of visiblePages">
+      <button class="pg" [class.active]="p === currentPage" (click)="changePage(p)">
+        {{ p }}
+      </button>
+    </ng-container>
+
+    <button class="pg pg-arrow" (click)="changePage(currentPage + 1)" [disabled]="currentPage >= totalPages">&#8250;</button>
   </div>
 
   <div class="modal-overlay" *ngIf="showReviewModal">
