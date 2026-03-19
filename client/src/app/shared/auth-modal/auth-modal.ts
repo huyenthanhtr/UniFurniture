@@ -148,9 +148,7 @@ export class AuthModal {
         });
     }
 
-    closeOnBackdrop(event: MouseEvent) {
-        if ((event.target as HTMLElement).classList.contains('auth-overlay')) {
-            this.ui.closeAuth();
-        }
+    togglePassword() {
+        this.showPassword = !this.showPassword;
     }
 }

@@ -1,4 +1,4 @@
-﻿import { Component, DestroyRef, HostListener, effect, inject, signal, computed } from '@angular/core';
+import { Component, DestroyRef, HostListener, effect, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -197,9 +197,10 @@ export class ProductDetailComponent {
     const maxRetries = 18;
 
     const alignToSection = (node: HTMLElement) => {
-      const scrollTopNow = () => window.scrollTo({ top: 0, behavior: 'auto' });
+      const scrollTopNow = () => window.scrollTo({ top: 0, behavior: 'smooth' });
       if (fragment === 'product-top') {
         scrollTopNow();
+        // Multiple passes to ensure it stays at top if images load
         setTimeout(scrollTopNow, 120);
         setTimeout(scrollTopNow, 360);
         return;

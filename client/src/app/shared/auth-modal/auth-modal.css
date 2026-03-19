@@ -172,6 +172,37 @@
     color: #aaa;
 }
 
+.password-group {
+    position: relative;
+}
+
+.password-group .form-input {
+    padding-right: 45px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 50%;
+    transition: color 0.2s, background 0.2s;
+    z-index: 5;
+}
+
+.password-toggle:hover {
+    color: #ef683a;
+    background: #fdf2f0;
+}
+
 .required-field {
     position: relative;
 }
@@ -181,10 +212,16 @@
     color: #ef4444;
     position: absolute;
     top: 11px;
-    right: 14px;
+    right: 8px; /* Adjusted to not overlap much with eye, but eye is top priority */
     font-size: 16px;
     font-weight: bold;
     pointer-events: none;
+    display: none; /* Hide asterisk when eye icon is present to avoid clutter */
+}
+
+/* Show asterisk only for non-password fields or adjust positioning */
+.required-field:not(.password-group)::after {
+    display: block;
 }
 
 /* Disclaimer */
