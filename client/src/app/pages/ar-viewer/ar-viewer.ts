@@ -81,8 +81,22 @@ export class ArViewer implements OnInit, AfterViewInit {
             next: (models) => {
                 if (models && models.length > 0) {
                     const categoryMap = new Map<string, string>();
-                    
-                    this.products = models.map(m => {
+
+                    const visibleModels = models.filter((m: any) => {
+                        const productStatus = String(m?.product_id?.status || '').trim().toLowerCase();
+                        if (productStatus === 'inactive') {
+                            return false;
+                        }
+
+                        const categorySource = m?.product_id?.category_id;
+                        const categoryStatus = typeof categorySource === 'object'
+                            ? String(categorySource?.status || '').trim().toLowerCase()
+                            : '';
+
+                        return categoryStatus !== 'inactive';
+                    });
+
+                    this.products = visibleModels.map(m => {
                         const p = m.product_id;
                         if (!p) return null;
 

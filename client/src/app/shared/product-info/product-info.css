@@ -240,6 +240,19 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.btn-soldout {
+    width: 100%;
+    padding: 14px;
+    background: #b9b9b9;
+    color: #f7f7f7;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
 .btn-add:hover,
 .btn-buy:hover {
     transform: translateY(-1px);

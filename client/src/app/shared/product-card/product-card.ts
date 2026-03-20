@@ -15,21 +15,54 @@ export class ProductCardComponent {
   readonly starValues = [1, 2, 3, 4, 5];
 
   readonly hoveredColor = signal<ColorSwatch | null>(null);
+  readonly defaultColor = computed<ColorSwatch | null>(() => {
+    const colors = Array.isArray(this.product?.colors) ? this.product.colors : [];
+    return colors.length > 0 ? colors[0] : null;
+  });
+  readonly activeColor = computed<ColorSwatch | null>(() => this.hoveredColor() ?? this.defaultColor());
 
   readonly displayImageUrl = computed(() => {
-    const hovered = this.hoveredColor();
-    return hovered?.imageUrl || this.product.imageUrl;
+    const active = this.activeColor();
+    return active?.imageUrl || this.product.imageUrl;
   });
 
   readonly displayPrice = computed(() => {
-    const hovered = this.hoveredColor();
-    return hovered?.price ?? this.product.price;
+    const active = this.activeColor();
+    const activePrice = this.toNumberOrNull(active?.price);
+    if (activePrice !== null) {
+      return activePrice;
+    }
+    return this.toNumberOrNull(this.product.price);
   });
 
   readonly displayOriginalPrice = computed(() => {
-    const hovered = this.hoveredColor();
-    return hovered?.originalPrice ?? this.product.originalPrice;
+    const active = this.activeColor();
+    const activeOriginal = this.toNumberOrNull(active?.originalPrice);
+    if (activeOriginal !== null) {
+      return activeOriginal;
+    }
+    return this.toNumberOrNull(this.product.originalPrice);
   });
+
+  readonly discountedOriginalPrice = computed(() => {
+    const salePrice = this.displayPrice();
+    const originalPrice = this.displayOriginalPrice();
+
+    if (typeof salePrice !== 'number' || typeof originalPrice !== 'number') {
+      return null;
+    }
+
+    return originalPrice > salePrice ? originalPrice : null;
+  });
+
+  get detailLink(): string[] {
+    const slug = String(this.product?.slug || '').trim();
+    if (slug) {
+      return ['/products', slug];
+    }
+
+    return ['/products', String(this.product?.id || '').trim()];
+  }
 
   get roundedAverageRating(): number {
     return Math.round(Number(this.product?.averageRating || 0));
@@ -45,5 +78,14 @@ export class ProductCardComponent {
 
   onColorLeave(): void {
     this.hoveredColor.set(null);
+  }
+
+  private toNumberOrNull(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 }

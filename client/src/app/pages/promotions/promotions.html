@@ -14,8 +14,8 @@
       </p>
 
       <div class="hero-actions">
-        <a class="btn-primary" [routerLink]="['/products']">Mua ngay</a>
-        <a class="btn-secondary" [routerLink]="['/danh-muc']">Xem danh mục</a>
+        <button type="button" class="btn-primary" (click)="scrollToSection('flash-deals')">Mua ngay</button>
+        <button type="button" class="btn-secondary" (click)="scrollToSection('voucher-codes')">Mã ưu đãi</button>
       </div>
 
       <div class="hero-metrics">
@@ -48,7 +48,7 @@
   </div>
   <div class="state-message state-error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
 
-  <section class="promo-section" *ngIf="!loading && !errorMessage">
+  <section id="flash-deals" class="promo-section" *ngIf="!loading && !errorMessage">
     <div class="section-head">
       <h2>Flash Deal hôm nay</h2>
       <p>Giá tốt trong 24h cho các sản phẩm nổi bật.</p>
@@ -87,7 +87,7 @@
     </ng-template>
   </section>
 
-  <section class="promo-section vouchers" *ngIf="!loading && !errorMessage">
+  <section id="voucher-codes" class="promo-section vouchers" *ngIf="!loading && !errorMessage">
     <div class="section-head">
       <h2>Mã ưu đãi</h2>
       <p class="voucher-subtitle">Nhấn vào để copy mã giảm giá và sử dụng ở trang thanh toán</p>
@@ -122,17 +122,21 @@
     <div class="section-head section-head--collections">
       <div>
         <span class="collection-kicker">Bộ sưu tập nổi bật</span>
-        <h2>Combo được yêu thích</h2>
-        <p>Chọn nhanh các combo nội thất được khách hàng đặt mua nhiều nhất tuần này.</p>
+        <h2>Bộ sưu tập được yêu thích</h2>
+        <p>Chọn nhanh các sản phẩm thuộc bộ sưu tập đang được khách hàng quan tâm nhiều nhất.</p>
       </div>
-      <a class="collection-link" [routerLink]="['/products']">Xem tất cả combo</a>
+      <a
+        class="collection-link"
+        [routerLink]="['/products']"
+        [queryParams]="{ group: 'bo-suu-tap', groupLabel: 'Bộ sưu tập' }"
+      >Xem tất cả Bộ sưu tập</a>
     </div>
 
     <div class="collection-grid">
       <a
         class="collection-card"
         *ngFor="let collection of collections; let index = index; trackBy: trackByCollection"
-        [routerLink]="['/products', collection.productSlug]"
+        [routerLink]="toProductDetailLink(collection)"
       >
         <img [src]="collection.imageUrl" [alt]="collection.title" />
         <span class="collection-badge">{{ index === 0 ? 'Top pick' : 'Hot combo' }}</span>
