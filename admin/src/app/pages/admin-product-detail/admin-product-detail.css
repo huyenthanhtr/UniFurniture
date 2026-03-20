@@ -169,6 +169,11 @@
 .variants-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
 .muted { opacity:.7; font-size:13px; }
 
+.variants-table-wrap {
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
 table { width:100%; border-collapse:collapse; min-width: 760px; }
 th, td { padding:12px; border-bottom:1px solid #f2ede8; vertical-align:middle; text-align:left; }
 th { background:#faf7f3; }
@@ -226,7 +231,7 @@ th { background:#faf7f3; }
 
 .confirm-box {
   background:#fff;
-  padding:30px;
+  padding:24px;
   border-radius:16px;
   width:90%;
   max-width:400px;
@@ -235,11 +240,21 @@ th { background:#faf7f3; }
 }
 
 .variant-box {
-  max-width:560px;
+  max-width:720px;
+  max-height:min(86vh, 920px);
+  display:flex;
+  flex-direction:column;
+}
+
+.variant-box-body {
+  overflow:auto;
+  padding-right:4px;
 }
 
 .variant-gallery {
   display:grid;
+  grid-template-columns:minmax(0, 280px) minmax(0, 1fr);
+  align-items:start;
   gap:12px;
   margin-bottom:16px;
 }
@@ -249,6 +264,7 @@ th { background:#faf7f3; }
   border-radius:14px;
   overflow:hidden;
   background:#fffdfb;
+  max-width:280px;
 }
 
 .variant-main-image img {
@@ -260,8 +276,9 @@ th { background:#faf7f3; }
 
 .variant-thumbs {
   display:grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
   gap:10px;
+  align-content:start;
 }
 
 .variant-thumb {
@@ -364,7 +381,86 @@ th { background:#faf7f3; }
     grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
   }
 
-  table {
-    min-width: 680px;
+  .variants-table {
+    min-width: 640px;
+  }
+}
+
+@media (max-width: 720px) {
+  .variant-gallery {
+    grid-template-columns:1fr;
+  }
+
+  .variant-main-image {
+    max-width:220px;
+  }
+
+  .variant-box {
+    width:min(94vw, 560px);
+    max-height:88vh;
+  }
+}
+
+@media (max-width: 640px) {
+  .variants-table,
+  .variants-table thead,
+  .variants-table tbody,
+  .variants-table tr,
+  .variants-table th,
+  .variants-table td {
+    display:block;
+  }
+
+  .variants-table {
+    min-width:0;
+  }
+
+  .variants-table thead {
+    display:none;
+  }
+
+  .variants-table tbody {
+    display:grid;
+    gap:12px;
+  }
+
+  .variants-table tr {
+    border:1px solid #ece6e0;
+    border-radius:14px;
+    padding:12px;
+    background:#fffdfb;
+  }
+
+  .variants-table td {
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    padding:8px 0;
+    border-bottom:1px dashed #eee3da;
+  }
+
+  .variants-table td:last-child {
+    border-bottom:none;
+    padding-bottom:0;
+  }
+
+  .variants-table td::before {
+    content:attr(data-label);
+    flex:0 0 92px;
+    font-weight:600;
+    color:#6f6255;
+  }
+
+  .variants-table td.actions {
+    justify-content:flex-start;
+  }
+
+  .variants-table td.actions::before {
+    align-self:center;
+  }
+
+  .variants-table td .btn {
+    width:auto;
   }
 }

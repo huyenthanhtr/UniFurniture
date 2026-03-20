@@ -226,7 +226,7 @@ export class AdminProducts implements OnInit, OnDestroy {
   }
 
   viewDetail(product: any): void {
-    this.router.navigate(['/admin/products', product._id], {
+    this.router.navigate(['/admin/products', product.slug || product._id], {
       queryParams: this.route.snapshot.queryParams,
     });
   }
@@ -238,7 +238,7 @@ export class AdminProducts implements OnInit, OnDestroy {
   }
 
   goEdit(product: any): void {
-    this.router.navigate(['/admin/products', product._id, 'edit'], {
+    this.router.navigate(['/admin/products', product.slug || product._id, 'edit'], {
       queryParams: this.route.snapshot.queryParams,
     });
   }

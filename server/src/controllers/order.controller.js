@@ -5,6 +5,7 @@ const Customer = require("../models/Customer");
 const Profile = require("../models/Profile");
 const CustomerAddress = require("../models/CustomerAddress");
 const Payment = require("../models/Payment");
+const Product = require("../models/Product");
 const ProductVariant = require("../models/ProductVariant");
 const ProductImage = require("../models/ProductImage");
 const Coupon = require("../models/Coupon");
@@ -35,6 +36,7 @@ const NORMAL_STATUS_DESC_WEIGHT = {
 };
 const CANCELLATION_GRACE_HOURS = 24;
 const WARRANTY_YEARS = 5;
+const SOLD_COUNT_STATUSES = new Set(["completed"]);
 
 function getExpectedDepositAmount(totalAmount, depositAmount) {
   const total = Math.max(Number(totalAmount || 0), 0);
@@ -126,6 +128,43 @@ async function adjustSoldCountForOrder(orderId, direction = 1) {
   for (const productId of affectedProductIds) {
     await recalculateProductAggregates(productId);
   }
+}
+
+function canAdminSetCancelled(order) {
+  const status = String(order?.status || "").toLowerCase();
+  const cancelledBy = String(order?.cancellation_request?.cancelled_by || "").toLowerCase();
+
+  if (status === "pending") {
+    return { allowed: true, message: "" };
+  }
+
+  if (status === "cancel_pending" && cancelledBy === "customer") {
+    return { allowed: true, message: "" };
+  }
+
+  return {
+    allowed: false,
+    message: "Đơn đang trong quá trình thực hiện nên không thể chuyển sang đã huỷ. Chỉ hỗ trợ huỷ khi đơn còn chờ xác nhận hoặc đang chờ xác nhận huỷ từ khách.",
+  };
+}
+
+function canAdminSetExchanged(order) {
+  const status = String(order?.status || "").toLowerCase();
+  if (status === "delivered" || status === "completed") {
+    return { allowed: true, message: "" };
+  }
+
+  return {
+    allowed: false,
+    message: "Chỉ có thể chuyển sang trạng thái đổi hàng khi đơn đã giao hoặc đã hoàn tất.",
+  };
+}
+
+function canAdminSetCancelPending() {
+  return {
+    allowed: false,
+    message: "Admin không thể tự chuyển đơn sang trạng thái chờ xác nhận huỷ. Trạng thái này chỉ được tạo khi khách hàng gửi yêu cầu huỷ đơn.",
+  };
 }
 
 function addYears(dateInput, years) {
@@ -691,6 +730,18 @@ async function getOrderById(req, res, next) {
       imageMap.set(key, image.image_url || "");
     }
 
+    const productIds = Array.from(
+      new Set(
+        variants
+          .map((variant) => String(variant?.product_id || ""))
+          .filter((value) => mongoose.Types.ObjectId.isValid(value))
+      )
+    );
+    const products = productIds.length
+      ? await Product.find({ _id: { $in: productIds } }).select({ _id: 1, slug: 1 }).lean()
+      : [];
+    const productSlugMap = new Map(products.map((product) => [String(product._id), String(product.slug || "").trim()]));
+
     let coupon = null;
     if (order.coupon_id && mongoose.Types.ObjectId.isValid(String(order.coupon_id))) {
       coupon = await Coupon.findById(order.coupon_id).lean();
@@ -703,6 +754,7 @@ async function getOrderById(req, res, next) {
       return {
         ...item,
         product_id: variant?.product_id || null,
+        product_slug: productSlugMap.get(String(variant?.product_id || "")) || "",
         image_url: imageMap.get(String(item.variant_id || "")) || "",
         variant_name: item.variant_name || variant?.variant_name || variant?.name || "-",
         product_name: item.product_name || "-",
@@ -857,6 +909,27 @@ async function patchOrderStatus(req, res, next) {
     if (!doc) return res.status(404).json({ error: "Order not found" });
 
     const previousStatus = String(doc.status || "").toLowerCase();
+
+    if (nextStatus === "cancelled") {
+      const cancelEligibility = canAdminSetCancelled(doc);
+      if (!cancelEligibility.allowed) {
+        return res.status(400).json({ error: cancelEligibility.message });
+      }
+    }
+
+    if (nextStatus === "cancel_pending") {
+      const cancelPendingEligibility = canAdminSetCancelPending();
+      if (!cancelPendingEligibility.allowed) {
+        return res.status(400).json({ error: cancelPendingEligibility.message });
+      }
+    }
+
+    if (nextStatus === "exchanged") {
+      const exchangeEligibility = canAdminSetExchanged(doc);
+      if (!exchangeEligibility.allowed) {
+        return res.status(400).json({ error: exchangeEligibility.message });
+      }
+    }
 
     if (INVENTORY_DEDUCT_STATUSES.has(nextStatus) && !doc.inventory_deducted) {
       await deductInventoryForOrder(doc._id);
@@ -1222,5 +1295,8 @@ module.exports = {
   requestCancelOrder,
   createCheckoutOrder,
   addWarrantyRecord,
+  canAdminSetCancelled,
+  canAdminSetExchanged,
+  SOLD_COUNT_STATUSES,
 };
 

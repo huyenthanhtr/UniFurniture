@@ -105,96 +105,100 @@
         <span class="muted">({{ variants.length }} biến thể)</span>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Ảnh</th>
-            <th>Biến thể</th>
-            <th>SKU</th>
-            <th>Màu</th>
-            <th>Giá</th>
-            <th>Tồn</th>
-            <th>Trạng thái</th>
-            <th class="th-actions">Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngIf="variants.length===0">
-            <td colspan="8" class="state">Chưa có biến thể.</td>
-          </tr>
+      <div class="variants-table-wrap">
+        <table class="variants-table">
+          <thead>
+            <tr>
+              <th>Ảnh</th>
+              <th>Biến thể</th>
+              <th>SKU</th>
+              <th>Màu</th>
+              <th>Giá</th>
+              <th>Tồn</th>
+              <th>Trạng thái</th>
+              <th class="th-actions">Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="variants.length===0">
+              <td colspan="8" class="state">Chưa có biến thể.</td>
+            </tr>
 
-          <tr *ngFor="let v of variants">
-            <td>
-              <img class="mini-thumb" [src]="normalizeImageUrl(getVariantThumbnail(v))" [alt]="getVariantLabel(v)" />
-            </td>
-            <td class="cell-title" (click)="viewVariant(v)"><b>{{ getVariantLabel(v) }}</b></td>
-            <td>{{ v.sku || '-' }}</td>
-            <td>{{ v.color || '-' }}</td>
-            <td>{{ v.price | number }}</td>
-            <td>{{ v.stock_quantity ?? '-' }}</td>
-            <td>{{ activeStatusLabel(v.variant_status || v.status) }}</td>
-            <td class="actions">
-              <button class="btn btn-ghost" (click)="viewVariant(v); $event.stopPropagation()">Chi tiết</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            <tr *ngFor="let v of variants">
+              <td data-label="Ảnh">
+                <img class="mini-thumb" [src]="normalizeImageUrl(getVariantThumbnail(v))" [alt]="getVariantLabel(v)" />
+              </td>
+              <td class="cell-title" data-label="Biến thể" (click)="viewVariant(v)"><b>{{ getVariantLabel(v) }}</b></td>
+              <td data-label="SKU">{{ v.sku || '-' }}</td>
+              <td data-label="Màu">{{ v.color || '-' }}</td>
+              <td data-label="Giá">{{ v.price | number }}</td>
+              <td data-label="Tồn">{{ v.stock_quantity ?? '-' }}</td>
+              <td data-label="Trạng thái">{{ activeStatusLabel(v.variant_status || v.status) }}</td>
+              <td class="actions" data-label="Hành động">
+                <button class="btn btn-ghost" (click)="viewVariant(v); $event.stopPropagation()">Chi tiết</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
   </div>
 
   <div class="confirm-overlay" *ngIf="selectedVariant">
     <div class="confirm-box variant-box">
       <h3>Chi tiết biến thể</h3>
-      <div class="variant-gallery" *ngIf="selectedVariantImageUrl">
-        <div class="variant-main-image">
-          <img [src]="normalizeImageUrl(selectedVariantImageUrl)" [alt]="getVariantLabel(selectedVariant)" />
+      <div class="variant-box-body">
+        <div class="variant-gallery" *ngIf="selectedVariantImageUrl">
+          <div class="variant-main-image">
+            <img [src]="normalizeImageUrl(selectedVariantImageUrl)" [alt]="getVariantLabel(selectedVariant)" />
+          </div>
+
+          <div class="variant-thumbs">
+            <button
+              class="variant-thumb"
+              type="button"
+              *ngFor="let img of getVariantGalleryImages(selectedVariant)"
+              [class.variant-thumb-active]="img.image_url===selectedVariantImageUrl"
+              (click)="selectVariantImage(img)"
+            >
+              <img [src]="normalizeImageUrl(img.image_url)" [alt]="img.alt_text || getVariantLabel(selectedVariant)" />
+            </button>
+          </div>
         </div>
 
-        <div class="variant-thumbs">
-          <button
-            class="variant-thumb"
-            type="button"
-            *ngFor="let img of getVariantGalleryImages(selectedVariant)"
-            [class.variant-thumb-active]="img.image_url===selectedVariantImageUrl"
-            (click)="selectVariantImage(img)"
-          >
-            <img [src]="normalizeImageUrl(img.image_url)" [alt]="img.alt_text || getVariantLabel(selectedVariant)" />
-          </button>
-        </div>
-      </div>
-
-      <div class="variant-detail-grid">
-        <div class="readonly-field">
-          <label>Tên biến thể</label>
-          <div>{{ getVariantLabel(selectedVariant) }}</div>
-        </div>
-        <div class="readonly-field">
-          <label>SKU</label>
-          <div>{{ selectedVariant.sku || '-' }}</div>
-        </div>
-        <div class="readonly-field">
-          <label>Màu</label>
-          <div>{{ selectedVariant.color || '-' }}</div>
-        </div>
-        <div class="readonly-field">
-          <label>Giá</label>
-          <div>{{ selectedVariant.price | number }}</div>
-        </div>
-        <div class="readonly-field">
-          <label>Giá so sánh</label>
-          <div>{{ selectedVariant.compare_at_price | number }}</div>
-        </div>
-        <div class="readonly-field">
-          <label>Tồn kho</label>
-          <div>{{ selectedVariant.stock_quantity ?? 0 }}</div>
-        </div>
-        <div class="readonly-field">
-          <label>Trạng thái bán</label>
-          <div>{{ activeStatusLabel(selectedVariant.variant_status || selectedVariant.status) }}</div>
-        </div>
-        <div class="readonly-field">
-          <label>Đã bán</label>
-          <div>{{ selectedVariant.sold ?? 0 }}</div>
+        <div class="variant-detail-grid">
+          <div class="readonly-field">
+            <label>Tên biến thể</label>
+            <div>{{ getVariantLabel(selectedVariant) }}</div>
+          </div>
+          <div class="readonly-field">
+            <label>SKU</label>
+            <div>{{ selectedVariant.sku || '-' }}</div>
+          </div>
+          <div class="readonly-field">
+            <label>Màu</label>
+            <div>{{ selectedVariant.color || '-' }}</div>
+          </div>
+          <div class="readonly-field">
+            <label>Giá</label>
+            <div>{{ selectedVariant.price | number }}</div>
+          </div>
+          <div class="readonly-field">
+            <label>Giá so sánh</label>
+            <div>{{ selectedVariant.compare_at_price | number }}</div>
+          </div>
+          <div class="readonly-field">
+            <label>Tồn kho</label>
+            <div>{{ selectedVariant.stock_quantity ?? 0 }}</div>
+          </div>
+          <div class="readonly-field">
+            <label>Trạng thái bán</label>
+            <div>{{ activeStatusLabel(selectedVariant.variant_status || selectedVariant.status) }}</div>
+          </div>
+          <div class="readonly-field">
+            <label>Đã bán</label>
+            <div>{{ selectedVariant.sold ?? 0 }}</div>
+          </div>
         </div>
       </div>
       <div class="confirm-actions">

@@ -96,6 +96,22 @@ function buildProjection(fields, exclude) {
   return null;
 }
 
+async function findProductByKey(key) {
+  const normalizedKey = String(key || "").trim();
+  if (!normalizedKey) {
+    return null;
+  }
+
+  if (mongoose.Types.ObjectId.isValid(normalizedKey)) {
+    const byId = await Product.findById(normalizedKey).lean();
+    if (byId) {
+      return byId;
+    }
+  }
+
+  return Product.findOne({ slug: normalizedKey }).lean();
+}
+
 async function getProducts(req, res, next) {
   try {
     const {
@@ -341,13 +357,7 @@ async function getProducts(req, res, next) {
 async function getProductById(req, res, next) {
   try {
     const { id } = req.params;
-    let doc;
-
-    if (mongoose.Types.ObjectId.isValid(id)) {
-      doc = await Product.findById(id).lean();
-    } else {
-      doc = await Product.findOne({ slug: id }).lean();
-    }
+    const doc = await findProductByKey(id);
 
     if (!doc) return res.status(404).json({ error: "Product not found" });
     res.json(doc);
@@ -383,11 +393,7 @@ async function createProduct(req, res, next) {
 async function updateProduct(req, res, next) {
   try {
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: "Invalid id" });
-    }
-
-    const current = await Product.findById(id);
+    const current = await findProductByKey(id);
     if (!current) return res.status(404).json({ error: "Product not found" });
 
     const payload = normalizeProductPayload(req.body);
@@ -395,10 +401,10 @@ async function updateProduct(req, res, next) {
     if (!payload.name) return res.status(400).json({ error: "Name is required" });
     if (!payload.category_id) return res.status(400).json({ error: "Category is required" });
 
-    const slug = await ensureUniqueSlug(req.body.slug || payload.name, id);
+    const slug = await ensureUniqueSlug(req.body.slug || payload.name, current._id);
 
     await Product.findByIdAndUpdate(
-      id,
+      current._id,
       {
         $set: {
           ...payload,
@@ -408,9 +414,9 @@ async function updateProduct(req, res, next) {
       { new: true, runValidators: true }
     );
 
-    await recalculateProductAggregates(id);
+    await recalculateProductAggregates(current._id);
 
-    const fresh = await Product.findById(id).lean();
+    const fresh = await Product.findById(current._id).lean();
     res.json(fresh);
   } catch (err) {
     next(err);
@@ -420,9 +426,8 @@ async function updateProduct(req, res, next) {
 async function patchProduct(req, res, next) {
   try {
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: "Invalid id" });
-    }
+    const current = await findProductByKey(id);
+    if (!current) return res.status(404).json({ error: "Product not found" });
 
     const update = {};
 
@@ -436,15 +441,14 @@ async function patchProduct(req, res, next) {
 
     if (req.body.name !== undefined) {
       update.name = String(req.body.name || "").trim();
-      update.slug = await ensureUniqueSlug(req.body.slug || update.name, id);
+      update.slug = await ensureUniqueSlug(req.body.slug || update.name, current._id);
     }
 
     if (req.body.description !== undefined) {
       update.description = normalizeRichHtml(req.body.description || "");
     }
 
-    const doc = await Product.findByIdAndUpdate(id, { $set: update }, { new: true, runValidators: true }).lean();
-    if (!doc) return res.status(404).json({ error: "Product not found" });
+    const doc = await Product.findByIdAndUpdate(current._id, { $set: update }, { new: true, runValidators: true }).lean();
 
     res.json(doc);
   } catch (err) {

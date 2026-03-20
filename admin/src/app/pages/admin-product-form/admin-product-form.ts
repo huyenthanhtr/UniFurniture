@@ -54,6 +54,8 @@ export class AdminProductForm implements OnInit, AfterViewInit {
 
   isEdit = false;
   id: string | null = null;
+  routeProductKey: string | null = null;
+  savedProductSlug: string | null = null;
   isLoading = false;
   showImageMenu = false;
 
@@ -101,8 +103,8 @@ export class AdminProductForm implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.id = this.route.snapshot.paramMap.get('id');
-    this.isEdit = !!this.id;
+    this.routeProductKey = this.route.snapshot.paramMap.get('slug');
+    this.isEdit = !!this.routeProductKey;
     this.isLoading = true;
 
     const reqs: any = {
@@ -111,9 +113,7 @@ export class AdminProductForm implements OnInit, AfterViewInit {
     };
 
     if (this.isEdit) {
-      reqs.product = this.api.getProductById(this.id!);
-      reqs.images = this.api.getImages({ product_id: this.id!, limit: 500 });
-      reqs.variants = this.api.getVariants({ product_id: this.id!, limit: 200 });
+      reqs.product = this.api.getProductById(this.routeProductKey!);
     }
 
     forkJoin(reqs).subscribe({
@@ -122,6 +122,8 @@ export class AdminProductForm implements OnInit, AfterViewInit {
         this.collections = res.collections?.items ?? res.collections ?? [];
 
         if (this.isEdit && res.product) {
+          this.id = String(res.product._id || '');
+          this.savedProductSlug = String(res.product.slug || '').trim() || this.routeProductKey;
           this.form.patchValue({
             name: res.product.name ?? '',
             sku: res.product.sku ?? '',
@@ -135,22 +137,44 @@ export class AdminProductForm implements OnInit, AfterViewInit {
             description: res.product.description ?? '',
           });
 
-          const rawImages = res.images?.items ?? res.images ?? [];
-          this.images = this.sortImages(rawImages).map((img: any) => ({
-            _id: String(img._id),
-            localId: this.nextLocalId('img'),
-            variant_id: img.variant_id ? String(img.variant_id) : null,
-            image_url: String(img.image_url || ''),
-            preview_url: this.normalizeImageUrl(img.image_url),
-            sort_order: Number(img.sort_order || 0),
-            is_primary: !!img.is_primary,
-            alt_text: String(img.alt_text || ''),
-            file: null,
-          }));
-          this.selectedFormImageId = this.images[0]?.localId || null;
+          forkJoin({
+            images: this.api.getImages({ product_id: this.id, limit: 500 }),
+            variants: this.api.getVariants({ product_id: this.id, limit: 200 }),
+          }).subscribe({
+            next: (detailRes: any) => {
+              const rawImages = detailRes.images?.items ?? detailRes.images ?? [];
+              this.images = this.sortImages(rawImages).map((img: any) => ({
+                _id: String(img._id),
+                localId: this.nextLocalId('img'),
+                variant_id: img.variant_id ? String(img.variant_id) : null,
+                image_url: String(img.image_url || ''),
+                preview_url: this.normalizeImageUrl(img.image_url),
+                sort_order: Number(img.sort_order || 0),
+                is_primary: !!img.is_primary,
+                alt_text: String(img.alt_text || ''),
+                file: null,
+              }));
+              this.selectedFormImageId = this.images[0]?.localId || null;
 
-          const rawVariants = res.variants?.items ?? res.variants ?? [];
-          this.variants = rawVariants.map((variant: any) => this.mapVariantToDraft(variant));
+              const rawVariants = detailRes.variants?.items ?? detailRes.variants ?? [];
+              this.variants = rawVariants.map((variant: any) => this.mapVariantToDraft(variant));
+
+              if (this.routeProductKey !== res.product.slug && res.product.slug) {
+                this.savedProductSlug = String(res.product.slug);
+                this.router.navigate(['/admin/products', res.product.slug, 'edit'], {
+                  queryParams: this.route.snapshot.queryParams,
+                  replaceUrl: true,
+                });
+              }
+
+              this.syncEditorFromForm();
+              this.form.markAsPristine();
+              this.isLoading = false;
+            },
+            error: () => (this.isLoading = false),
+          });
+
+          return;
         }
 
         this.syncEditorFromForm();
@@ -592,7 +616,7 @@ export class AdminProductForm implements OnInit, AfterViewInit {
 
   back() {
     if (this.isEdit) {
-      this.router.navigate(['/admin/products', this.id], {
+      this.router.navigate(['/admin/products', this.savedProductSlug || this.routeProductKey || this.id], {
         queryParams: this.route.snapshot.queryParams,
       });
       return;
@@ -639,7 +663,8 @@ export class AdminProductForm implements OnInit, AfterViewInit {
 
       this.form.markAsPristine();
       this.isLoading = false;
-      this.router.navigate(['/admin/products', productId], {
+      this.savedProductSlug = String(doc?.slug || '').trim() || this.savedProductSlug;
+      this.router.navigate(['/admin/products', doc?.slug || productId], {
         queryParams: this.route.snapshot.queryParams,
       });
     } catch {
