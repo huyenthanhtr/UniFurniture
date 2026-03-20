@@ -148,16 +148,16 @@ overflow-x: auto; /* Thay đổi từ hidden thành auto */
 table {
   width: 100%;
   border-collapse: collapse;
+
 }
 
 th, td {
-  padding: 12px;
+  padding: 12px 8px;
   border-bottom: 1px solid #f2ede8;
   vertical-align: middle;
   text-align: left;
   font-size: 14px;
 }
-
 th {
   background: #faf7f3;
   color: #444;
@@ -352,4 +352,56 @@ tbody tr:last-child td {
 /* Đảm bảo chữ trong ô khóa không bị bôi đen gây khó chịu */
 .search-input:disabled {
   user-select: none;
+}
+/* Thêm vào cuối file admin-coupons.css nếu chưa có */
+
+/* PHÂN TRANG (PAGINATION) - Đồng bộ với Category */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px; /* Tăng khoảng cách với bảng */
+}
+
+.pg {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid #ddd2c6;
+  background: #fff;
+  color: #908372;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.pg.active {
+  background: #908372;
+  border-color: #908372;
+  color: #fff;
+}
+
+.pg:hover:not(.active):not(:disabled) {
+  background: #fdfcfb;
+  border-color: #908372;
+}
+
+.pg:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pg-arrow {
+  font-size: 18px;
+}
+
+/* Chỉnh lại Header h1 cho chuẩn font-size đồng bộ */
+.page-header h1 {
+  font-size: 24px; /* Fix cứng hoặc dùng calc như Category */
+  font-weight: 700;
+  color: #333;
 }
