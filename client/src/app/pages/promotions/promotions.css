@@ -184,9 +184,9 @@
 
 .section-head h2 {
   margin: 0;
-  color: #1f1b17;
+  color: #950606;
   font-size: clamp(20px, 2vw, 30px);
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.1;
 }
 
