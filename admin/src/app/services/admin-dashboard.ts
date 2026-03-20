@@ -1,51 +1,96 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+
+export type DashboardRangePreset =
+  | 'all'
+  | 'last7days'
+  | 'thisMonth'
+  | 'thisQuarter'
+  | 'thisYear'
+  | 'custom';
+
+export type TrendGranularity = 'day' | 'week' | 'month' | 'quarter';
+
+export interface DashboardOverviewQuery {
+  rangePreset: DashboardRangePreset;
+  granularity: TrendGranularity;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface DashboardTrendData {
+  labels: string[];
+  revenueData: number[];
+  countData: number[];
+}
+
+export interface DashboardSummary {
+  totalRevenue: number;
+  totalOrders: number;
+  processingOrdersCount: number;
+  needRestockCount: number;
+  lowStockCount: number;
+}
+
+export interface DashboardInventoryAlertItem {
+  _id?: string;
+  id?: string;
+  name?: string;
+  sku?: string;
+  stock_quantity: number;
+  reorder_point: number;
+  low_stock_threshold: number;
+  parent_product_id: string;
+  parent_product_name: string;
+}
+
+export interface DashboardOverviewResponse {
+  summary: DashboardSummary;
+  trend: DashboardTrendData;
+  statusStats: Record<string, number>;
+  lists: {
+    recentOrders: any[];
+    installationOrders: any[];
+        topSellingProducts: any[];
+
+  };
+  inventoryAlerts: {
+    needRestockItems: DashboardInventoryAlertItem[];
+    lowStockItems: DashboardInventoryAlertItem[];
+  };
+  meta: {
+    rangePreset: DashboardRangePreset;
+    granularity: TrendGranularity;
+    startDate: string;
+    endDate: string;
+  };
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardService {
-  private apiUrl = 'http://localhost:3000/api'; 
+  private apiUrl = 'http://localhost:3000/api';
 
   constructor(private http: HttpClient) {}
 
-  // Ép lấy 1000 đơn hàng mới nhất để thống kê chính xác
-  getOrders(): Observable<any[]> {
-    return this.http.get<any>(`${this.apiUrl}/orders?limit=1000`).pipe(
-      map(res => res.items || res || []) 
+  getOverview(query: DashboardOverviewQuery): Observable<DashboardOverviewResponse> {
+    let params = new HttpParams()
+      .set('rangePreset', query.rangePreset)
+      .set('granularity', query.granularity);
+
+    if (query.startDate) {
+      params = params.set('startDate', query.startDate);
+    }
+
+    if (query.endDate) {
+      params = params.set('endDate', query.endDate);
+    }
+
+    return this.http.get<DashboardOverviewResponse>(
+      `${this.apiUrl}/admin/dashboard/overview`,
+      { params }
     );
-  }
-
-  getVariants(): Observable<any[]> {
-    return this.http.get<any>(`${this.apiUrl}/product-variants?limit=1000`).pipe(
-      map(res => res.items || res || []) 
-    );
-  }
-
-  getProducts(): Observable<any[]> {
-    return this.http.get<any>(`${this.apiUrl}/products?limit=1000`).pipe(
-      map(res => res.items || res || []) 
-    );
-  }
-
-  calculateTotalRevenue(orders: any[]): number {
-    return orders
-      .filter(order => ['completed', 'delivered'].includes(String(order.status).trim().toLowerCase()))
-      .reduce((sum, order) => sum + (order.total_amount || 0), 0);
-  }
-
-  getOrderStatusStats(orders: any[]): any {
-    const stats: { [key: string]: number } = {};
-    orders.forEach(order => {
-      const status = String(order.status).trim().toLowerCase();
-      stats[status] = (stats[status] || 0) + 1;
-    });
-    return stats;
-  }
-
-  getLowStockAlerts(variants: any[]): any[] {
-    return variants.filter(v => v.stock_quantity <= 5 || v.status === 'unavailable');
   }
 }

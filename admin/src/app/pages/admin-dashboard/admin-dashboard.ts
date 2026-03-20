@@ -3,10 +3,20 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import Chart from 'chart.js/auto';
-import { DashboardService } from '../../services/admin-dashboard';
-import { forkJoin } from 'rxjs';
+import {
+  DashboardService,
+  DashboardOverviewResponse,
+  DashboardRangePreset,
+  TrendGranularity
+} from '../../services/admin-dashboard';
 
-type TrendGranularity = 'day' | 'week' | 'month' | 'quarter';
+const IN_PROGRESS_ORDER_STATUSES = [
+  'pending',
+  'confirmed',
+  'processing',
+  'shipping',
+  'delivered'
+];
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -16,45 +26,134 @@ type TrendGranularity = 'day' | 'week' | 'month' | 'quarter';
   styleUrls: ['./admin-dashboard.css']
 })
 export class AdminDashboard implements OnInit {
+  readonly inProgressOrderStatuses = IN_PROGRESS_ORDER_STATUSES;
+
   totalRevenue = 0;
   totalOrders = 0;
-  totalItemsSold = 0;
-  pendingOrdersCount = 0;
+  processingOrdersCount = 0;
+  needRestockCount = 0;
+  lowStockCount = 0;
 
   lowStockItems: any[] = [];
   needRestockItems: any[] = [];
   recentOrders: any[] = [];
   installationOrders: any[] = [];
-  allOrders: any[] = [];
-  productsMap = new Map<string, any>();
 
   isBrowser: boolean;
   statusChart: Chart | null = null;
   trendChart: Chart | null = null;
 
+  selectedRangePreset: DashboardRangePreset = 'thisYear';
   currentFilter: TrendGranularity = 'month';
   startDate = '';
   endDate = '';
+topSellingProducts: any[] = [];
 
   constructor(
     private dashboardService: DashboardService,
     private router: Router,
     @Inject(PLATFORM_ID) private platformId: Object,
-    private cdr: ChangeDetectorRef // THÊM CHANGEDETECTORREF ĐỂ FIX LỖI PHẢI CLICK CHUỘT
+    private cdr: ChangeDetectorRef
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
 
   ngOnInit(): void {
-    this.initializeDefaultDateRange();
-    this.loadDashboardData();
+    this.applyRangePreset('thisYear');
   }
 
-  initializeDefaultDateRange(): void {
-    const now = new Date();
-    const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
-    this.startDate = this.formatDateInput(firstDayOfYear);
-    this.endDate = this.formatDateInput(now);
+  applyRangePreset(preset: DashboardRangePreset): void {
+    const { start, end, granularity } = this.resolvePresetRange(preset);
+
+    this.selectedRangePreset = preset;
+    this.currentFilter = granularity;
+    this.startDate = this.formatDateInput(start);
+    this.endDate = this.formatDateInput(end);
+
+    this.loadDashboardOverview();
+  }
+
+  changeGranularity(granularity: TrendGranularity): void {
+    this.currentFilter = granularity;
+    this.loadDashboardOverview();
+  }
+
+  onDateChange(): void {
+    if (!this.startDate || !this.endDate) return;
+
+    let start = new Date(this.startDate);
+    let end = new Date(this.endDate);
+
+    if (start > end) {
+      const temp = start;
+      start = end;
+      end = temp;
+      this.startDate = this.formatDateInput(start);
+      this.endDate = this.formatDateInput(end);
+    }
+
+    this.selectedRangePreset = 'custom';
+    this.currentFilter = this.getSuggestedGranularity(start, end);
+
+    this.loadDashboardOverview();
+  }
+
+resolvePresetRange(
+  preset: DashboardRangePreset
+): { start: Date; end: Date; granularity: TrendGranularity } {
+  const now = new Date();
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
+
+  let start = new Date(end);
+  let granularity: TrendGranularity = 'month';
+
+  switch (preset) {
+    case 'all':
+      start = new Date(2000, 0, 1);
+      start.setHours(0, 0, 0, 0);
+      granularity = 'quarter';
+      break;
+
+    case 'last7days':
+      start = new Date(end);
+      start.setDate(end.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      granularity = 'day';
+      break;
+
+    case 'thisMonth':
+      start = new Date(end.getFullYear(), end.getMonth(), 1);
+      start.setHours(0, 0, 0, 0);
+      granularity = 'day';
+      break;
+
+    case 'thisQuarter': {
+      const quarterStartMonth = Math.floor(end.getMonth() / 3) * 3;
+      start = new Date(end.getFullYear(), quarterStartMonth, 1);
+      start.setHours(0, 0, 0, 0);
+      granularity = 'week';
+      break;
+    }
+
+    case 'thisYear':
+    default:
+      start = new Date(end.getFullYear(), 0, 1);
+      start.setHours(0, 0, 0, 0);
+      granularity = 'month';
+      break;
+  }
+
+  return { start, end, granularity };
+}
+  getSuggestedGranularity(start: Date, end: Date): TrendGranularity {
+    const diffMs = end.getTime() - start.getTime();
+    const diffDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1);
+
+    if (diffDays <= 31) return 'day';
+    if (diffDays <= 120) return 'week';
+    if (diffDays <= 366) return 'month';
+    return 'quarter';
   }
 
   formatDateInput(date: Date): string {
@@ -64,276 +163,81 @@ export class AdminDashboard implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
-  loadDashboardData(): void {
-    forkJoin({
-      orders: this.dashboardService.getOrders(),
-      variants: this.dashboardService.getVariants(),
-      products: this.dashboardService.getProducts()
+  loadDashboardOverview(): void {
+    this.dashboardService.getOverview({
+      rangePreset: this.selectedRangePreset,
+      granularity: this.currentFilter,
+      startDate: this.startDate,
+      endDate: this.endDate
     }).subscribe({
-      next: (data) => {
-        this.allOrders = Array.isArray(data.orders) ? data.orders : [];
-        const variantsData = Array.isArray(data.variants) ? data.variants : [];
-        const productsData = Array.isArray(data.products) ? data.products : [];
-
-        this.productsMap = new Map(productsData.map((p: any) => [String(p._id || p.id), p]));
-
-        this.totalOrders = this.allOrders.length;
-        this.totalRevenue = this.dashboardService.calculateTotalRevenue(this.allOrders);
-        this.pendingOrdersCount = this.allOrders.filter((o: any) => this.normalizeStatus(o.status) === 'pending').length;
-        this.totalItemsSold = variantsData.reduce((sum: number, v: any) => sum + Number(v?.sold || 0), 0);
-
-        this.prepareStockLists(variantsData);
-        this.prepareRecentOrders();
-        this.prepareInstallationOrders();
-
-        // ÉP ANGULAR CẬP NHẬT GIAO DIỆN NGAY LẬP TỨC
+      next: (data: DashboardOverviewResponse) => {
+        this.bindOverviewData(data);
         this.cdr.detectChanges();
 
         if (this.isBrowser) {
-          setTimeout(() => {
-            this.createStatusChart(this.allOrders);
-            this.updateTrendChart(this.currentFilter);
-            this.cdr.detectChanges(); // Cập nhật lại sau khi vẽ xong biểu đồ
-          }, 0);
+setTimeout(() => {
+  this.drawMixedChart(
+    data.trend.labels,
+    data.trend.revenueData,
+    data.trend.countData
+  );
+  this.createStatusChart(data.statusStats);
+
+  this.trendChart?.resize();
+  this.statusChart?.resize();
+
+  this.cdr.detectChanges();
+}, 50);
         }
       },
       error: (err) => {
-        console.error('Lỗi tải dữ liệu dashboard:', err);
+        console.error('Lỗi tải dữ liệu dashboard overview:', err);
       }
     });
   }
 
-  prepareStockLists(variantsData: any[]): void {
-    const enrichedVariants = variantsData.map((variant: any) => {
-      let productId = variant?.product_id;
-      if (productId && typeof productId === 'object') {
-        productId = productId._id || productId.id || productId;
-      }
+bindOverviewData(data: DashboardOverviewResponse): void {
+  this.topSellingProducts = Array.isArray(data?.lists?.topSellingProducts)
+    ? data.lists.topSellingProducts
+    : [];
 
-      const parentProduct = this.productsMap.get(String(productId));
-      const stockQuantity = Number(variant?.stock_quantity ?? 0);
+  this.needRestockItems = Array.isArray(data?.inventoryAlerts?.needRestockItems)
+    ? data.inventoryAlerts.needRestockItems
+    : [];
 
-      const rawLowThreshold = Number(variant?.low_stock_threshold ?? variant?.minimum_stock ?? 10);
-      const lowStockThreshold = Number.isFinite(rawLowThreshold) ? Math.max(0, rawLowThreshold) : 10;
+  this.lowStockItems = Array.isArray(data?.inventoryAlerts?.lowStockItems)
+    ? data.inventoryAlerts.lowStockItems
+    : [];
 
-      const rawReorderPoint = Number(variant?.reorder_point ?? Math.min(lowStockThreshold, 3));
-      const reorderPointBase = Number.isFinite(rawReorderPoint) ? Math.max(0, rawReorderPoint) : Math.min(lowStockThreshold, 3);
-      const reorderPoint = Math.min(reorderPointBase, lowStockThreshold);
+  this.recentOrders = Array.isArray(data?.lists?.recentOrders)
+    ? data.lists.recentOrders
+    : [];
 
-      return {
-        ...variant,
-        stock_quantity: stockQuantity,
-        low_stock_threshold: lowStockThreshold,
-        reorder_point: reorderPoint,
-        parent_product_name: parentProduct?.name || 'Sản phẩm chưa cập nhật tên',
-        parent_product_id: String(productId) // BỔ SUNG ID ĐỂ CHUYỂN HƯỚNG
-      };
-    });
+  this.installationOrders = Array.isArray(data?.lists?.installationOrders)
+    ? data.lists.installationOrders
+    : [];
 
-    const sorted = [...enrichedVariants].sort((a: any, b: any) => {
-      if (a.stock_quantity !== b.stock_quantity) return a.stock_quantity - b.stock_quantity;
-      return String(a.parent_product_name).localeCompare(String(b.parent_product_name), 'vi');
-    });
+  this.totalRevenue = Number(data?.summary?.totalRevenue || 0);
+  this.totalOrders = Number(data?.summary?.totalOrders || 0);
+  this.processingOrdersCount = Number(data?.summary?.processingOrdersCount || 0);
 
-    this.needRestockItems = sorted
-      .filter((variant: any) => variant.stock_quantity <= variant.reorder_point)
-      .slice(0, 12);
+  const backendNeedRestockCount = Number(data?.summary?.needRestockCount);
+  const backendLowStockCount = Number(data?.summary?.lowStockCount);
 
-    this.lowStockItems = sorted
-      .filter((variant: any) => {
-        return variant.stock_quantity > variant.reorder_point
-          && variant.stock_quantity <= variant.low_stock_threshold;
-      })
-      .slice(0, 12);
-  }
+  this.needRestockCount =
+    Number.isFinite(backendNeedRestockCount) && backendNeedRestockCount > 0
+      ? backendNeedRestockCount
+      : this.needRestockItems.length;
 
-  prepareRecentOrders(): void {
-    this.recentOrders = [...this.allOrders]
-      .sort((a: any, b: any) => this.getOrderDate(b).getTime() - this.getOrderDate(a).getTime())
-      .slice(0, 7);
-  }
+  this.lowStockCount =
+    Number.isFinite(backendLowStockCount) && backendLowStockCount > 0
+      ? backendLowStockCount
+      : this.lowStockItems.length;
 
-  prepareInstallationOrders(): void {
-    const visibleStatuses = ['confirmed', 'processing', 'shipping'];
-
-    this.installationOrders = this.allOrders
-      .filter((order: any) => order?.is_installed === true && visibleStatuses.includes(this.normalizeStatus(order.status)))
-      .sort((a: any, b: any) => this.getOrderDate(b).getTime() - this.getOrderDate(a).getTime())
-      .slice(0, 10);
-  }
-
-  normalizeStatus(status: any): string {
-    return String(status || '').trim().toLowerCase();
-  }
-
-  getOrderDate(order: any): Date {
-    const rawDate = order?.ordered_at || order?.createdAt || order?.created_at;
-    const parsed = rawDate ? new Date(rawDate) : new Date();
-    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-  }
-
-  getStockSeverityLabel(item: any): string {
-    const stock = Number(item?.stock_quantity ?? 0);
-    const reorderPoint = Number(item?.reorder_point ?? 0);
-    const lowStockThreshold = Number(item?.low_stock_threshold ?? 0);
-
-    if (stock <= 0) return 'Hết hàng';
-    if (stock <= reorderPoint) return `≤ mức nhập ngay (${reorderPoint})`;
-    if (stock <= lowStockThreshold) return `≤ mức cảnh báo (${lowStockThreshold})`;
-    return 'Đủ kho';
-  }
-
-  updateTrendChart(granularity: TrendGranularity): void {
-    this.currentFilter = granularity;
-
-    const start = this.startDate ? new Date(this.startDate) : new Date(new Date().getFullYear(), 0, 1);
-    const end = this.endDate ? new Date(this.endDate) : new Date();
-
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
-
-    if (start > end) {
-      const temp = new Date(start);
-      start.setTime(end.getTime());
-      end.setTime(temp.getTime());
-      this.startDate = this.formatDateInput(start);
-      this.endDate = this.formatDateInput(end);
-    }
-
-    const grouped = new Map<string, { revenue: number; count: number }>();
-
-    for (const order of this.allOrders) {
-      const orderDate = this.getOrderDate(order);
-      if (orderDate < start || orderDate > end) continue;
-
-      const bucketKey = this.getBucketKey(orderDate, granularity);
-      if (!grouped.has(bucketKey)) {
-        grouped.set(bucketKey, { revenue: 0, count: 0 });
-      }
-
-      const stats = grouped.get(bucketKey)!;
-      stats.count += 1;
-
-      const status = this.normalizeStatus(order.status);
-      if (['completed', 'delivered'].includes(status)) {
-        stats.revenue += Number(order?.total_amount || 0);
-      }
-    }
-
-    const bucketKeys = this.generateBucketKeys(start, end, granularity);
-    const labels: string[] = [];
-    const revenueData: number[] = [];
-    const countData: number[] = [];
-
-    for (const key of bucketKeys) {
-      const stats = grouped.get(key) || { revenue: 0, count: 0 };
-      labels.push(this.formatBucketLabel(key, granularity));
-      revenueData.push(stats.revenue);
-      countData.push(stats.count);
-    }
-
-    this.drawMixedChart(labels, revenueData, countData);
-  }
-
-  onDateChange(): void {
-    if (!this.startDate || !this.endDate) return;
-    this.updateTrendChart(this.currentFilter);
-  }
-
-  generateBucketKeys(start: Date, end: Date, granularity: TrendGranularity): string[] {
-    const keys: string[] = [];
-
-    if (granularity === 'day') {
-      const cursor = new Date(start);
-      while (cursor <= end) {
-        keys.push(this.getBucketKey(cursor, 'day'));
-        cursor.setDate(cursor.getDate() + 1);
-      }
-      return keys;
-    }
-
-    if (granularity === 'week') {
-      const cursor = this.getStartOfWeek(start);
-      while (cursor <= end) {
-        keys.push(this.getBucketKey(cursor, 'week'));
-        cursor.setDate(cursor.getDate() + 7);
-      }
-      return keys;
-    }
-
-    if (granularity === 'month') {
-      const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
-      while (cursor <= end) {
-        keys.push(this.getBucketKey(cursor, 'month'));
-        cursor.setMonth(cursor.getMonth() + 1);
-      }
-      return keys;
-    }
-
-    const cursor = new Date(start.getFullYear(), Math.floor(start.getMonth() / 3) * 3, 1);
-    while (cursor <= end) {
-      keys.push(this.getBucketKey(cursor, 'quarter'));
-      cursor.setMonth(cursor.getMonth() + 3);
-    }
-    return keys;
-  }
-
-  getStartOfWeek(date: Date): Date {
-    const result = new Date(date);
-    const day = result.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    result.setDate(result.getDate() + diff);
-    result.setHours(0, 0, 0, 0);
-    return result;
-  }
-
-  getWeekNumber(date: Date): number {
-    const startOfYear = new Date(date.getFullYear(), 0, 1);
-    const diffMs = this.getStartOfWeek(date).getTime() - this.getStartOfWeek(startOfYear).getTime();
-    return Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000)) + 1;
-  }
-
-  getBucketKey(date: Date, granularity: TrendGranularity): string {
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-
-    if (granularity === 'day') {
-      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    }
-
-    if (granularity === 'week') {
-      const weekNumber = this.getWeekNumber(date);
-      return `${year}-W${String(weekNumber).padStart(2, '0')}`;
-    }
-
-    if (granularity === 'month') {
-      return `${year}-${String(month).padStart(2, '0')}`;
-    }
-
-    const quarter = Math.floor((month - 1) / 3) + 1;
-    return `${year}-Q${quarter}`;
-  }
-
-  formatBucketLabel(key: string, granularity: TrendGranularity): string {
-    if (granularity === 'day') {
-      const parts = key.split('-');
-      return `${parts[2]}/${parts[1]}`;
-    }
-
-    if (granularity === 'week') {
-      const [year, week] = key.split('-W');
-      return `T${Number(week)}/${year}`;
-    }
-
-    if (granularity === 'month') {
-      const [year, month] = key.split('-');
-      return `${month}/${year}`;
-    }
-
-    return key.replace('-', ' ');
-  }
-
+  if (data?.meta?.startDate) this.startDate = data.meta.startDate;
+  if (data?.meta?.endDate) this.endDate = data.meta.endDate;
+  if (data?.meta?.granularity) this.currentFilter = data.meta.granularity;
+}
   drawMixedChart(labels: string[], revenueData: number[], countData: number[]): void {
     const canvas = document.getElementById('trendChart') as HTMLCanvasElement | null;
     if (!canvas) return;
@@ -350,7 +254,7 @@ export class AdminDashboard implements OnInit {
             type: 'bar',
             label: 'Doanh thu (VNĐ)',
             data: revenueData,
-            backgroundColor: '#908372', 
+            backgroundColor: '#908372',
             borderRadius: 6,
             yAxisID: 'y'
           },
@@ -358,7 +262,7 @@ export class AdminDashboard implements OnInit {
             type: 'line',
             label: 'Số đơn hàng',
             data: countData,
-            borderColor: '#d4a373', 
+            borderColor: '#d4a373',
             backgroundColor: '#d4a373',
             pointRadius: 3,
             pointHoverRadius: 4,
@@ -412,7 +316,7 @@ export class AdminDashboard implements OnInit {
     });
   }
 
-  createStatusChart(orders: any[]): void {
+  createStatusChart(stats: Record<string, number>): void {
     const canvas = document.getElementById('statusPieChart') as HTMLCanvasElement | null;
     if (!canvas) return;
 
@@ -420,7 +324,6 @@ export class AdminDashboard implements OnInit {
       this.statusChart.destroy();
     }
 
-    const stats = this.dashboardService.getOrderStatusStats(orders);
     const labels = [
       'Chờ xử lý',
       'Đã xác nhận',
@@ -432,19 +335,30 @@ export class AdminDashboard implements OnInit {
       'Đã hủy',
       'Đã đổi hàng'
     ];
+
     const data = [
-      stats['pending'] || 0,
-      stats['confirmed'] || 0,
-      stats['processing'] || 0,
-      stats['shipping'] || 0,
-      stats['delivered'] || 0,
-      stats['completed'] || 0,
-      stats['cancel_pending'] || 0,
-      stats['cancelled'] || 0,
-      stats['exchanged'] || 0
+      stats?.['pending'] || 0,
+      stats?.['confirmed'] || 0,
+      stats?.['processing'] || 0,
+      stats?.['shipping'] || 0,
+      stats?.['delivered'] || 0,
+      stats?.['completed'] || 0,
+      stats?.['cancel_pending'] || 0,
+      stats?.['cancelled'] || 0,
+      stats?.['exchanged'] || 0
     ];
-    
-    const colors = ['#eab308', '#d4a373', '#a3b18a', '#908372', '#588157', '#166534', '#f87171', '#b42318', '#475569'];
+
+    const colors = [
+      '#eab308',
+      '#d4a373',
+      '#a3b18a',
+      '#908372',
+      '#588157',
+      '#166534',
+      '#f87171',
+      '#b42318',
+      '#475569'
+    ];
 
     this.statusChart = new Chart(canvas, {
       type: 'doughnut',
@@ -476,12 +390,33 @@ export class AdminDashboard implements OnInit {
     });
   }
 
+  normalizeStatus(status: any): string {
+    return String(status || '').trim().toLowerCase();
+  }
+
+  getOrderDate(order: any): Date {
+    const rawDate = order?.ordered_at || order?.createdAt || order?.created_at;
+    const parsed = rawDate ? new Date(rawDate) : new Date();
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  }
+
+
+
   goToOrders(statusFilter?: string): void {
     if (statusFilter) {
       this.router.navigate(['/admin/orders'], { queryParams: { status: statusFilter } });
       return;
     }
+
     this.router.navigate(['/admin/orders']);
+  }
+
+  goToOrdersByStatuses(statuses: string[]): void {
+    this.router.navigate(['/admin/orders'], {
+      queryParams: {
+        statuses: statuses.join(',')
+      }
+    });
   }
 
   goToOrderDetail(orderId: string): void {
@@ -492,14 +427,13 @@ export class AdminDashboard implements OnInit {
     this.router.navigate(['/admin/products']);
   }
 
-  // HÀM MỚI BỔ SUNG: Chuyển thẳng đến trang chi tiết của sản phẩm đó
   goToProductDetail(productId: string): void {
     if (productId && productId !== 'undefined' && productId !== 'null') {
       this.router.navigate(['/admin/products', productId]);
-    } else {
-      // Đề phòng trường hợp lỗi không có ID thì về danh sách sản phẩm
-      this.router.navigate(['/admin/products']);
+      return;
     }
+
+    this.router.navigate(['/admin/products']);
   }
 
   getStatusBadgeClass(status: string): string {

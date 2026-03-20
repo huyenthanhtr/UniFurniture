@@ -4,7 +4,7 @@ const cors = require("cors");
 const path = require("path");
 
 const connectDB = require("./src/configs/db");
-
+const dashboardRoutes = require('./src/routes/dashboard.routes');
 const cartRoutes = require("./src/routes/cart.routes");
 const cartItemsRoutes = require("./src/routes/cart-items.routes");
 const categoriesRoutes = require("./src/routes/categories.routes");
@@ -57,7 +57,7 @@ app.use("/api/profiles", profilesRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/product-models-3d", productModels3dRoutes);
 app.use('/api/reviews', reviewRoutes);
-
+app.use('/api/admin/dashboard', dashboardRoutes);
 connectDB().then(async () => {
   await normalizeSystemCodes();
   const PORT = process.env.PORT || 3000;
