@@ -139,20 +139,71 @@
 /* BỐ CỤC LƯỚI */
 .charts-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+  grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.9fr);
   gap: 20px;
   margin-bottom: 24px;
+  align-items: start;
 }
-
 .tables-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+  grid-template-columns: minmax(0, 1.75fr) minmax(340px, 0.95fr);
   gap: 20px;
+  align-items: start;
 }
 
 /* BIỂU ĐỒ */
-.chart-container { height: 360px; position: relative; width: 100%; }
-.chart-container-sm { height: 360px; }
+.chart-container {
+  height: 340px;
+  min-height: 340px;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.chart-container-sm {
+  height: 340px;
+  min-height: 340px;
+}
+.chart-container canvas,
+.chart-container-sm canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+}
+.trend-card,
+.status-card,
+.recent-orders-card,
+.operational-card {
+  min-width: 0;
+  overflow: hidden;
+}
+.trend-card .card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.card-header-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.custom-date {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.custom-date label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #666;
+  font-weight: 600;
+}
 
 /* TOOLBAR & FORMS */
 .chart-toolbar {
@@ -256,17 +307,47 @@ tbody tr:last-child td { border-bottom: none; }
 .empty-cell { text-align: center; color: #999; padding: 32px 16px !important; }
 
 /* LIST GROUPS */
-.operational-column { display: flex; flex-direction: column; gap: 24px; }
-.operational-list { max-height: 280px; overflow-y: auto; }
+.operational-column { display: flex; flex-direction: column; gap: 20px; }
+.operational-list { max-height: 220px; overflow-y: auto; }
+
+.operational-card {
+  margin-bottom: 0;
+}
+
+.recent-orders-card .table-wrap {
+  max-height: 540px;
+  overflow: auto;
+}
+
+.recent-orders-card thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #faf7f3;
+}
+.recent-orders-card table {
+  min-width: 760px;
+}
 .list-group { margin: 0; padding: 0; list-style: none; }
 .list-group-item {
-  padding: 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid #f2ede8;
   background: #fff;
 }
 .list-group-item:last-child { border-bottom: none; }
 
-/* BADGES (Trạng thái) */
+.operational-card .list-group-item strong {
+  display: block;
+  line-height: 1.45;
+  margin-bottom: 4px;
+}
+
+.operational-card .list-group-item small {
+  line-height: 1.5;
+}
+
+/* BADGES (Trạng thái)
+ */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -327,4 +408,212 @@ tbody tr:last-child td { border-bottom: none; }
   .page { padding: 12px; }
   .card-header, .card-body, .kpi-card { padding: 16px; }
   th, td { padding: 12px; }
+}
+
+.dashboard-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.range-preset-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.range-summary {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #666;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .dashboard-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 1200px) {
+  .charts-grid,
+  .tables-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-container,
+  .chart-container-sm {
+    height: 320px;
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 12px;
+  }
+
+  .card-header,
+  .card-body,
+  .kpi-card {
+    padding: 16px;
+  }
+
+  th,
+  td {
+    padding: 12px;
+  }
+
+  .dashboard-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-container,
+  .chart-container-sm {
+    height: 280px;
+    min-height: 280px;
+  }
+
+  .operational-list {
+    max-height: 200px;
+  }
+}
+/* Layout tổng thể */
+.main-stats-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr; /* Tỷ lệ 2:1 cho biểu đồ */
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+/* Fix lỗi filter bị nhảy trong ảnh bạn gửi */
+.chart-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.custom-date-minimal {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.custom-date-minimal .search-input {
+  width: 130px;
+  height: 32px;
+  font-size: 12px;
+}
+
+/* Làm đẹp các thẻ vận hành bên phải */
+.operational-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.status-card {
+  margin-bottom: 0; /* Ghi đè margin cũ */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cố định chiều cao các list để không bị nhảy */
+.operational-list {
+  height: 300px; /* Độ cao cố định */
+  overflow-y: auto;
+}
+
+/* Responsive cho Mobile */
+@media (max-width: 1024px) {
+  .main-stats-grid, .details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.ops-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+  align-items: start;
+}
+
+.table-pair-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.table-half-card,
+.top-products-card,
+.operational-card {
+  min-width: 0;
+}
+
+.ops-grid-3 .operational-list {
+  height: 260px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.table-half-card .table-wrap {
+  max-height: 520px;
+  overflow: auto;
+}
+
+.top-products-card table {
+  min-width: 640px;
+}
+
+.product-name-cell strong {
+  display: block;
+  line-height: 1.45;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.top-products-card td,
+.top-products-card th {
+  vertical-align: middle;
+}
+
+@media (max-width: 1200px) {
+  .ops-grid-3,
+  .table-pair-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ops-grid-3 .operational-list {
+    height: 220px;
+    max-height: 220px;
+  }
+}
+/* Đảm bảo 2 bảng dưới có độ cao đồng bộ */
+.table-pair-grid .table-wrap {
+  height: 500px; /* Tăng lên một chút để hiển thị được nhiều đơn hàng hơn */
+  overflow-y: auto;
+}
+
+/* Tinh chỉnh badge cho top bán chạy */
+.top-products-card .badge-success {
+  font-size: 13px;
+  padding: 6px 12px;
 }
