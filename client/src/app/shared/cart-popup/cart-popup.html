@@ -44,7 +44,12 @@
                             {{ item.colorName || 'Mặc định' }}@if (item.variantLabel) { / {{ item.variantLabel }} }
                         </span>
                         }
-                        <span class="cart-item-price">{{ formatPrice(item.price) }}</span>
+                        <div class="cart-item-price-row">
+                            <span class="cart-item-price">{{ formatPrice(item.price) }}</span>
+                            @if (showOriginalPrice(item)) {
+                            <span class="cart-item-original-price">{{ formatPrice(getOriginalPrice(item)) }}</span>
+                            }
+                        </div>
                         <div class="cart-item-actions">
                             <div class="qty-controls">
                                 <button type="button" class="qty-mini-btn" (click)="decreaseQuantity(item)">-</button>

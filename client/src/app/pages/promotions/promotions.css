@@ -106,6 +106,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  font: inherit;
   padding: 12px 22px;
   border-radius: 999px;
   text-decoration: none;
@@ -155,6 +157,11 @@
 
 .promo-section {
   margin-top: 28px;
+}
+
+#flash-deals,
+#voucher-codes {
+  scroll-margin-top: 84px;
 }
 
 .state-message {
@@ -529,28 +536,29 @@
   display: inline-flex;
   align-items: center;
   margin-bottom: 8px;
-  padding: 4px 10px;
+  padding: 5px 10px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #fdf2e7;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: linear-gradient(120deg, #ef683a, #f0932f);
+  box-shadow: 0 8px 18px rgba(239, 104, 58, 0.3);
 }
 
 .collection-overlay h3 {
   margin: 0;
-  font-size: clamp(20px, 1.8vw, 34px);
-  line-height: 1.2;
+  font-size: clamp(18px, 1.6vw, 26px);
+  line-height: 1.25;
 }
 
 .collection-overlay p {
   margin: 6px 0 0;
   color: rgba(255, 255, 255, 0.88);
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .collection-cta {

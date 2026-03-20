@@ -114,6 +114,21 @@ export class CartPopup {
         return `${new Intl.NumberFormat('vi-VN').format(price)}₫`;
     }
 
+    showOriginalPrice(item: CartItem): boolean {
+        return this.getOriginalPrice(item) !== null;
+    }
+
+    getOriginalPrice(item: CartItem): number | null {
+        const salePrice = typeof item.price === 'number' ? item.price : null;
+        const originalPrice = typeof item.originalPrice === 'number' ? item.originalPrice : null;
+
+        if (salePrice === null || originalPrice === null) {
+            return null;
+        }
+
+        return originalPrice > salePrice ? originalPrice : null;
+    }
+
     private setError(cartKey: string) {
         this.errorItems.update(set => {
             const newSet = new Set(set);

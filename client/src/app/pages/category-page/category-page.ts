@@ -14,6 +14,7 @@ interface Category {
   _id: string;
   name: string;
   slug: string;
+  status?: string;
   image_url?: string;
   description?: string;
 }
@@ -140,10 +141,11 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
     this.loading = true;
 
     this.http
-      .get<any>(`${BASE_URL}/categories?slug=${slug}&limit=1`)
+      .get<any>(`${BASE_URL}/categories?slug=${slug}&limit=1&status=active`)
       .pipe(catchError(() => of({ items: [] })))
       .subscribe((res) => {
-        const items: Category[] = Array.isArray(res?.items) ? res.items : [];
+        const items: Category[] = (Array.isArray(res?.items) ? res.items : [])
+          .filter((category: Category) => this.isCategoryVisible(category));
         const matchedCategory = items[0] || null;
 
         if (matchedCategory) {
@@ -173,10 +175,11 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
     }
 
     this.http
-      .get<any>(`${BASE_URL}/categories?limit=200`)
+      .get<any>(`${BASE_URL}/categories?limit=200&status=active`)
       .pipe(catchError(() => of({ items: [] })))
       .subscribe((res) => {
-        const allCategories: Category[] = Array.isArray(res?.items) ? res.items : [];
+        const allCategories: Category[] = (Array.isArray(res?.items) ? res.items : [])
+          .filter((category: Category) => this.isCategoryVisible(category));
         const matchedCategories =
           group.categorySlugs.length > 0
             ? allCategories.filter((category) => group.categorySlugs.includes(category.slug))
@@ -200,10 +203,11 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
 
   private loadMultiCategoryBanner(categoryIds: string): void {
     this.http
-      .get<any>(`${BASE_URL}/categories?limit=200`)
+      .get<any>(`${BASE_URL}/categories?limit=200&status=active`)
       .pipe(catchError(() => of({ items: [] })))
       .subscribe((res) => {
-        const allCategories: Category[] = Array.isArray(res?.items) ? res.items : [];
+        const allCategories: Category[] = (Array.isArray(res?.items) ? res.items : [])
+          .filter((category: Category) => this.isCategoryVisible(category));
         const idsList = categoryIds
           .split(',')
           .map((id) => id.trim())
@@ -351,6 +355,15 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
       .split(',')
       .map((id) => id.trim())
       .filter(Boolean);
+  }
+
+  private isCategoryVisible(category: Category | null | undefined): boolean {
+    if (!category) {
+      return false;
+    }
+
+    const status = String(category.status || '').trim().toLowerCase();
+    return status !== 'inactive';
   }
 
   goToPage(page: number): void {

@@ -21,7 +21,7 @@
         <div class="kv"><span>Loại</span><b>{{ product.product_type || '-' }}</b></div>
         <div class="kv"><span>SKU</span><b>{{ product.sku || '-' }}</b></div>
         <div class="kv"><span>Slug</span><b>{{ product.slug || '-' }}</b></div>
-        <div class="kv"><span>Giá thấp nhất</span><b>{{ product.min_price | number }}</b></div>
+        <div class="kv"><span>Giá thấp nhất</span><b>{{ displayMinPrice | number }}</b></div>
         <div class="kv"><span>Đã bán</span><b>{{ product.sold || 0 }}</b></div>
         <div class="kv">
           <span>Trạng thái</span>

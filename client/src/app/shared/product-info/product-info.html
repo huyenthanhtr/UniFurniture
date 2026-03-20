@@ -76,7 +76,7 @@
   </div>
 
   <div class="quantity">
-    <button type="button" class="qty-btn" (click)="decrease()" aria-label="Giảm số lượng">-</button>
+    <button type="button" class="qty-btn" [disabled]="isOutOfStock" (click)="decrease()" aria-label="Giảm số lượng">-</button>
     <input
       type="number"
       class="qty-input"
@@ -84,6 +84,7 @@
       [min]="quantityInputMin"
       step="1"
       inputmode="numeric"
+      [disabled]="isOutOfStock"
       [value]="quantityInput"
       (input)="onQuantityInput($event)"
       (blur)="onQuantityBlur()"
@@ -93,21 +94,26 @@
       type="button"
       class="qty-btn"
       [class.qty-btn--disabled]="!canIncreaseQuantity"
-      [disabled]="!canIncreaseQuantity"
+      [disabled]="!canIncreaseQuantity || isOutOfStock"
       (click)="increase()"
       aria-label="Tăng số lượng"
     >+</button>
   </div>
 
   <p class="add-message" [class.add-message--error]="isDisplayMessageError" *ngIf="displayMessage">{{ displayMessage }}</p>
-  <button type="button" class="btn-add" (click)="addToCart()">THÊM VÀO GIỎ</button>
-  <button
-    type="button"
-    class="btn-buy"
-    [class.btn-buy--disabled]="isBuyNowDisabled"
-    [disabled]="isBuyNowDisabled"
-    (click)="buyNow()"
-  >MUA NGAY</button>
+  <ng-container *ngIf="!isOutOfStock; else soldOutAction">
+    <button type="button" class="btn-add" (click)="addToCart()">THÊM VÀO GIỎ</button>
+    <button
+      type="button"
+      class="btn-buy"
+      [class.btn-buy--disabled]="isBuyNowDisabled"
+      [disabled]="isBuyNowDisabled"
+      (click)="buyNow()"
+    >MUA NGAY</button>
+  </ng-container>
+  <ng-template #soldOutAction>
+    <button type="button" class="btn-soldout" disabled>HẾT HÀNG</button>
+  </ng-template>
 </div>
 
 <ng-template #contactPrice>Liên hệ</ng-template>

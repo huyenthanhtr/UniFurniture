@@ -1,4 +1,4 @@
-<a class="product-card" [routerLink]="['/products', product.slug]">
+<a class="product-card" [routerLink]="detailLink">
   <div class="image-wrapper">
     <img [src]="displayImageUrl()" [alt]="product.name" class="product-image" />
     <div class="badge" *ngIf="product.discountBadge">
@@ -16,8 +16,8 @@
         <ng-container *ngIf="displayPrice() !== null; else contactPrice">{{ displayPrice() | number }}d</ng-container>
       </span>
 
-      <span class="original-price" *ngIf="displayOriginalPrice() !== null">
-        {{ displayOriginalPrice() | number }}d
+      <span class="original-price" *ngIf="discountedOriginalPrice() !== null">
+        {{ discountedOriginalPrice() | number }}d
       </span>
     </div>
 

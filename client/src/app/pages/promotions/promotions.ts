@@ -1,9 +1,8 @@
 ﻿import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
-import { Observable, catchError, forkJoin, map, of, timeout } from 'rxjs';
-import { ProductDataService, ProductListItem } from '../../services/product-data.service';
+import { Observable, catchError, finalize, forkJoin, map, of, shareReplay, timeout } from 'rxjs';
 
 interface FlashDeal {
   id: string;
@@ -41,13 +40,57 @@ interface VoucherDeal {
 
 interface PromoCollection {
   id: string;
+  productId: string;
   productSlug: string;
   title: string;
   subtitle: string;
   imageUrl: string;
 }
 
+interface CollectionApi {
+  _id?: string;
+  name?: string;
+  slug?: string;
+  status?: string;
+}
+
+interface ProductApi {
+  _id?: string;
+  slug?: string;
+  name?: string;
+  status?: string;
+  thumbnail?: string;
+  thumbnail_url?: string;
+  min_price?: number;
+  compare_at_price?: number;
+  sold?: number;
+  collection_id?: string;
+}
+
+interface ApiListResponse<T> {
+  items?: T[];
+}
+
+interface PromoProductItem {
+  id: string;
+  slug: string;
+  name: string;
+  price: number;
+  originalPrice: number;
+  imageUrl: string;
+  soldCount: number;
+  collectionId: string;
+}
+
 const API_BASE_URL = 'http://localhost:3000/api';
+const FALLBACK_IMAGE_URL =
+  'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=900';
+
+interface PromotionsCacheData {
+  flashDeals: FlashDeal[];
+  vouchers: VoucherDeal[];
+  collections: PromoCollection[];
+}
 
 @Component({
   selector: 'app-promotions-page',
@@ -57,10 +100,17 @@ const API_BASE_URL = 'http://localhost:3000/api';
   styleUrl: './promotions.css',
 })
 export class PromotionsPageComponent implements OnInit, OnDestroy {
-  private readonly productDataService = inject(ProductDataService);
   private readonly http = inject(HttpClient);
   private readonly ngZone = inject(NgZone);
   private readonly cdr = inject(ChangeDetectorRef);
+  private static readonly CACHE_TTL_MS = 3 * 60 * 1000;
+  private static cache:
+    | {
+        data: PromotionsCacheData;
+        cachedAt: number;
+      }
+    | null = null;
+  private static inFlightData$?: Observable<PromotionsCacheData>;
 
   readonly countdown = signal({ hours: '00', minutes: '00', seconds: '00' });
 
@@ -108,6 +158,15 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
     return collection.id || String(index);
   }
 
+  toProductDetailLink(collection: PromoCollection): string[] {
+    const slug = String(collection?.productSlug || '').trim();
+    if (slug) {
+      return ['/products', slug];
+    }
+
+    return ['/products', String(collection?.productId || '').trim()];
+  }
+
   formatPrice(value: number): string {
     return new Intl.NumberFormat('vi-VN').format(value) + '\u0111';
   }
@@ -124,6 +183,25 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
       return 0;
     }
     return Math.min(Math.round((deal.sold / deal.total) * 100), 100);
+  }
+
+  scrollToSection(sectionId: string): void {
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+      return;
+    }
+
+    const section = document.getElementById(sectionId);
+    if (!section) {
+      return;
+    }
+
+    const topOffset = this.getTopStickyOffset() + 12;
+    const targetTop = window.scrollY + section.getBoundingClientRect().top - topOffset;
+
+    window.scrollTo({
+      top: Math.max(targetTop, 0),
+      behavior: 'smooth',
+    });
   }
 
   copyVoucherCode(voucher: VoucherDeal): void {
@@ -157,17 +235,25 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
   }
 
   private loadData(): void {
+    const cache = PromotionsPageComponent.cache;
+    if (cache && Date.now() - cache.cachedAt < PromotionsPageComponent.CACHE_TTL_MS) {
+      this.flashDeals = cache.data.flashDeals;
+      this.vouchers = cache.data.vouchers;
+      this.collections = cache.data.collections;
+      this.loading = false;
+      this.errorMessage = '';
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.loading = true;
     this.errorMessage = '';
 
-    forkJoin({
-      products: this.productDataService.getProductList(80).pipe(catchError(() => of([] as ProductListItem[]))),
-      coupons: this.fetchCoupons().pipe(catchError(() => of([] as CouponApi[]))),
-    }).subscribe(({ products, coupons }) => {
+    this.getPromotionsData().subscribe((data) => {
       this.ngZone.run(() => {
-        this.flashDeals = this.mapFlashDeals(products);
-        this.vouchers = this.mapVouchers(coupons);
-        this.collections = this.mapCollections(products);
+        this.flashDeals = data.flashDeals;
+        this.vouchers = data.vouchers;
+        this.collections = data.collections;
 
         if (!this.flashDeals.length && !this.vouchers.length && !this.collections.length) {
           this.errorMessage =
@@ -178,6 +264,73 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       });
     });
+  }
+
+  private getPromotionsData(): Observable<PromotionsCacheData> {
+    if (!PromotionsPageComponent.inFlightData$) {
+      PromotionsPageComponent.inFlightData$ = forkJoin({
+        products: this.fetchActiveProducts().pipe(catchError(() => of([] as PromoProductItem[]))),
+        collections: this.fetchCollections().pipe(catchError(() => of([] as CollectionApi[]))),
+        coupons: this.fetchCoupons().pipe(catchError(() => of([] as CouponApi[]))),
+      }).pipe(
+        map(({ products, collections, coupons }) => {
+          const data: PromotionsCacheData = {
+            flashDeals: this.mapFlashDeals(products),
+            vouchers: this.mapVouchers(coupons),
+            collections: this.mapCollections(products, collections),
+          };
+
+          PromotionsPageComponent.cache = {
+            data,
+            cachedAt: Date.now(),
+          };
+
+          return data;
+        }),
+        finalize(() => {
+          PromotionsPageComponent.inFlightData$ = undefined;
+        }),
+        shareReplay(1),
+      );
+    }
+
+    return PromotionsPageComponent.inFlightData$;
+  }
+
+  private fetchActiveProducts(): Observable<PromoProductItem[]> {
+    const params = new HttpParams()
+      .set('page', '1')
+      .set('limit', '120')
+      .set('status', 'active')
+      .set('sortBy', 'sold')
+      .set('order', 'desc')
+      .set(
+        'fields',
+        'name,slug,status,thumbnail,thumbnail_url,min_price,compare_at_price,sold,collection_id',
+      );
+
+    return this.http.get<ProductApi[] | ApiListResponse<ProductApi>>(`${API_BASE_URL}/products`, { params }).pipe(
+      timeout(12000),
+      map((response) => (Array.isArray(response) ? response : response.items || [])),
+      map((items) =>
+        items
+          .filter((item) => String(item.status || '').trim().toLowerCase() === 'active')
+          .map((item) => ({
+            id: String(item._id || '').trim(),
+            slug: String(item.slug || item._id || '').trim(),
+            name: String(item.name || '').trim(),
+            price: this.toNumber(item.min_price),
+            originalPrice: this.toNumber(item.compare_at_price),
+            imageUrl:
+              String(item.thumbnail || '').trim() ||
+              String(item.thumbnail_url || '').trim() ||
+              FALLBACK_IMAGE_URL,
+            soldCount: this.toNumber(item.sold),
+            collectionId: String(item.collection_id || '').trim(),
+          }))
+          .filter((item) => Boolean(item.id) && Boolean(item.slug) && Boolean(item.name)),
+      ),
+    );
   }
 
   private fetchCoupons(): Observable<CouponApi[]> {
@@ -194,7 +347,17 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
       );
   }
 
-  private mapFlashDeals(products: ProductListItem[]): FlashDeal[] {
+  private fetchCollections(): Observable<CollectionApi[]> {
+    const params = new HttpParams().set('status', 'active').set('page', '1').set('limit', '200');
+    return this.http
+      .get<CollectionApi[] | { items?: CollectionApi[] }>(`${API_BASE_URL}/collections`, { params })
+      .pipe(
+        timeout(12000),
+        map((response) => (Array.isArray(response) ? response : response.items || [])),
+      );
+  }
+
+  private mapFlashDeals(products: PromoProductItem[]): FlashDeal[] {
     return [...products]
       .filter((product) => typeof product.price === 'number' && product.price > 0)
       .sort((left, right) => right.soldCount - left.soldCount)
@@ -269,17 +432,57 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
       });
   }
 
-  private mapCollections(products: ProductListItem[]): PromoCollection[] {
-    return [...products]
-      .filter((product) => product.id && product.slug && product.imageUrl)
+  private mapCollections(products: PromoProductItem[], collections: CollectionApi[]): PromoCollection[] {
+    const activeCollections = collections.filter((item) => String(item.status || '').trim().toLowerCase() === 'active');
+    const activeCollectionIds = new Set(
+      activeCollections
+        .map((item) => String(item._id || '').trim())
+        .filter(Boolean),
+    );
+
+    const collectionNameMap = new Map<string, string>(
+      activeCollections
+        .map((item) => [String(item._id || '').trim(), String(item.name || '').trim()] as const)
+        .filter(([id, name]) => Boolean(id) && Boolean(name)),
+    );
+
+    const featuredByCollection = new Map<string, PromoProductItem>();
+    const sortedProducts = [...products].sort((left, right) => (right.soldCount || 0) - (left.soldCount || 0));
+
+    for (const product of sortedProducts) {
+      const collectionId = String(product.collectionId || '').trim();
+      if (!collectionId || !activeCollectionIds.has(collectionId)) {
+        continue;
+      }
+
+      if (!String(product.id || '').trim() || !String(product.imageUrl || '').trim()) {
+        continue;
+      }
+
+      if (!featuredByCollection.has(collectionId)) {
+        featuredByCollection.set(collectionId, product);
+      }
+    }
+
+    return Array.from(featuredByCollection.entries())
       .slice(0, 3)
-      .map((product) => ({
-        id: product.id,
-        productSlug: product.slug,
+      .map(([collectionId, product]) => ({
+        id: collectionId,
+        productId: String(product.id || '').trim(),
+        productSlug: String(product.slug || '').trim(),
         title: product.name,
-        subtitle: `Ưu đãi ${product.discountBadge || '-18%'}`,
+        subtitle: collectionNameMap.get(collectionId) || 'Bộ sưu tập nổi bật',
         imageUrl: product.imageUrl,
       }));
+  }
+
+  private toNumber(value: unknown): number {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : 0;
   }
 
   private inferCategoryFromName(name: string): string {
@@ -380,5 +583,35 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
     } finally {
       document.body.removeChild(textArea);
     }
+  }
+
+  private getTopStickyOffset(): number {
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+      return 0;
+    }
+
+    const header = document.querySelector('.moho-header') as HTMLElement | null;
+    const navbar = document.querySelector('.moho-navbar') as HTMLElement | null;
+
+    let offset = 0;
+    if (header) {
+      offset += header.getBoundingClientRect().height;
+    }
+
+    if (!navbar) {
+      return offset;
+    }
+
+    const isMobileViewport = window.matchMedia('(max-width: 768px)').matches;
+    const isMobileSidebarClosed = isMobileViewport && !navbar.classList.contains('mobile-open');
+    const isNavbarHidden = navbar.classList.contains('nav-hidden');
+    const rect = navbar.getBoundingClientRect();
+    const isVisible = rect.height > 0 && rect.width > 0;
+
+    if (!isMobileSidebarClosed && !isNavbarHidden && isVisible) {
+      offset += rect.height;
+    }
+
+    return offset;
   }
 }

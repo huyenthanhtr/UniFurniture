@@ -25,6 +25,7 @@ export class AdminProductDetail implements OnInit {
   images: any[] = [];
   galleryImages: any[] = [];
   variants: any[] = [];
+  lowestVariantPrice: number | null = null;
   selectedImageUrl = '';
   selectedImage: any = null;
   selectedVariant: any = null;
@@ -76,6 +77,7 @@ export class AdminProductDetail implements OnInit {
     this.images = [];
     this.galleryImages = [];
     this.variants = [];
+    this.lowestVariantPrice = null;
     this.selectedImageUrl = '';
     this.selectedImage = null;
     this.selectedVariant = null;
@@ -91,6 +93,7 @@ export class AdminProductDetail implements OnInit {
         this.images = this.sortImages(res.images?.items ?? res.images ?? []);
         this.galleryImages = this.dedupeImagesByScopeAndUrl(this.images);
         this.variants = res.variants?.items ?? res.variants ?? [];
+        this.lowestVariantPrice = this.computeLowestVariantPrice(this.variants);
 
         this.selectedImageUrl =
           this.galleryImages.find((x: any) => x.is_primary)?.image_url ||
@@ -214,6 +217,27 @@ export class AdminProductDetail implements OnInit {
   closeVariantDetail(): void {
     this.selectedVariant = null;
     this.selectedVariantImageUrl = '';
+  }
+
+  get displayMinPrice(): number {
+    if (typeof this.lowestVariantPrice === 'number' && Number.isFinite(this.lowestVariantPrice)) {
+      return this.lowestVariantPrice;
+    }
+
+    const fallback = Number(this.product?.min_price);
+    return Number.isFinite(fallback) ? fallback : 0;
+  }
+
+  private computeLowestVariantPrice(variants: any[]): number | null {
+    const prices = (Array.isArray(variants) ? variants : [])
+      .map((variant) => Number(variant?.price))
+      .filter((price) => Number.isFinite(price) && price >= 0);
+
+    if (!prices.length) {
+      return null;
+    }
+
+    return Math.min(...prices);
   }
 
   activeStatusLabel(status: string): string {

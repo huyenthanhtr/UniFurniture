@@ -353,7 +353,9 @@ export class ProductDataService {
           timeout(15000),
           map((response) => {
             const items = Array.isArray(response) ? response : response.items || [];
-            return items.map((item) => this.toTaxonomyItem(item));
+            return items
+              .filter((item) => !this.isInactiveStatus(item?.status))
+              .map((item) => this.toTaxonomyItem(item));
           }),
           shareReplay(1),
         );
@@ -371,7 +373,9 @@ export class ProductDataService {
           timeout(15000),
           map((response) => {
             const items = Array.isArray(response) ? response : response.items || [];
-            return items.map((item) => this.toTaxonomyItem(item));
+            return items
+              .filter((item) => !this.isInactiveStatus(item?.status))
+              .map((item) => this.toTaxonomyItem(item));
           }),
           shareReplay(1),
         );
@@ -473,7 +477,9 @@ export class ProductDataService {
       .pipe(
         timeout(15000),
         map((response) => {
-          return (response.items || []).map((product) => {
+          return (response.items || [])
+            .filter((product) => !this.isInactiveStatus(product?.status))
+            .map((product) => {
             const price = this.toNullableNumber(product.min_price);
             const originalPrice = this.toNullableNumber(product.compare_at_price);
 
@@ -507,6 +513,10 @@ export class ProductDataService {
       .pipe(
         timeout(15000),
         switchMap((product) => {
+          if (this.isInactiveStatus(product?.status)) {
+            throw new Error('Product is inactive');
+          }
+
           const productId = String(product?._id || '').trim() || String(productSlug || '').trim();
           return forkJoin({
             product: of(product),
@@ -529,7 +539,10 @@ export class ProductDataService {
           });
         }),
         map(({ product, images, variants }) => {
-          const preferredVariant = this.pickPreferredVariant(variants.items);
+          const visibleVariants = (variants.items || []).filter(
+            (variant) => !this.isInactiveStatus(variant?.variant_status),
+          );
+          const preferredVariant = this.pickPreferredVariant(visibleVariants);
           const mappedImages = this.sortImages(images.items)
             .map((image) => ({ url: image.image_url?.trim() || '', variant_id: image.variant_id }))
             .filter((img) => img.url.length > 0);
@@ -559,8 +572,8 @@ export class ProductDataService {
             sizeText: this.valueToSizeText(product.size),
             materialText: this.valueToText(product.material),
             warrantyMonths: this.toNullableNumber(product.warranty_months),
-            colors: this.extractColors(variants.items, images.items, product),
-            variants: variants.items,
+            colors: this.extractColors(visibleVariants, images.items, product),
+            variants: visibleVariants,
             images: uniqueImages.length > 0 ? uniqueImages : [{ url: product.thumbnail?.trim() || FALLBACK_IMAGE_URL }],
           };
         }),
@@ -874,6 +887,10 @@ export class ProductDataService {
       room: room || undefined,
       imageUrl: imageUrl || undefined,
     };
+  }
+
+  private isInactiveStatus(value: unknown): boolean {
+    return String(value || '').trim().toLowerCase() === 'inactive';
   }
 
   private normalizeText(value: string): string {

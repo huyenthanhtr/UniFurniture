@@ -78,8 +78,9 @@
 
 .product-card .product-info .product-price .original-price {
     font-size: 12px;
-    color: #999;
+    color: #9ca3af;
     text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
 }
 
 .product-card .product-meta {

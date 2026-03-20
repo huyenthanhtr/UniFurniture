@@ -228,11 +228,17 @@ export class ProductInfoComponent implements OnChanges {
   }
 
   isVariantUnavailable(variant: ProductVariantDocument): boolean {
-    if ((variant.stock_quantity ?? 0) <= 0 && variant.stock_quantity !== undefined) {
+    const stock = variant.stock_quantity;
+    if (typeof stock === 'number') {
+      return stock <= 0;
+    }
+
+    if (String(variant.variant_status || '').toLowerCase() === 'inactive') {
       return true;
     }
 
-    return variant.status === 'unavailable' || variant.variant_status === 'inactive';
+    // Fallback for legacy variants that do not expose stock_quantity.
+    return String(variant.status || '').toLowerCase() === 'unavailable';
   }
 
   get roundedAverageRating(): number {
