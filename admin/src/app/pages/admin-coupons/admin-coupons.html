@@ -11,11 +11,11 @@
   <div class="filter-bar card mb-4">
     <div class="filter-wrapper d-flex flex-wrap align-items-center gap-3">
       <div class="filter-item">
-        <input type="text" class="search-input" placeholder="Mã code..." [(ngModel)]="filter.search">
+        <input type="text" class="search-input" placeholder="Mã code..." [(ngModel)]="filter.search"  (input)="onFilterChange(true)">
       </div>
 
       <div class="filter-item">
-        <select class="toolbar-select" [(ngModel)]="filter.type">
+        <select class="toolbar-select" [(ngModel)]="filter.type" (change)="onFilterChange(true)">
           <option value="">-- Loại --</option>
           <option value="percent">Phần trăm</option>
           <option value="fixed">Cố định</option>
@@ -23,7 +23,7 @@
       </div>
 
       <div class="filter-item">
-        <select class="toolbar-select" [(ngModel)]="filter.status">
+        <select class="toolbar-select" [(ngModel)]="filter.status" (change)="onFilterChange(true)">
           <option value="">-- Trạng thái --</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
@@ -34,9 +34,9 @@
       <div class="filter-item-date d-flex flex-column">
         <div class="d-flex align-items-center gap-2">
           <label class="form-label small fw-bold mb-0" style="white-space: nowrap; color: #908372;">Thời hạn</label>
-          <input type="date" class="search-input date-input" [(ngModel)]="filter.startDate">
+          <input type="date" class="search-input date-input" [(ngModel)]="filter.startDate" (change)="onFilterChange(true)">
           <span class="fw-bold" style="color: #908372;">-</span>
-          <input type="date" class="search-input date-input" [(ngModel)]="filter.endDate">
+          <input type="date" class="search-input date-input" [(ngModel)]="filter.endDate" (change)="onFilterChange(true)">
         </div>
       </div>
 
@@ -51,62 +51,37 @@
     <table>
       <thead>
         <tr>
-          <th class="cell-title sortable" (click)="toggleSort('code')">
-            Mã Code <i class="fas" [ngClass]="{
-              'fa-sort': sortConfig.column !== 'code',
-              'fa-sort-up active': sortConfig.column === 'code' && sortConfig.direction === 'asc',
-              'fa-sort-down active': sortConfig.column === 'code' && sortConfig.direction === 'desc'
-            }"></i>
-          </th>
-          <th class="cell-title sortable" (click)="toggleSort('discount_type')">
-            Loại <i class="fas" [ngClass]="{
-              'fa-sort': sortConfig.column !== 'discount_type',
-              'fa-sort-up active': sortConfig.column === 'discount_type' && sortConfig.direction === 'asc',
-              'fa-sort-down active': sortConfig.column === 'discount_type' && sortConfig.direction === 'desc'
-            }"></i>
-          </th>
-          <th class="cell-title sortable" (click)="toggleSort('discount_value')">
-            Giá trị <i class="fas" [ngClass]="{
-              'fa-sort': sortConfig.column !== 'discount_value',
-              'fa-sort-up active': sortConfig.column === 'discount_value' && sortConfig.direction === 'asc',
-              'fa-sort-down active': sortConfig.column === 'discount_value' && sortConfig.direction === 'desc'
-            }"></i>
-          </th>
-          <th class="cell-title sortable" (click)="toggleSort('min_order_value')">
-            Đơn tối thiểu <i class="fas" [ngClass]="{
-              'fa-sort': sortConfig.column !== 'min_order_value',
-              'fa-sort-up active': sortConfig.column === 'min_order_value' && sortConfig.direction === 'asc',
-              'fa-sort-down active': sortConfig.column === 'min_order_value' && sortConfig.direction === 'desc'
-            }"></i>
-          </th>
-          <th class="cell-title sortable" (click)="toggleSort('max_discount_amount')">
-            Giảm tối đa <i class="fas" [ngClass]="{
-              'fa-sort': sortConfig.column !== 'max_discount_amount',
-              'fa-sort-up active': sortConfig.column === 'max_discount_amount' && sortConfig.direction === 'asc',
-              'fa-sort-down active': sortConfig.column === 'max_discount_amount' && sortConfig.direction === 'desc'
-            }"></i>
-          </th>
-          <th class="cell-title sortable" (click)="toggleSort('used')">
-            Đã dùng <i class="fas" [ngClass]="{
-              'fa-sort': sortConfig.column !== 'used',
-              'fa-sort-up active': sortConfig.column === 'used' && sortConfig.direction === 'asc',
-              'fa-sort-down active': sortConfig.column === 'used' && sortConfig.direction === 'desc'
-            }"></i>
-          </th>
-          <th class="cell-title sortable" (click)="toggleSort('end_at')">
-            Thời hạn <i class="fas" [ngClass]="{
-              'fa-sort': sortConfig.column !== 'end_at',
-              'fa-sort-up active': sortConfig.column === 'end_at' && sortConfig.direction === 'asc',
-              'fa-sort-down active': sortConfig.column === 'end_at' && sortConfig.direction === 'desc'
-            }"></i>
-          </th>
-          <th class="cell-title sortable" (click)="toggleSort('status')">
-            Trạng thái <i class="fas" [ngClass]="{
-              'fa-sort': sortConfig.column !== 'status',
-              'fa-sort-up active': sortConfig.column === 'status' && sortConfig.direction === 'asc',
-              'fa-sort-down active': sortConfig.column === 'status' && sortConfig.direction === 'desc'
-            }"></i>
-          </th>
+<th class="cell-title sortable" (click)="toggleSort('code')">
+  Mã Code <i class="fas" [ngClass]="getSortIcon('code')"></i>
+</th>
+
+<th class="cell-title sortable" (click)="toggleSort('discount_type')">
+  Loại <i class="fas" [ngClass]="getSortIcon('discount_type')"></i>
+</th>
+
+<th class="cell-title sortable" (click)="toggleSort('discount_value')">
+  Giá trị <i class="fas" [ngClass]="getSortIcon('discount_value')"></i>
+</th>
+
+<th class="cell-title sortable" (click)="toggleSort('min_order_value')">
+  Đơn tối thiểu <i class="fas" [ngClass]="getSortIcon('min_order_value')"></i>
+</th>
+
+<th class="cell-title sortable" (click)="toggleSort('max_discount_amount')">
+  Giảm tối đa <i class="fas" [ngClass]="getSortIcon('max_discount_amount')"></i>
+</th>
+
+<th class="cell-title sortable" (click)="toggleSort('used')">
+  Đã dùng <i class="fas" [ngClass]="getSortIcon('used')"></i>
+</th>
+
+<th class="cell-title sortable" (click)="toggleSort('end_at')">
+  Thời hạn <i class="fas" [ngClass]="getSortIcon('end_at')"></i>
+</th>
+
+<th class="cell-title sortable" (click)="toggleSort('status')">
+  Trạng thái <i class="fas" [ngClass]="getSortIcon('status')"></i>
+</th>
           <th class="th-actions text-center">Hành động</th>
         </tr>
       </thead>
@@ -116,7 +91,7 @@
           <td colspan="9" class="state">Không có mã khuyến mãi nào phù hợp.</td>
         </tr>
 
-        <tr *ngFor="let item of filteredCoupons">
+        <tr *ngFor="let item of paginatedCoupons">
           <td><strong>{{ item.code }}</strong></td>
           <td>{{ item.discount_type === 'percent' ? 'Phần trăm' : 'Cố định' }}</td>
           <td>{{ item.discount_value | number }}{{ item.discount_type === 'percent' ? '%' : 'đ' }}</td>
@@ -148,6 +123,18 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+<div class="pagination" *ngIf="totalPages > 1">
+    <button class="pg pg-arrow" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">&#8249;</button>
+    
+    <ng-container *ngFor="let p of visiblePages">
+      <button class="pg" [class.active]="p === currentPage" (click)="changePage(p)">
+        {{ p }}
+      </button>
+    </ng-container>
+
+    <button class="pg pg-arrow" (click)="changePage(currentPage + 1)" [disabled]="currentPage >= totalPages">&#8250;</button>
   </div>
 
   <div class="modal-overlay" *ngIf="showModal">
