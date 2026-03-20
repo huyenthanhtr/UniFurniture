@@ -179,6 +179,13 @@ export class AdminOrders implements OnInit, OnDestroy {
       return;
     }
 
+    const restrictionMessage = this.getOrderStatusRestrictionMessage(order, nextStatus);
+    if (restrictionMessage) {
+      order._selectedStatus = oldStatus;
+      this.showResult('Không thể cập nhật', restrictionMessage, 'error');
+      return;
+    }
+
     order._selectedStatus = nextStatus;
     this.pendingStatusChange = { order, newStatus: nextStatus, oldStatus };
 
@@ -748,6 +755,46 @@ export class AdminOrders implements OnInit, OnDestroy {
     if (s === 'cancelled') return 'Đã huỷ';
     if (s === 'exchanged') return 'Đã đổi hàng';
     return status || '-';
+  }
+
+  isOrderStatusSelectable(order: any, status: string): boolean {
+    return !this.getOrderStatusRestrictionMessage(order, status);
+  }
+
+  getOrderStatusRestrictionMessage(order: any, nextStatus: string): string {
+    const currentStatus = String(order?.status || '').toLowerCase();
+    const targetStatus = String(nextStatus || '').toLowerCase();
+    const cancelledBy = String(order?.cancellation_request?.cancelled_by || '').toLowerCase();
+
+    if (!targetStatus || targetStatus === currentStatus) {
+      return '';
+    }
+
+    if (targetStatus === 'cancel_pending') {
+      return 'Admin không thể tự chuyển đơn sang trạng thái chờ xác nhận huỷ. Trạng thái này chỉ được tạo khi khách hàng gửi yêu cầu huỷ đơn.';
+    }
+
+    if (targetStatus === 'cancelled') {
+      if (currentStatus === 'pending') {
+        return '';
+      }
+
+      if (currentStatus === 'cancel_pending' && cancelledBy === 'customer') {
+        return '';
+      }
+
+      return 'Đơn đang trong quá trình thực hiện nên không thể chuyển sang đã huỷ. Chỉ hỗ trợ huỷ khi đơn còn chờ xác nhận hoặc đang chờ xác nhận huỷ từ khách.';
+    }
+
+    if (targetStatus === 'exchanged') {
+      if (currentStatus === 'delivered' || currentStatus === 'completed') {
+        return '';
+      }
+
+      return 'Chỉ có thể chuyển sang trạng thái đổi hàng khi đơn đã giao hoặc đã hoàn tất.';
+    }
+
+    return '';
   }
 
   customerTypeLabel(type: string): string {

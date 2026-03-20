@@ -142,7 +142,9 @@ export class AdminVariantDetail implements OnInit {
   }
 
   backToProduct() {
-    if (this.variant?.product_id) this.router.navigate(['/admin/products', this.variant.product_id]);
+    if (this.product?.slug || this.variant?.product_id) {
+      this.router.navigate(['/admin/products', this.product?.slug || this.variant.product_id]);
+    }
     else this.router.navigate(['/admin/products']);
   }
 

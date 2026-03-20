@@ -30,11 +30,15 @@ export class AdminProductDetail implements OnInit {
   selectedImage: any = null;
   selectedVariant: any = null;
   selectedVariantImageUrl = '';
+  productKey = '';
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((pm) => {
-      const id = pm.get('id');
-      if (id) this.load(id);
+      const slug = pm.get('slug');
+      if (slug) {
+        this.productKey = slug;
+        this.load(slug);
+      }
     });
   }
 
@@ -71,7 +75,7 @@ export class AdminProductDetail implements OnInit {
     return Array.from(map.values());
   }
 
-  load(id: string) {
+  load(productKey: string) {
     this.isLoading = true;
     this.product = null;
     this.images = [];
@@ -83,29 +87,51 @@ export class AdminProductDetail implements OnInit {
     this.selectedVariant = null;
     this.selectedVariantImageUrl = '';
 
-    forkJoin({
-      product: this.api.getProductById(id),
-      images: this.api.getImages({ product_id: id, limit: 500 }),
-      variants: this.api.getVariants({ product_id: id, limit: 200 }),
-    }).subscribe({
-      next: (res: any) => {
-        this.product = res.product;
-        this.images = this.sortImages(res.images?.items ?? res.images ?? []);
-        this.galleryImages = this.dedupeImagesByScopeAndUrl(this.images);
-        this.variants = res.variants?.items ?? res.variants ?? [];
-        this.lowestVariantPrice = this.computeLowestVariantPrice(this.variants);
+    this.api.getProductById(productKey).subscribe({
+      next: (product: any) => {
+        this.product = product;
+        const productId = String(product?._id || '').trim();
 
-        this.selectedImageUrl =
-          this.galleryImages.find((x: any) => x.is_primary)?.image_url ||
-          this.galleryImages[0]?.image_url ||
-          this.product?.thumbnail ||
-          this.product?.thumbnail_url ||
-          '';
+        if (!productId) {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+          return;
+        }
 
-        this.selectedImage = null;
+        forkJoin({
+          images: this.api.getImages({ product_id: productId, limit: 500 }),
+          variants: this.api.getVariants({ product_id: productId, limit: 200 }),
+        }).subscribe({
+          next: (res: any) => {
+            this.images = this.sortImages(res.images?.items ?? res.images ?? []);
+            this.galleryImages = this.dedupeImagesByScopeAndUrl(this.images);
+            this.variants = this.sortVariants(res.variants?.items ?? res.variants ?? []);
+            this.lowestVariantPrice = this.computeLowestVariantPrice(this.variants);
 
-        this.isLoading = false;
-        this.cdr.detectChanges();
+            this.selectedImageUrl =
+              this.galleryImages.find((x: any) => x.is_primary)?.image_url ||
+              this.galleryImages[0]?.image_url ||
+              this.product?.thumbnail ||
+              this.product?.thumbnail_url ||
+              '';
+
+            this.selectedImage = null;
+
+            if (this.productKey !== this.product?.slug && this.product?.slug) {
+              this.router.navigate(['/admin/products', this.product.slug], {
+                queryParams: this.route.snapshot.queryParams,
+                replaceUrl: true,
+              });
+            }
+
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          },
+          error: () => {
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          },
+        });
       },
       error: () => {
         this.isLoading = false;
@@ -120,7 +146,7 @@ export class AdminProductDetail implements OnInit {
   }
 
   goEdit() {
-    this.router.navigate(['/admin/products', this.product._id, 'edit'], {
+    this.router.navigate(['/admin/products', this.product?.slug || this.product?._id, 'edit'], {
       queryParams: this.route.snapshot.queryParams,
     });
   }
@@ -230,6 +256,7 @@ export class AdminProductDetail implements OnInit {
 
   private computeLowestVariantPrice(variants: any[]): number | null {
     const prices = (Array.isArray(variants) ? variants : [])
+      .filter((variant) => this.isSellableVariant(variant))
       .map((variant) => Number(variant?.price))
       .filter((price) => Number.isFinite(price) && price >= 0);
 
@@ -238,6 +265,18 @@ export class AdminProductDetail implements OnInit {
     }
 
     return Math.min(...prices);
+  }
+
+  private sortVariants(variants: any[]): any[] {
+    return [...(Array.isArray(variants) ? variants : [])].sort((a, b) =>
+      this.getVariantLabel(a).localeCompare(this.getVariantLabel(b), 'vi', { sensitivity: 'base', numeric: true })
+    );
+  }
+
+  private isSellableVariant(variant: any): boolean {
+    const variantStatus = String(variant?.variant_status || '').toLowerCase();
+    const stockStatus = String(variant?.status || '').toLowerCase();
+    return variantStatus === 'active' && stockStatus === 'available';
   }
 
   activeStatusLabel(status: string): string {

@@ -37,8 +37,8 @@ export const routes: Routes = [
       { path: 'dashboard', component: AdminDashboard},
       { path: 'products', component: AdminProducts },
       { path: 'products/new', component: AdminProductForm, canDeactivate: [pendingChangesGuard] },
-      { path: 'products/:id', component: AdminProductDetail },
-      { path: 'products/:id/edit', component: AdminProductForm, canDeactivate: [pendingChangesGuard] },
+      { path: 'products/:slug', component: AdminProductDetail },
+      { path: 'products/:slug/edit', component: AdminProductForm, canDeactivate: [pendingChangesGuard] },
       { path: 'variants/:id', component: AdminVariantDetail, canDeactivate: [pendingChangesGuard] },
 
       { path: 'orders', component: AdminOrders },
