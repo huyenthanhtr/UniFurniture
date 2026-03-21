@@ -419,8 +419,8 @@ bindOverviewData(data: DashboardOverviewResponse): void {
     });
   }
 
-  goToOrderDetail(orderId: string): void {
-    this.router.navigate(['/admin/orders', orderId]);
+  goToOrderDetail(orderKey: string): void {
+    this.router.navigate(['/admin/orders', orderKey]);
   }
 
   goToProducts(): void {

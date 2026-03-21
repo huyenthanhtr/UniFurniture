@@ -239,9 +239,10 @@ changePage(page: number): void {
   }
 
   goToOrderDetail(item: Review): void {
-    const orderId = item.order_detail_id?.order_id?._id || (item.order_detail_id?.order_id as any);
-    if (orderId) {
-      this.router.navigate(['/admin/orders', orderId]);
+    const rawOrder = item.order_detail_id?.order_id as any;
+    const orderKey = rawOrder?.order_code || rawOrder?._id || rawOrder;
+    if (orderKey) {
+      this.router.navigate(['/admin/orders', orderKey]);
     } else {
       this.showResult('Lỗi', 'Không tìm thấy thông tin đơn hàng gốc.', 'error');
     }
