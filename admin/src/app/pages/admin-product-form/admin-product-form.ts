@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -47,6 +47,7 @@ export class AdminProductForm implements OnInit, AfterViewInit {
   private api = inject(AdminProductsService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   @ViewChild('descriptionEditor') descriptionEditor?: ElementRef<HTMLDivElement>;
   private savedRange: Range | null = null;
@@ -170,8 +171,12 @@ export class AdminProductForm implements OnInit, AfterViewInit {
               this.syncEditorFromForm();
               this.form.markAsPristine();
               this.isLoading = false;
+              this.cdr.detectChanges();
             },
-            error: () => (this.isLoading = false),
+            error: () => {
+              this.isLoading = false;
+              this.cdr.detectChanges();
+            },
           });
 
           return;
@@ -180,8 +185,12 @@ export class AdminProductForm implements OnInit, AfterViewInit {
         this.syncEditorFromForm();
         this.form.markAsPristine();
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
-      error: () => (this.isLoading = false),
+      error: () => {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
     });
   }
 

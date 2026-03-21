@@ -85,7 +85,7 @@
               <div class="readonly-box">{{ selectedImage.sort_order || 0 }}</div>
             </div>
 
-            <div class="field full">
+            <div class="field full" [hidden]="true">
               <label>URL ảnh</label>
               <div class="readonly-box url-box">{{ selectedImage.image_url || '-' }}</div>
             </div>

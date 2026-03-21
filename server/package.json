@@ -7,7 +7,8 @@
   "scripts": {
     "start": "nodemon server.js",
     "dev": "node server.js",
-    "rebuild:sold": "node src/scripts/rebuild-sold-counts.js"
+    "rebuild:sold": "node src/scripts/rebuild-sold-counts.js",
+    "reconcile:completed-orders": "node src/scripts/reconcile-completed-orders.js"
   },
   "dependencies": {
     "@vonage/server-sdk": "^3.26.4",
