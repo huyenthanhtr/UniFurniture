@@ -795,6 +795,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       retries += 1;
       await new Promise((resolve) => requestAnimationFrame(resolve));
     }
+  }
 
     const video = this.reviewFlowComponent?.cameraVideoRef?.nativeElement;
     if (!video) {

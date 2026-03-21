@@ -1,4 +1,4 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TrackingOrder } from '../models/order-tracking.models';
@@ -31,6 +31,3 @@ export class TrackingCancelFlowComponent {
     );
   }
 }
-
-
-
