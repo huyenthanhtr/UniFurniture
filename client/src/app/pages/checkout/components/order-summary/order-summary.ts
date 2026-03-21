@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { getStockConstrainedQuantity } from '../../../../shared/cart-stock.util';
-import { CheckoutCartItem } from '../../checkout';
-import { CouponPickerComponent } from '../coupon-picker/coupon-picker';
+import { CheckoutCartItem, CheckoutForm } from '../../checkout';
+import { PaymentMethodComponent } from '../payment-method/payment-method';
 
 @Component({
   selector: 'app-order-summary',
   standalone: true,
-  imports: [CommonModule, CouponPickerComponent],
+  imports: [CommonModule, PaymentMethodComponent],
   templateUrl: './order-summary.html',
   styleUrl: './order-summary.css',
 })
@@ -21,11 +21,10 @@ export class OrderSummaryComponent {
   @Input() depositAmount = 0;
   @Input() isSubmitting = false;
   @Input() canSubmit = false;
-  @Input() appliedCoupon = '';
+  @Input() form!: CheckoutForm;
 
-  @Output() couponApplied = new EventEmitter<{ code: string; discount: number }>();
+  @Output() formChange = new EventEmitter<Partial<CheckoutForm>>();
   @Output() quantityChange = new EventEmitter<{ cartKey: string; quantity: number }>();
-  @Output() removeItem = new EventEmitter<string>();
   @Output() placeOrder = new EventEmitter<void>();
 
   stockErrorKeys = signal<Set<string>>(new Set());
