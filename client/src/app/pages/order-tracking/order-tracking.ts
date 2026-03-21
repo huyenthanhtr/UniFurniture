@@ -41,6 +41,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   reviewThanksMessage = '';
   orders: TrackingOrder[] = [];
   reviewSubmittingProductKey: string | null = null;
+  cancelSuccessOrderId: string | null = null;
   reviewInlineErrors: Record<string, string> = {};
   cameraOpen = false;
   cameraError = '';
@@ -246,6 +247,9 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   toggleCancelForm(order: TrackingOrder): void {
     order.cancelForm.open = !order.cancelForm.open;
+    if (!order.cancelForm.open && this.cancelSuccessOrderId === order.id) {
+      this.cancelSuccessOrderId = null;
+    }
     this.cdr.detectChanges();
   }
 
@@ -254,12 +258,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     const phone = String(order.cancelForm.phone || '').trim();
 
     if (!reason) {
-      this.errorMessage = `Vui lòng chọn lý do hủy cho đơn ${order.orderCode}.`;
+      this.errorMessage = `Vui lòng chọn lý do cho đơn hàng${order.orderCode}.`;
       return;
     }
 
     if (!phone) {
-      this.errorMessage = `Vui lòng nhập số điện thoại xác nhận cho đơn ${order.orderCode}.`;
+      this.errorMessage = `Vui lòng nhập số điện thoại xác nhận cho đơn hàng ${order.orderCode}.`;
       return;
     }
 
@@ -268,17 +272,19 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
     try {
       const response = await firstValueFrom(
-        this.http.post<{ order?: any; warning?: string }>(`${API_BASE_URL}/orders/${order.id}/cancel-request`, {
+        this.http.post<{ order?: any; message?: string }>(`${API_BASE_URL}/orders/${order.id}/cancel-request`, {
           reason,
           note: String(order.cancelForm.note || '').trim(),
           phone,
         }),
       );
 
-      const previousStatus = String(response?.order?.cancellation_request?.previous_status || order.backendStatus || '') as BackendStatus | '';
+      const previousStatus = String(
+        response?.order?.cancellation_request?.previous_status || order.backendStatus || '',
+      ) as BackendStatus | '';
 
-      order.backendStatus = 'cancel_pending';
-      order.statusLabel = 'Chờ xác nhận hủy';
+      order.backendStatus = 'cancelled';
+      order.statusLabel = 'Đã hủy';
       order.cancelForm.open = false;
       order.cancellationRequest = {
         reason,
@@ -289,17 +295,22 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
         over10mWithDeposit: Boolean(response?.order?.cancellation_request?.over_10m_with_deposit),
       };
 
-      const warning = String(response?.warning || '').trim();
-      this.infoMessage = warning || `Đã gửi yêu cầu hủy đơn ${order.orderCode}. Vui lòng chờ admin xác nhận.`;
+      this.infoMessage = '';
+      this.cancelSuccessOrderId = order.id;
       this.cdr.detectChanges();
-      this.scrollToAnchor(`cancel-pending-${order.id}`);
+      this.scrollToAnchor('tracking-feedback');
     } catch (error: any) {
-      this.errorMessage = error?.error?.error || `Không thể gửi yêu cầu hủy cho đơn ${order.orderCode}.`;
+      this.errorMessage = error?.error?.error || `Không thể gửi yêu cầu hủy cho đơn hàng ${order.orderCode}.`;
       this.cdr.detectChanges();
     } finally {
       order.cancelForm.submitting = false;
       this.cdr.detectChanges();
     }
+  }
+
+  closeCancelSuccess(): void {
+    this.cancelSuccessOrderId = null;
+    this.cdr.detectChanges();
   }
 
   async completeOrder(order: TrackingOrder): Promise<void> {
@@ -367,15 +378,15 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   getRatingLabel(rating: number): string {
     switch (rating) {
       case 5:
-        return '\u0052\u1ea5t h\u00e0i l\u00f2ng';
+        return 'Rất hài lòng';
       case 4:
-        return 'H\u00e0i l\u00f2ng';
+        return 'Hài lòng';
       case 3:
-        return 'Trung b\u00ecnh';
+        return 'Trung bình';
       case 2:
-        return '\u00cdt h\u00e0i l\u00f2ng';
+        return 'Chưa hài lòng';
       case 1:
-        return 'Kh\u00f4ng h\u00e0i l\u00f2ng';
+        return 'Tệ';
       default:
         return '';
     }

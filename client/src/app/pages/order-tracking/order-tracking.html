@@ -42,8 +42,10 @@
       <app-tracking-cancel-flow
         [order]="order"
         [cancelReasons]="cancelReasons"
+        [cancelSuccess]="cancelSuccessOrderId === order.id"
         (toggleCancelClick)="toggleCancelForm(order)"
         (submitCancelClick)="submitCancelRequest(order)"
+        (closeCancelSuccessClick)="closeCancelSuccess()"
       />
 
       <app-tracking-review-flow
@@ -89,3 +91,4 @@
     <button type="button" (click)="closeReviewThanks()">Đóng</button>
   </div>
 </div>
+

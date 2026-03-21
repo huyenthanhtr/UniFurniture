@@ -83,7 +83,7 @@ export class OrderTrackingDataService {
     const map: Record<BackendStatus, string> = {
       pending: 'Đã đặt hàng',
       confirmed: 'Đã xác nhận',
-      cancel_pending: 'Chờ xác nhận hủy',
+      cancel_pending: 'Đã hủy',
       processing: 'Đang xử lý',
       shipping: 'Đang giao hàng',
       delivered: 'Đã giao hàng',
@@ -141,7 +141,8 @@ export class OrderTrackingDataService {
     }));
 
     const latestPayment = payments[0] || null;
-    const backendStatus = String(order?.status || 'pending').toLowerCase() as BackendStatus;
+    const rawStatus = String(order?.status || 'pending').toLowerCase();
+    const backendStatus = (rawStatus === 'cancel_pending' ? 'cancelled' : rawStatus) as BackendStatus;
 
     const reviewStatus = await firstValueFrom(
       this.http.get<{ reviewedDetailIds?: string[]; items?: Array<any> }>(`${API_BASE_URL}/reviews/order/${String(order?._id || matched._id)}/status`),
@@ -226,3 +227,4 @@ export class OrderTrackingDataService {
     return method || 'Không xác định';
   }
 }
+

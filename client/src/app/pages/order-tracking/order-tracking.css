@@ -532,17 +532,6 @@
 }
 
 
-.cancel-pending-alert {
-  background: #fff0f3;
-  border-color: #f6a9b8;
-  color: #9f1239;
-  box-shadow: 0 8px 18px rgba(190, 24, 93, 0.14);
-}
-
-.cancel-pending-alert .cancel-note {
-  color: #9f1239;
-  font-weight: 600;
-}
 
 .action-history-card {
   margin-bottom: 14px;
@@ -1020,3 +1009,15 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+.cancel-modal__content--success {
+  width: min(420px, 92vw);
+  text-align: center;
+  border-color: #bde7d0;
+  background: #f6fff9;
+}
+
+.cancel-modal__content--success p {
+  margin: 10px 0 2px;
+}
+

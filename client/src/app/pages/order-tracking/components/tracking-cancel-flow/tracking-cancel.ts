@@ -13,9 +13,11 @@ import { TrackingOrder } from '../models/order-tracking.models';
 export class TrackingCancelFlowComponent {
   @Input({ required: true }) order!: TrackingOrder;
   @Input() cancelReasons: readonly string[] = [];
+  @Input() cancelSuccess = false;
 
   @Output() toggleCancelClick = new EventEmitter<void>();
   @Output() submitCancelClick = new EventEmitter<void>();
+  @Output() closeCancelSuccessClick = new EventEmitter<void>();
 
   hasCancellationHistory(): boolean {
     const req = this.order?.cancellationRequest;
@@ -29,5 +31,6 @@ export class TrackingCancelFlowComponent {
     );
   }
 }
+
 
 

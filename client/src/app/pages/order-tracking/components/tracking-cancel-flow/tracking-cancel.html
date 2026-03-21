@@ -1,16 +1,9 @@
-<div class="alert warning" *ngIf="order.backendStatus === 'cancelled'">
+﻿<div class="alert warning" *ngIf="order.backendStatus === 'cancelled'">
   Đơn hàng đã bị hủy. Vui lòng liên hệ hỗ trợ nếu cần thêm thông tin.
 </div>
 
 <div class="alert info" *ngIf="order.backendStatus === 'refunded'">
   Đơn hàng đã được hoàn tiền. Vui lòng kiểm tra lại giao dịch tại phương thức thanh toán.
-</div>
-
-<div class="alert warning cancel-pending-alert" *ngIf="order.backendStatus === 'cancel_pending'" [attr.id]="'cancel-pending-' + order.id">
-  Đơn hàng đang chờ xác nhận hủy. Vui lòng chờ quản trị viên xử lý.
-  <div *ngIf="order.cancellationRequest?.over10mWithDeposit" class="cancel-note">
-    Lưu ý: Đơn hàng trên 10 triệu đã đặt cọc 10% sẽ không được hoàn lại tiền cọc.
-  </div>
 </div>
 
 <div class="card action-history-card" *ngIf="hasCancellationHistory()">
@@ -56,6 +49,17 @@
           {{ order.cancelForm.submitting ? 'Đang gửi...' : 'Gửi yêu cầu hủy' }}
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="cancel-modal" *ngIf="cancelSuccess">
+  <div class="cancel-modal__backdrop" (click)="closeCancelSuccessClick.emit()"></div>
+  <div class="card cancel-modal__content cancel-modal__content--success">
+    <h3>HỦY ĐƠN THÀNH CÔNG</h3>
+    <p>U-Home Furni xin cảm ơn quý khách hàng!</p>
+    <div class="cancel-form__actions">
+      <button type="button" class="btn-primary" (click)="closeCancelSuccessClick.emit()">Đóng</button>
     </div>
   </div>
 </div>

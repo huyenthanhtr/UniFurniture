@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+﻿import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -189,7 +189,7 @@ export class AdminOrders implements OnInit, OnDestroy {
     order._selectedStatus = nextStatus;
     this.pendingStatusChange = { order, newStatus: nextStatus, oldStatus };
 
-    if (this.requiresStatusReason(nextStatus)) {
+    if (this.requiresStatusReason(nextStatus, order)) {
       this.statusReasonDraft = '';
       this.showStatusReasonFormPopup = true;
       return;
@@ -331,7 +331,7 @@ export class AdminOrders implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         this.isLoading = false;
-        this.showResult('Thất bại', err?.error?.error || 'Xuất hoá đơn thất bại.', 'error');
+        this.showResult('Thất bại', err?.error?.error || 'Xuất hóa đơn thất bại.', 'error');
         this.cdr.detectChanges();
       },
     });
@@ -347,7 +347,7 @@ export class AdminOrders implements OnInit, OnDestroy {
         const payments = Array.isArray(res?.payments) ? res.payments : [];
         if (!payments.length) {
           this.isLoading = false;
-          this.showResult('KhÃ´ng cÃ³ giao dá»‹ch', 'ÄÆ¡n nÃ y chÆ°a cÃ³ giao dá»‹ch thanh toÃ¡n Ä‘á»ƒ cáº­p nháº­t.', 'error');
+          this.showResult('Không có giao dịch', 'Đơn này chưa có giao dịch thanh toán để cập nhật.', 'error');
           this.cdr.detectChanges();
           return;
         }
@@ -365,7 +365,7 @@ export class AdminOrders implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         this.isLoading = false;
-        this.showResult('Tháº¥t báº¡i', err?.error?.error || 'KhÃ´ng táº£i Ä‘Æ°á»£c thÃ´ng tin thanh toÃ¡n.', 'error');
+        this.showResult('Thất bại', err?.error?.error || 'Không tải được thông tin thanh toán.', 'error');
         this.cdr.detectChanges();
       },
     });
@@ -393,7 +393,7 @@ export class AdminOrders implements OnInit, OnDestroy {
     const currentStatus = String(payment?.status || '').toLowerCase();
     if (!payment?._id || !nextStatus || nextStatus === currentStatus) return;
 
-    this.confirmMessage = `Äá»•i tráº¡ng thÃ¡i thanh toÃ¡n sang ${this.getPaymentStatusText(nextStatus)}?`;
+    this.confirmMessage = `Đổi trạng thái thanh toán sang ${this.getPaymentStatusText(nextStatus)}?`;
     this.confirmKind = 'payment';
     this.showConfirmPopup = true;
   }
@@ -456,11 +456,11 @@ export class AdminOrders implements OnInit, OnDestroy {
 
   getCancellationReasonLabel(order: any): string {
     const cancelledBy = String(order?.cancellation_request?.cancelled_by || '').toLowerCase();
-    if (cancelledBy === 'admin') return 'Lý do huỷ (shop)';
+    if (cancelledBy === 'admin') return 'Lý do hủy (shop)';
     if (cancelledBy === 'customer' || String(order?.cancellation_request?.reason || '').trim()) {
-      return 'Lý do huỷ (khách)';
+      return 'Lý do hủy (khách)';
     }
-    return 'Lý do huỷ';
+    return 'Lý do hủy';
   }
 
   getStatusReasonLabel(order: any): string {
@@ -478,7 +478,7 @@ export class AdminOrders implements OnInit, OnDestroy {
   }
 
   getStatusReasonButtonText(order: any): string {
-    return this.isExchangeOrder(order) ? 'Lý do đổi' : 'Lý do huỷ';
+    return this.isExchangeOrder(order) ? 'Lý do đổi' : 'Lý do hủy';
   }
 
   getStatusReasonIcon(order: any): string {
@@ -724,12 +724,14 @@ export class AdminOrders implements OnInit, OnDestroy {
 
   getPaymentStateText(state: any): string {
     const key = String(state || '').toLowerCase();
+    
     if (key === 'settled') return 'Tất toán';
     if (key === 'deposit_paid') return 'Đã cọc';
     if (key === 'pending') return 'Đang chờ thanh toán';
     if (key === 'unpaid') return 'Chưa thanh toán';
-    if (key === 'refunded') return 'Hoàn tiền';
-    return '-';
+    if (key === 'refunded') return 'Đã hoàn tiền';
+    
+    return 'Chưa rõ';
   }
 
   getPaymentStateOptions(order: any): PaymentStateKey[] {
@@ -747,14 +749,14 @@ export class AdminOrders implements OnInit, OnDestroy {
     const s = String(status || '').toLowerCase();
     if (s === 'pending') return 'Chờ xác nhận';
     if (s === 'confirmed') return 'Đã xác nhận';
-    if (s === 'cancel_pending') return 'Chờ xác nhận huỷ';
     if (s === 'processing') return 'Đang xử lý';
     if (s === 'shipping') return 'Đang giao';
     if (s === 'delivered') return 'Đã giao';
     if (s === 'completed') return 'Hoàn tất';
-    if (s === 'cancelled') return 'Đã huỷ';
+    if (s === 'cancelled') return 'Đã hủy';
     if (s === 'exchanged') return 'Đã đổi hàng';
-    return status || '-';
+    
+    return status || '-'; 
   }
 
   isOrderStatusSelectable(order: any, status: string): boolean {
@@ -764,39 +766,28 @@ export class AdminOrders implements OnInit, OnDestroy {
   getOrderStatusRestrictionMessage(order: any, nextStatus: string): string {
     const currentStatus = String(order?.status || '').toLowerCase();
     const targetStatus = String(nextStatus || '').toLowerCase();
-    const cancelledBy = String(order?.cancellation_request?.cancelled_by || '').toLowerCase();
 
     if (!targetStatus || targetStatus === currentStatus) {
       return '';
-    }
-
-    if (targetStatus === 'cancel_pending') {
-      return 'Admin không thể tự chuyển đơn sang trạng thái chờ xác nhận huỷ. Trạng thái này chỉ được tạo khi khách hàng gửi yêu cầu huỷ đơn.';
     }
 
     if (targetStatus === 'cancelled') {
       if (currentStatus === 'pending') {
         return '';
       }
-
-      if (currentStatus === 'cancel_pending' && cancelledBy === 'customer') {
-        return '';
-      }
-
-      return 'Đơn đang trong quá trình thực hiện nên không thể chuyển sang đã huỷ. Chỉ hỗ trợ huỷ khi đơn còn chờ xác nhận hoặc đang chờ xác nhận huỷ từ khách.';
+      return 'Đơn đang trong quá trình thực hiện nên không thể chuyển sang đã hủy. Chỉ hỗ trợ hủy khi đơn còn chờ xác nhận hoặc đang chờ xác thực hủy từ khách.';
     }
 
     if (targetStatus === 'exchanged') {
       if (currentStatus === 'delivered' || currentStatus === 'completed') {
         return '';
       }
-
       return 'Chỉ có thể chuyển sang trạng thái đổi hàng khi đơn đã giao hoặc đã hoàn tất.';
     }
 
     return '';
   }
-
+  
   customerTypeLabel(type: string): string {
     const key = String(type || '').toLowerCase();
     if (key === 'member') return 'Thành viên';
@@ -804,32 +795,52 @@ export class AdminOrders implements OnInit, OnDestroy {
     return type || '-';
   }
 
-  requiresStatusReason(status: string): boolean {
-    return ['cancelled', 'exchanged'].includes(String(status || '').toLowerCase());
+  requiresStatusReason(status: string, order?: any): boolean {
+    const key = String(status || '').toLowerCase();
+    if (key === 'exchanged') return true;
+
+    if (key === 'cancelled') {
+      const cancelledBy = String(order?.cancellation_request?.cancelled_by || '').toLowerCase();
+      const existedReason = String(order?.cancellation_request?.reason || '').trim();
+      if (cancelledBy === 'customer' && existedReason) {
+        return false;
+      }
+      return true;
+    }
+
+    return false;
   }
 
   getStatusReasonTitle(status: string): string {
-    return String(status || '').toLowerCase() === 'exchanged' ? 'Lý do đổi hàng' : 'Lý do huỷ đơn';
+    return String(status || '').toLowerCase() === 'exchanged' 
+      ? 'Lý do đổi hàng' 
+      : 'Lý do hủy đơn';
   }
 
   getStatusReasonDialogTitle(status: string): string {
-    return String(status || '').toLowerCase() === 'exchanged' ? 'Xác nhận đổi hàng' : 'Xác nhận huỷ đơn';
+    return String(status || '').toLowerCase() === 'exchanged' 
+      ? 'Xác nhận đổi hàng' 
+      : 'Xác nhận hủy đơn';
   }
 
   getStatusReasonPlaceholder(status: string): string {
-    return String(status || '').toLowerCase() === 'exchanged' ? 'Nhập lý do đổi hàng' : 'Nhập lý do huỷ đơn';
+    return String(status || '').toLowerCase() === 'exchanged' 
+      ? 'Nhập lý do đổi hàng...' 
+      : 'Nhập lý do hủy đơn...';
   }
 
   getStatusReasonSubmitText(status: string): string {
-    return String(status || '').toLowerCase() === 'exchanged' ? 'Xác nhận đổi hàng' : 'Xác nhận huỷ đơn';
+    return String(status || '').toLowerCase() === 'exchanged' 
+      ? 'Xác nhận đổi hàng' 
+      : 'Xác nhận hủy đơn';
   }
 
   getStatusReasonSuccessMessage(status: string): string {
     return String(status || '').toLowerCase() === 'exchanged'
       ? 'Đã chuyển đơn hàng sang trạng thái đã đổi hàng và lưu lý do.'
-      : 'Đã huỷ đơn hàng và lưu lý do huỷ.';
+      : 'Đã hủy đơn hàng và lưu lý do hủy thành công.';
   }
-
+  
   private getSortParams(): { sortBy?: string; order?: SortDirection } {
     const sortMap: Record<string, string> = {
       order_code: 'order_code',
