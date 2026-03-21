@@ -23,6 +23,16 @@ import { TrackingReviewFlowComponent } from './components/tracking-review-flow/t
 import { OrderTrackingDataService } from './order-tracking-data.service';
 
 
+interface PendingQrState {
+  orderId: string;
+  orderCode: string;
+  total: number;
+  requireDeposit: boolean;
+  depositAmount: number;
+  createdAt: number;
+}
+
+
 @Component({
   selector: 'app-order-tracking',
   standalone: true,
@@ -43,6 +53,11 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   reviewSubmittingProductKey: string | null = null;
   cancelSuccessOrderId: string | null = null;
   reviewInlineErrors: Record<string, string> = {};
+  pendingQr: PendingQrState | null = null;
+  pendingQrChoice: 'deposit' | 'full' = 'full';
+  pendingQrSecondsLeft = 0;
+  pendingQrCopied = '';
+  private pendingQrTick: ReturnType<typeof setInterval> | null = null;
   cameraOpen = false;
   cameraError = '';
   cameraFacingMode: 'user' | 'environment' = 'environment';
@@ -59,8 +74,15 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   @ViewChild(TrackingReviewFlowComponent) private reviewFlowComponent?: TrackingReviewFlowComponent;
   private pendingRestoreScrollY: number | null = null;
+  private pendingQrSource: PendingQrState | null = null;
   readonly cancelReasons = CANCEL_REASONS;
   readonly shopZaloUrl = SHOP_ZALO_URL;
+  readonly bankInfo = {
+    accountName: 'CONG TY TNHH NOI THAT U-HOME FURNI',
+    accountNumber: '0011111222333',
+    bankName: 'Vietcombank - CN TP.HCM',
+    qrUrl: 'assets/images/qrcode-default.png',
+  };
   readonly timelineSteps: TimelineStep[] = [
     { label: 'Đã đặt hàng' },
     { label: 'Đã xác nhận' },
@@ -80,6 +102,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.loadPendingQr();
     const codeFromQuery = this.route.snapshot.queryParamMap.get('code');
     if (codeFromQuery) {
       this.searchCode = codeFromQuery;
@@ -100,6 +123,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopCameraStream();
+    this.stopPendingQrTimer();
     if (this.toastTimer) {
       clearTimeout(this.toastTimer);
       this.toastTimer = null;
@@ -132,6 +156,24 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     this.reviewThanksMessage = '';
   }
 
+  get pendingQrAmount(): number {
+    if (!this.pendingQr) return 0;
+    if (this.pendingQrChoice === 'deposit' && this.pendingQr.requireDeposit) {
+      return this.pendingQr.depositAmount;
+    }
+    return this.pendingQr.total;
+  }
+
+  get pendingQrTimerDisplay(): string {
+    const m = Math.floor(this.pendingQrSecondsLeft / 60).toString().padStart(2, '0');
+    const s = (this.pendingQrSecondsLeft % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  formatCurrency(value: number): string {
+    return `${new Intl.NumberFormat('vi-VN').format(Number(value || 0))}\u20ab`;
+  }
+
   async searchOrder(): Promise<void> {
     const codes = this.trackingData.parseCodes(this.searchCode);
 
@@ -156,6 +198,8 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       const missingCodes = codes.filter((code) => !foundSet.has(code));
 
       this.orders = foundOrders;
+
+      this.syncPendingQrByResults(foundOrders);
 
       if (!foundOrders.length) {
         this.errorMessage = 'Không tìm thấy đơn hàng nào. Vui lòng kiểm tra lại mã vận đơn.';
@@ -846,6 +890,113 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     }
   }
 
+  copyPendingQrValue(value: string, field: string): void {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return;
+    navigator.clipboard.writeText(value).then(() => {
+      this.pendingQrCopied = field;
+      setTimeout(() => {
+        if (this.pendingQrCopied === field) this.pendingQrCopied = '';
+        this.cdr.detectChanges();
+      }, 1500);
+    }).catch(() => undefined);
+  }
+
+  private loadPendingQr(): void {
+    if (typeof window === 'undefined') return;
+    const raw = window.sessionStorage.getItem('checkout_qr_state');
+    if (!raw) return;
+
+    let state: PendingQrState;
+    try {
+      state = JSON.parse(raw) as PendingQrState;
+    } catch {
+      return;
+    }
+
+    const elapsed = Date.now() - Number(state.createdAt || 0);
+    const remaining = 5 * 60 * 1000 - elapsed;
+    if (remaining <= 0) {
+      window.sessionStorage.removeItem('checkout_qr_state');
+      return;
+    }
+
+    this.pendingQrSource = state;
+
+    const codeFromQuery = this.route.snapshot.queryParamMap.get('code');
+    if (codeFromQuery && codeFromQuery === state.orderCode) {
+      this.activatePendingQr(state, remaining);
+    }
+  }
+
+  private activatePendingQr(state: PendingQrState, remainingMs?: number): void {
+    const elapsed = Date.now() - Number(state.createdAt || 0);
+    const remaining = typeof remainingMs === 'number' ? remainingMs : 5 * 60 * 1000 - elapsed;
+
+    if (remaining <= 0) {
+      this.clearPendingQr();
+      return;
+    }
+
+    this.pendingQr = state;
+    this.pendingQrSecondsLeft = Math.ceil(remaining / 1000);
+    this.pendingQrChoice = state.requireDeposit ? 'deposit' : 'full';
+    this.startPendingQrTimer();
+  }
+
+  private clearPendingQr(removeStorage = true): void {
+    this.stopPendingQrTimer();
+    this.pendingQr = null;
+    this.pendingQrSource = null;
+
+    if (removeStorage && typeof window !== 'undefined') {
+      window.sessionStorage.removeItem('checkout_qr_state');
+    }
+  }
+
+  private syncPendingQrByResults(foundOrders: TrackingOrder[]): void {
+    if (!this.pendingQrSource) {
+      this.stopPendingQrTimer();
+      this.pendingQr = null;
+      return;
+    }
+
+    const matchedOrder = foundOrders.find((order) => order.orderCode === this.pendingQrSource?.orderCode);
+    if (!matchedOrder) {
+      this.stopPendingQrTimer();
+      this.pendingQr = null;
+      return;
+    }
+
+    // Nếu state cũ bị thiếu total/deposit thì lấy theo dữ liệu đơn vừa tra cứu
+    const normalizedSource: PendingQrState = {
+      ...this.pendingQrSource,
+      total: Number(this.pendingQrSource.total || matchedOrder.total || 0),
+      depositAmount: Number(this.pendingQrSource.depositAmount || Math.round((matchedOrder.total || 0) * 0.1)),
+      requireDeposit: Boolean(this.pendingQrSource.requireDeposit || Number(matchedOrder.total || 0) >= 10000000),
+    };
+
+    this.pendingQrSource = normalizedSource;
+    this.activatePendingQr(normalizedSource);
+  }
+
+  private startPendingQrTimer(): void {
+    if (this.pendingQrTick) return;
+    this.pendingQrTick = setInterval(() => {
+      this.pendingQrSecondsLeft -= 1;
+      if (this.pendingQrSecondsLeft <= 0) {
+        this.clearPendingQr();
+      }
+      this.cdr.detectChanges();
+    }, 1000);
+  }
+
+  private stopPendingQrTimer(): void {
+    if (this.pendingQrTick) {
+      clearInterval(this.pendingQrTick);
+      this.pendingQrTick = null;
+    }
+  }
+
   private persistTrackingState(scrollY: number): void {
     if (typeof window === 'undefined') {
       return;
@@ -915,3 +1066,4 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     requestAnimationFrame(tryScroll);
   }
 }
+

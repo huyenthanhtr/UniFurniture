@@ -27,6 +27,7 @@ export const routes: Routes = [
   { path: 'cua-hang', redirectTo: 'cong-dong', pathMatch: 'full' },
   { path: 'tra-cuu-van-don', component: OrderTrackingComponent },
   { path: 'checkout', loadComponent: () => import('./pages/checkout/checkout').then(m => m.CheckoutComponent) },
+  { path: 'checkout-payment', loadComponent: () => import('./pages/checkout/components/checkout-payment-qr/checkout-payment-qr').then(m => m.CheckoutPaymentQrComponent) },
   { path: 'checkout-success', component: CheckoutSuccessComponent }
 ];
 

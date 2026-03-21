@@ -1,19 +1,21 @@
-<!-- n8n Chat Container -->
+﻿<!-- n8n Chat Container -->
 <div class="n8n-chat-overlay" [class.active]="ui.isAiChatOpen()" (click)="ui.closeAiChat()">
   <div class="n8n-chat-window" (click)="$event.stopPropagation()">
     <div id="n8n-chat-container"></div>
-    <button class="n8n-chat-close-top" (click)="ui.closeAiChat()">×</button>
+    <button class="n8n-chat-close-top" (click)="ui.closeAiChat()">Ã—</button>
   </div>
 </div>
 
 <app-header></app-header>
 <app-navbar></app-navbar>
 <router-outlet />
-<app-homepage *ngIf="!isRouteActive('/danh-muc') && !isRouteActive('/products') && !isRouteActive('/tin-tuc') && !isRouteActive('/khuyen-mai') && !isRouteActive('/chinh-sach') && !isRouteActive('/ve-unifurniture') && !isRouteActive('/cong-dong') && !isRouteActive('/cua-hang') && !isRouteActive('/ar') && !isRouteActive('/ar-viewer') && !isRouteActive('/tra-cuu-van-don') && !isRouteActive('/checkout') && !isRouteActive('/checkout-success')"></app-homepage>
+<app-homepage *ngIf="!isRouteActive('/danh-muc') && !isRouteActive('/products') && !isRouteActive('/tin-tuc') && !isRouteActive('/khuyen-mai') && !isRouteActive('/chinh-sach') && !isRouteActive('/ve-unifurniture') && !isRouteActive('/cong-dong') && !isRouteActive('/cua-hang') && !isRouteActive('/ar') && !isRouteActive('/ar-viewer') && !isRouteActive('/tra-cuu-van-don') && !isRouteActive('/checkout') && !isRouteActive('/checkout-success') && !isRouteActive('/checkout-payment')"></app-homepage>
 <app-footer></app-footer>
 
 <!-- Global Modals & Widgets -->
 <app-auth-modal></app-auth-modal>
 <app-cart-popup></app-cart-popup>
 <app-contact-float></app-contact-float>
+
+
 
