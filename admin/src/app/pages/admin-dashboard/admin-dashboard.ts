@@ -110,7 +110,7 @@ resolvePresetRange(
 
   switch (preset) {
     case 'all':
-      start = new Date(2000, 0, 1);
+      start = new Date(2025, 0, 1);
       start.setHours(0, 0, 0, 0);
       granularity = 'quarter';
       break;

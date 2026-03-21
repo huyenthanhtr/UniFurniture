@@ -30,6 +30,7 @@ function getOrderDate(order) {
 
 function resolveDateRange(rangePreset, startDate, endDate) {
   const now = new Date();
+
   const end = endDate ? new Date(endDate) : new Date(now);
   end.setHours(23, 59, 59, 999);
 
@@ -42,31 +43,38 @@ function resolveDateRange(rangePreset, startDate, endDate) {
   }
 
   switch (rangePreset) {
+    case 'all':
+      start = startDate ? new Date(startDate) : new Date(2025, 0, 1);
+      start.setHours(0, 0, 0, 0);
+      break;
+
     case 'last7days':
       start = new Date(end);
       start.setDate(end.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
       break;
 
     case 'thisMonth':
       start = new Date(end.getFullYear(), end.getMonth(), 1);
+      start.setHours(0, 0, 0, 0);
       break;
 
     case 'thisQuarter': {
       const quarterStartMonth = Math.floor(end.getMonth() / 3) * 3;
       start = new Date(end.getFullYear(), quarterStartMonth, 1);
+      start.setHours(0, 0, 0, 0);
       break;
     }
 
     case 'thisYear':
     default:
       start = new Date(end.getFullYear(), 0, 1);
+      start.setHours(0, 0, 0, 0);
       break;
   }
 
-  start.setHours(0, 0, 0, 0);
   return { start, end };
 }
-
 function getWeekNumber(date) {
   const target = new Date(date.valueOf());
   const dayNr = (date.getDay() + 6) % 7;
@@ -317,18 +325,24 @@ exports.getOverview = async (req, res, next) => {
 
     const { start, end } = resolveDateRange(rangePreset, startDate, endDate);
 
-    const orderDateFilter = {
-      $gte: start,
-      $lte: end
-    };
+    let orderQuery = {};
 
-    const orders = await Order.find({
-      $or: [
-        { ordered_at: orderDateFilter },
-        { createdAt: orderDateFilter },
-        { created_at: orderDateFilter }
-      ]
-    }).lean();
+    if (rangePreset !== 'all') {
+      const orderDateFilter = {
+        $gte: start,
+        $lte: end
+      };
+
+      orderQuery = {
+        $or: [
+          { ordered_at: orderDateFilter },
+          { createdAt: orderDateFilter },
+          { created_at: orderDateFilter }
+        ]
+      };
+    }
+
+    const orders = await Order.find(orderQuery).lean();
 
     const [variants, products] = await Promise.all([
       ProductVariant.find({}).lean(),
@@ -345,37 +359,35 @@ exports.getOverview = async (req, res, next) => {
       IN_PROGRESS_ORDER_STATUSES.includes(normalizeStatus(order.status))
     ).length;
 
+    const installationOrders = await Order.find({
+      is_installed: true,
+      status: { $in: IN_PROGRESS_ORDER_STATUSES }
+    })
+      .sort({ ordered_at: -1, createdAt: -1, created_at: -1 })
+      .lean();
 
-const installationOrders = await Order.find({
-  is_installed: true,
-  status: { $in: IN_PROGRESS_ORDER_STATUSES }
-})
-  .sort({ ordered_at: -1, createdAt: -1, created_at: -1 })
-  .lean();
-const topSellingProducts = await buildTopSellingProducts(orders);
+    const topSellingProducts = await buildTopSellingProducts(orders);
     const trend = buildTrendData(orders, start, end, granularity);
     const statusStats = buildStatusStats(orders);
 
-      const threeDaysAgo = new Date();
-  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-  threeDaysAgo.setHours(0, 0, 0, 0);
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    threeDaysAgo.setHours(0, 0, 0, 0);
 
-  // Lọc đơn trong 3 ngày gần nhất từ tập đơn đã load
-  const ordersInLast3Days = orders.filter(o => getOrderDate(o) >= threeDaysAgo);
-  
-  // Nếu số đơn trong 3 ngày < 10, lấy top 10 đơn mới nhất. Ngược lại lấy hết đơn 3 ngày.
-  const recentOrdersCount = Math.max(10, ordersInLast3Days.length);
-  const recentOrders = [...orders]
-    .sort((a, b) => getOrderDate(b).getTime() - getOrderDate(a).getTime())
-    .slice(0, recentOrdersCount);
+    const ordersInLast3Days = orders.filter(o => getOrderDate(o) >= threeDaysAgo);
+
+    const recentOrdersCount = Math.max(10, ordersInLast3Days.length);
+    const recentOrders = [...orders]
+      .sort((a, b) => getOrderDate(b).getTime() - getOrderDate(a).getTime())
+      .slice(0, recentOrdersCount);
 
     res.json({
       summary: {
         totalRevenue,
         totalOrders: orders.length,
         processingOrdersCount,
-        needRestockCount: inventory.needRestockCount,
-        lowStockCount: inventory.lowStockCount
+        needRestockCount: inventory.needRestockItems.length,
+        lowStockCount: inventory.lowStockItems.length
       },
       trend,
       statusStats,
