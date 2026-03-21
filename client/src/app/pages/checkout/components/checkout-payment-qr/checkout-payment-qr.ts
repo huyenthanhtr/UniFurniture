@@ -178,12 +178,26 @@ export class CheckoutPaymentQrComponent implements OnInit, OnDestroy {
   private handleExpired(): void {
     this.stopTimer();
     this.expired = true;
+
+    const state = this.qrState;
+    if (state?.orderId) {
+      void this.syncDemoTransferTimeout(state.orderId);
+    }
+
     sessionStorage.removeItem('checkout_qr_state');
 
-    const code = this.qrState?.orderCode || this.route.snapshot.queryParamMap.get('code') || '';
+    const code = state?.orderCode || this.route.snapshot.queryParamMap.get('code') || '';
     void this.router.navigate(['/checkout-success'], {
       queryParams: { code: code || null },
       replaceUrl: true,
     });
+  }
+
+  private async syncDemoTransferTimeout(orderId: string): Promise<void> {
+    try {
+      await firstValueFrom(this.http.post(`${API_BASE_URL}/orders/${orderId}/demo-transfer-timeout`, {}));
+    } catch {
+      // Demo mode: b? qua l?i ??ng b? backend, v?n cho lu?ng UI ch?y ti?p
+    }
   }
 }

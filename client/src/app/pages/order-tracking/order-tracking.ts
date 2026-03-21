@@ -365,9 +365,9 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     try {
       await firstValueFrom(this.http.patch(`${API_BASE_URL}/orders/${order.id}/status`, { status: 'completed' }));
       order.backendStatus = 'completed';
-      order.statusLabel = 'Hoàn tất';
+      order.statusLabel = 'Ho\u00e0n t\u1ea5t';
     } catch {
-      this.errorMessage = 'Không thể cập nhật trạng thái hoàn tất lúc này.';
+      this.errorMessage = 'Kh\u00f4ng th\u1ec3 c\u1eadp nh\u1eadt tr\u1ea1ng th\u00e1i ho\u00e0n t\u1ea5t l\u00fac n\u00e0y.';
     }
   }
 
@@ -916,6 +916,9 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     const elapsed = Date.now() - Number(state.createdAt || 0);
     const remaining = 5 * 60 * 1000 - elapsed;
     if (remaining <= 0) {
+      if (state.orderId) {
+        void this.syncDemoTransferTimeout(state.orderId);
+      }
       window.sessionStorage.removeItem('checkout_qr_state');
       return;
     }
@@ -944,12 +947,18 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   }
 
   private clearPendingQr(removeStorage = true): void {
+    const orderId = this.pendingQrSource?.orderId || this.pendingQr?.orderId || '';
+
     this.stopPendingQrTimer();
     this.pendingQr = null;
     this.pendingQrSource = null;
 
     if (removeStorage && typeof window !== 'undefined') {
       window.sessionStorage.removeItem('checkout_qr_state');
+    }
+
+    if (orderId) {
+      void this.syncDemoTransferTimeout(orderId);
     }
   }
 
@@ -994,6 +1003,14 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     if (this.pendingQrTick) {
       clearInterval(this.pendingQrTick);
       this.pendingQrTick = null;
+    }
+  }
+
+  private async syncDemoTransferTimeout(orderId: string): Promise<void> {
+    try {
+      await firstValueFrom(this.http.post(`${API_BASE_URL}/orders/${orderId}/demo-transfer-timeout`, {}));
+    } catch {
+      // Demo mode: kh?ng ch?n lu?ng UI n?u ??ng b? backend l?i
     }
   }
 
@@ -1066,4 +1083,5 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     requestAnimationFrame(tryScroll);
   }
 }
+
 
