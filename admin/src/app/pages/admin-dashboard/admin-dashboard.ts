@@ -251,14 +251,6 @@ bindOverviewData(data: DashboardOverviewResponse): void {
         labels,
         datasets: [
           {
-            type: 'bar',
-            label: 'Doanh thu (VNĐ)',
-            data: revenueData,
-            backgroundColor: '#908372',
-            borderRadius: 6,
-            yAxisID: 'y'
-          },
-          {
             type: 'line',
             label: 'Số đơn hàng',
             data: countData,
@@ -269,6 +261,14 @@ bindOverviewData(data: DashboardOverviewResponse): void {
             borderWidth: 2,
             tension: 0.3,
             yAxisID: 'y1'
+          },
+          {
+            type: 'bar',
+            label: 'Doanh thu (VNĐ)',
+            data: revenueData,
+            backgroundColor: '#908372',
+            borderRadius: 6,
+            yAxisID: 'y'
           }
         ]
       },
