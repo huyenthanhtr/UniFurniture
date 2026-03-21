@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -42,6 +42,7 @@ export class AdminOrderDetail implements OnInit {
   editablePaymentStatus = '';
 
   showConfirm = false;
+  showStatusReason = false;
   showStatusReasonForm = false;
   showWarrantyForm = false;
   showWarrantyDetail = false;
@@ -55,7 +56,6 @@ export class AdminOrderDetail implements OnInit {
   readonly statuses = [
     'pending',
     'confirmed',
-    'cancel_pending',
     'processing',
     'shipping',
     'delivered',
@@ -213,7 +213,7 @@ export class AdminOrderDetail implements OnInit {
       return;
     }
 
-    if (this.requiresStatusReason(this.editableStatus)) {
+    if (this.requiresStatusReason(this.editableStatus, this.order)) {
       this.statusReasonDraft = '';
       this.showStatusReasonForm = true;
       this.cdr.detectChanges();
@@ -463,7 +463,7 @@ export class AdminOrderDetail implements OnInit {
     const key = String(status || '').toLowerCase();
     if (key === 'pending') return 'Chờ xác nhận';
     if (key === 'confirmed') return 'Đã xác nhận';
-    if (key === 'cancel_pending') return 'Chờ xác nhận huỷ';
+    if (key === 'cancel_pending') return 'Đã huỷ';
     if (key === 'processing') return 'Đang xử lý';
     if (key === 'shipping') return 'Đang giao';
     if (key === 'delivered') return 'Đã giao';
@@ -502,8 +502,20 @@ export class AdminOrderDetail implements OnInit {
     return String(this.order?.cancellation_request?.reason || '').trim();
   }
 
-  requiresStatusReason(status: string): boolean {
-    return ['cancelled', 'exchanged'].includes(String(status || '').toLowerCase());
+  requiresStatusReason(status: string, order?: any): boolean {
+    const key = String(status || '').toLowerCase();
+    if (key === 'exchanged') return true;
+
+    if (key === 'cancelled') {
+      const cancelledBy = String(order?.cancellation_request?.cancelled_by || '').toLowerCase();
+      const existedReason = String(order?.cancellation_request?.reason || '').trim();
+      if (cancelledBy === 'customer' && existedReason) {
+        return false;
+      }
+      return true;
+    }
+
+    return false;
   }
 
   getStatusReasonTitle(status: string): string {
@@ -529,25 +541,15 @@ export class AdminOrderDetail implements OnInit {
   getOrderStatusRestrictionMessage(nextStatus: string): string {
     const currentStatus = String(this.order?.status || '').toLowerCase();
     const targetStatus = String(nextStatus || '').toLowerCase();
-    const cancelledBy = String(this.order?.cancellation_request?.cancelled_by || '').toLowerCase();
 
     if (!targetStatus || targetStatus === currentStatus) {
       return '';
-    }
-
-    if (targetStatus === 'cancel_pending') {
-      return 'Admin không thể tự chuyển đơn sang trạng thái chờ xác nhận huỷ. Trạng thái này chỉ được tạo khi khách hàng gửi yêu cầu huỷ đơn.';
     }
 
     if (targetStatus === 'cancelled') {
       if (currentStatus === 'pending') {
         return '';
       }
-
-      if (currentStatus === 'cancel_pending' && cancelledBy === 'customer') {
-        return '';
-      }
-
       return 'Đơn đang trong quá trình thực hiện nên không thể chuyển sang đã huỷ. Chỉ hỗ trợ huỷ khi đơn còn chờ xác nhận hoặc đang chờ xác nhận huỷ từ khách.';
     }
 
@@ -555,7 +557,6 @@ export class AdminOrderDetail implements OnInit {
       if (currentStatus === 'delivered' || currentStatus === 'completed') {
         return '';
       }
-
       return 'Chỉ có thể chuyển sang trạng thái đổi hàng khi đơn đã giao hoặc đã hoàn tất.';
     }
 

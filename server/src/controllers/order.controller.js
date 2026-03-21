@@ -279,23 +279,23 @@ function checkCancelEligibility(order) {
   if (status === "confirmed") {
     const confirmedAt = getConfirmedAt(order);
     if (!confirmedAt) {
-      return { allowed: false, message: "KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c thá»i Ä‘iá»ƒm xÃ¡c nháº­n Ä‘Æ¡n." };
+      return { allowed: false, message: "Khong xac dinh duoc thoi diem xac nhan don." };
     }
 
     const elapsedMs = Date.now() - confirmedAt.getTime();
     const withinWindow = elapsedMs <= CANCELLATION_GRACE_HOURS * 60 * 60 * 1000;
     if (!withinWindow) {
-      return { allowed: false, message: "ÄÆ¡n Ä‘Ã£ quÃ¡ 24h ká»ƒ tá»« lÃºc xÃ¡c nháº­n nÃªn khÃ´ng thá»ƒ yÃªu cáº§u há»§y." };
+      return { allowed: false, message: "Don da qua 24h ke tu luc xac nhan nen khong the yeu cau huy." };
     }
 
     return { allowed: true, message: "" };
   }
 
   if (status === "cancel_pending") {
-    return { allowed: false, message: "ÄÆ¡n Ä‘ang chá» xÃ¡c nháº­n há»§y." };
+    return { allowed: false, message: "Don dang cho xac nhan huy." };
   }
 
-  return { allowed: false, message: "ÄÆ¡n hÃ ng khÃ´ng cÃ²n trong thá»i háº¡n cho phÃ©p há»§y." };
+  return { allowed: false, message: "Don hang khong con trong thoi han cho phep huy." };
 }
 
 async function resolveProfile(order, customerId) {
@@ -846,11 +846,11 @@ async function requestCancelOrder(req, res, next) {
     }
 
     if (!reason) {
-      return res.status(400).json({ error: "LÃ½ do há»§y lÃ  báº¯t buá»™c." });
+      return res.status(400).json({ error: "Ly do huy la bat buoc." });
     }
 
     if (!phone) {
-      return res.status(400).json({ error: "Sá»‘ Ä‘iá»‡n thoáº¡i xÃ¡c nháº­n lÃ  báº¯t buá»™c." });
+      return res.status(400).json({ error: "So dien thoai xac nhan la bat buoc." });
     }
 
     const order = await Order.findById(id);
@@ -860,13 +860,13 @@ async function requestCancelOrder(req, res, next) {
 
     const eligibility = checkCancelEligibility(order);
     if (!eligibility.allowed) {
-      return res.status(400).json({ error: eligibility.message || "ÄÆ¡n hÃ ng khÃ´ng thá»ƒ yÃªu cáº§u há»§y." });
+      return res.status(400).json({ error: eligibility.message || "Don hang khong the yeu cau huy." });
     }
 
     const previousStatus = String(order.status || "").toLowerCase();
     const over10mWithDeposit = Number(order.total_amount || 0) >= 10000000 && Number(order.deposit_amount || 0) > 0;
 
-    order.status = "cancel_pending";
+    order.status = "cancelled";
     order.cancellation_request = {
       reason,
       note,
@@ -880,10 +880,7 @@ async function requestCancelOrder(req, res, next) {
     await order.save();
 
     return res.status(200).json({
-      message: "ÄÃ£ ghi nháº­n yÃªu cáº§u há»§y Ä‘Æ¡n. Vui lÃ²ng chá» admin xÃ¡c nháº­n.",
-      warning: over10mWithDeposit
-        ? "ÄÆ¡n trÃªn 10 triá»‡u Ä‘Ã£ Ä‘áº·t cá»c 10% sáº½ khÃ´ng Ä‘Æ°á»£c hoÃ n láº¡i tiá»n cá»c."
-        : "",
+      message: "Da huy don hang thanh cong.",
       order: order.toObject(),
     });
   } catch (err) {
@@ -1299,4 +1296,5 @@ module.exports = {
   canAdminSetExchanged,
   SOLD_COUNT_STATUSES,
 };
+
 

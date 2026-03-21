@@ -59,3 +59,14 @@
     </div>
   </div>
 </div>
+
+<div class="cancel-modal" *ngIf="cancelSuccess">
+  <div class="cancel-modal__backdrop" (click)="closeCancelSuccessClick.emit()"></div>
+  <div class="card cancel-modal__content cancel-modal__content--success">
+    <h3>HỦY ĐƠN THÀNH CÔNG</h3>
+    <p>U-Home Furni xin cảm ơn quý khách hàng!</p>
+    <div class="cancel-form__actions">
+      <button type="button" class="btn-primary" (click)="closeCancelSuccessClick.emit()">Đóng</button>
+    </div>
+  </div>
+</div>
