@@ -7,9 +7,75 @@ body {
   font-family: 'Montserrat', sans-serif;
 }
 
-button,
-input,
-select,
-textarea {
-  font-family: inherit;
+div.n8n-chat {
+  /* n8n Chat Theme - UniFurniture Style */
+  --chat--color--primary: #f05244 !important; /* UniFurniture Orange */
+  --chat--color--primary-shade-50: #d94639 !important;
+  --chat--color--primary--shade-100: #c23b2f !important;
+  --chat--color--secondary: #2c3e50 !important; /* UniFurniture Dark Blue */
+  --chat--color-white: #ffffff !important;
+  --chat--color-light: #f8f9fa !important;
+  --chat--color-light-shade-50: #e9ecef !important;
+  --chat--color-light-shade-100: #dee2e6 !important;
+  --chat--color-medium: #ced4da !important;
+  --chat--color-dark: #212529 !important;
+  --chat--color-disabled: #adb5bd !important;
+  --chat--color-typing: #f05244 !important;
+
+  /* Base Layout */
+  --chat--spacing: 1rem !important;
+  --chat--border-radius: 12px !important;
+  --chat--font-family: 'Montserrat', sans-serif !important;
+
+  /* Header Styles */
+  --chat--header-height: auto !important;
+  --chat--header--padding: 1.25rem !important;
+  --chat--header--background: #f05244 !important;
+  --chat--header--color: #ffffff !important;
+  --chat--heading--font-size: 1.25rem !important;
+  --chat--subtitle--font-size: 0.875rem !important;
+
+  /* Message Styles */
+  --chat--message--font-size: 0.9375rem !important;
+  --chat--message--padding: 0.75rem 1rem !important;
+  --chat--message--border-radius: 12px !important;
+  --chat--message--bot--background: #ffffff !important;
+  --chat--message--bot--color: #2c3e50 !important;
+  --chat--message--bot--border: 1px solid #e9ecef !important;
+  --chat--message--user--background: #f05244 !important;
+  --chat--message--user--color: #ffffff !important;
+
+  /* Input Area */
+  --chat--input--background: #ffffff !important;
+  --chat--input--text-color: #2c3e50 !important;
+  --chat--input--border: 1px solid #e9ecef !important;
+  --chat--input--placeholder--font-size: 0.875rem !important;
+  
+  /* Fix blocking issue: ensure n8n global container doesn't block clicks */
+  pointer-events: none !important;
+}
+
+/* Force UniFurniture Orange on the n8n Chat Header */
+#n8n-chat-container .chat-header {
+  background: #f05244 !important;
+}
+
+/* Hide default n8n chat button and launcher */
+.n8n-chat-button,
+.n8n-chat-launcher {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Allow interaction with our custom chat window */
+.n8n-chat-window,
+#n8n-chat-container,
+#n8n-chat-container * {
+  pointer-events: auto !important;
+}
+
+/* Ensure contact float is always accessible */
+.contact-float-wrap {
+  z-index: 3000 !important;
 }

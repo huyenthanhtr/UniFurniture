@@ -24,9 +24,24 @@ function normalizePhone(phone) {
 async function register(req, res) {
     try {
         let { phone, email, password_hash, full_name, gender, date_of_birth, address } = req.body;
+
+        if (!phone || !password_hash || !full_name) {
+            return res.status(400).json({ message: "Vui lòng cung cấp đầy đủ thông tin bắt buộc." });
+        }
+
+        const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+        if (email && !emailRegex.test(email)) {
+            return res.status(400).json({ message: "Định dạng email không hợp lệ." });
+        }
+
+        // Phone validation (Vietnamese format or just digits)
+        const phoneDigits = phone.replace(/\D/g, '');
+        if (phoneDigits.length < 10 || phoneDigits.length > 12) { // 84 + 9 digits = 11, etc.
+             return res.status(400).json({ message: "Số điện thoại không hợp lệ." });
+        }
+
         phone = normalizePhone(phone);
 
-        // Check if phone or email already exists in ACTIVE profiles
         const query = [{ phone }];
         if (email) {
             query.push({ email });
@@ -43,10 +58,12 @@ async function register(req, res) {
         // Save registration payload directly into OTP table (Expires in 5 mins)
         await Otp.deleteMany({ phone });
 
+        const hashedPassword = hashValue(password_hash);
+
         await Otp.create({
             phone,
-            email: email || undefined,
-            password_hash: password_hash || undefined,
+            email: (email && email.trim()) ? email.trim().toLowerCase() : undefined,
+            password_hash: hashedPassword,
             full_name,
             gender: gender || undefined,
             date_of_birth: date_of_birth || undefined,
@@ -88,7 +105,7 @@ async function verifyOtp(req, res) {
         }
         let newProfile = new Profile({
             phone: otpRecord.phone,
-            email: otpRecord.email || undefined,
+            email: (otpRecord.email && otpRecord.email.trim()) ? otpRecord.email.trim().toLowerCase() : undefined,
             password_hash: otpRecord.password_hash || undefined,
             full_name: otpRecord.full_name,
             gender: otpRecord.gender || undefined,
@@ -104,7 +121,7 @@ async function verifyOtp(req, res) {
         return res.status(200).json({ message: "Đăng ký thành công! Đang chuyển sang màn hình OTP...", profile: newProfile });
 
     } catch (err) {
-        console.error(err);
+        console.error("OTP Verification Error:", err);
         return res.status(500).json({ message: "OTP verification failed", error: err.message });
     }
 }

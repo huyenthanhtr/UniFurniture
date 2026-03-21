@@ -53,7 +53,7 @@
             </div>
 
             <div class="auth-disclaimer">
-                <a href="#" class="auth-link">Điều khoản dịch vụ</a>
+                <a [routerLink]="['/chinh-sach', 'chinh-sach-ban-hang']" (click)="ui.closeAuth()" class="auth-link">Điều khoản dịch vụ</a>
                 <span> · Website được bảo vệ bởi reCAPTCHA</span>
             </div>
 
@@ -131,7 +131,7 @@
 
             <div class="auth-disclaimer">
                 <span>Bằng cách đăng ký, bạn đồng ý với </span>
-                <a href="#" class="auth-link">Điều khoản dịch vụ</a>
+                <a [routerLink]="['/chinh-sach', 'chinh-sach-ban-hang']" (click)="ui.closeAuth()" class="auth-link">Điều khoản dịch vụ</a>
             </div>
 
             <button type="submit" class="auth-submit-btn" [disabled]="isLoading"
