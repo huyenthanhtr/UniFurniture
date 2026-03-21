@@ -62,14 +62,13 @@ export class AdminProductDetail implements OnInit {
     });
   }
 
-  dedupeImagesByScopeAndUrl(arr: any[]) {
+  dedupeImagesByUrl(arr: any[]) {
     const map = new Map<string, any>();
 
     for (const img of this.sortImages(arr)) {
       const imageUrl = String(img.image_url || '').trim();
       if (!imageUrl) continue;
-      const key = `${String(img.variant_id || '')}::${imageUrl}`;
-      if (!map.has(key)) map.set(key, img);
+      if (!map.has(imageUrl)) map.set(imageUrl, img);
     }
 
     return Array.from(map.values());
@@ -104,7 +103,7 @@ export class AdminProductDetail implements OnInit {
         }).subscribe({
           next: (res: any) => {
             this.images = this.sortImages(res.images?.items ?? res.images ?? []);
-            this.galleryImages = this.dedupeImagesByScopeAndUrl(this.images);
+            this.galleryImages = this.dedupeImagesByUrl(this.images);
             this.variants = this.sortVariants(res.variants?.items ?? res.variants ?? []);
             this.lowestVariantPrice = this.computeLowestVariantPrice(this.variants);
 
@@ -172,7 +171,9 @@ export class AdminProductDetail implements OnInit {
   }
 
   getVariantGalleryImages(v: any): any[] {
-    const own = this.sortImages(this.images.filter((img) => String(img.variant_id || '') === String(v._id)));
+    const own = this.dedupeImagesByUrl(
+      this.sortImages(this.images.filter((img) => String(img.variant_id || '') === String(v._id)))
+    );
     if (own.length) return own;
 
     const fallbackUrl =

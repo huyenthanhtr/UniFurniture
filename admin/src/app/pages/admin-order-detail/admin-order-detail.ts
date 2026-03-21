@@ -444,6 +444,12 @@ export class AdminOrderDetail implements OnInit {
     return 'payment-unknown';
   }
 
+  private isCurrentOrderPaymentSettled(): boolean {
+    const total = this.toNumber(this.order?.total_amount);
+    if (total <= 0) return false;
+    return this.paidAmount >= total;
+  }
+
   private syncEditablePayment(): void {
     const firstPayment = this.payments[0] || null;
     this.editablePaymentId = String(firstPayment?._id || '');
@@ -574,7 +580,14 @@ export class AdminOrderDetail implements OnInit {
   }
 
   getOrderStatusRestrictionMessage(nextStatus: string): string {
-    return getOrderStatusRestrictionMessage(this.order?.status, nextStatus);
+    const sharedMessage = getOrderStatusRestrictionMessage(this.order?.status, nextStatus);
+    if (sharedMessage) return sharedMessage;
+
+    if (String(nextStatus || '').toLowerCase() === 'completed' && !this.isCurrentOrderPaymentSettled()) {
+      return 'Chỉ có thể chuyển đơn sang "Hoàn tất" khi trạng thái thanh toán đã là "Tất toán".';
+    }
+
+    return '';
   }
 
   private showConfirmMessage(message: string): void {

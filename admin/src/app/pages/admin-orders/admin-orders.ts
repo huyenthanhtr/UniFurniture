@@ -768,6 +768,10 @@ export class AdminOrders implements OnInit, OnDestroy {
     return options;
   }
 
+  private isOrderPaymentSettled(order: any): boolean {
+    return this.getPaymentStateKey(order) === 'settled';
+  }
+
   orderStatusLabel(status: string): string {
     return getOrderStatusLabel(status);
   }
@@ -777,7 +781,14 @@ export class AdminOrders implements OnInit, OnDestroy {
   }
 
   getOrderStatusRestrictionMessage(order: any, nextStatus: string): string {
-    return getOrderStatusRestrictionMessage(order?.status, nextStatus);
+    const sharedMessage = getOrderStatusRestrictionMessage(order?.status, nextStatus);
+    if (sharedMessage) return sharedMessage;
+
+    if (String(nextStatus || '').toLowerCase() === 'completed' && !this.isOrderPaymentSettled(order)) {
+      return 'Chỉ có thể chuyển đơn sang "Hoàn tất" khi trạng thái thanh toán đã là "Tất toán".';
+    }
+
+    return '';
   }
   
   customerTypeLabel(type: string): string {

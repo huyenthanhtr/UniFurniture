@@ -470,6 +470,10 @@ function buildPaymentSummary(orderDoc, orderPayments) {
   };
 }
 
+function isOrderPaymentSettled(orderDoc, orderPayments = []) {
+  return !!buildPaymentSummary(orderDoc, orderPayments)?.has_full_paid;
+}
+
 function getPaymentSortWeight(paymentSummary, direction) {
   const total = Number(paymentSummary?.total_amount || 0);
   const paidTotal = Number(paymentSummary?.paid_total || 0);
@@ -933,6 +937,15 @@ async function patchOrderStatus(req, res, next) {
     const transitionValidation = validateAdminStatusTransition(doc, nextStatus);
     if (!transitionValidation.allowed) {
       return res.status(400).json({ error: transitionValidation.message });
+    }
+
+    if (nextStatus === "completed") {
+      const orderPayments = await Payment.find({ order_id: doc._id }).lean();
+      if (!isOrderPaymentSettled(doc, orderPayments)) {
+        return res.status(400).json({
+          error: "Chỉ có thể chuyển đơn sang \"Hoàn tất\" khi trạng thái thanh toán đã là \"Tất toán\".",
+        });
+      }
     }
 
     if (INVENTORY_DEDUCT_STATUSES.has(nextStatus) && !doc.inventory_deducted) {
