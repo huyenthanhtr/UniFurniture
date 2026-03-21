@@ -458,3 +458,159 @@
     color: #EF683A;
 }
 
+
+
+/* ===========================
+   RESPONSIVE FOOTER
+=========================== */
+@media (max-width: 1280px) {
+  .footer-main {
+    padding: 36px 56px 20px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .footer-main {
+    padding: 32px 28px 18px;
+  }
+
+  .container-footer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 20px;
+  }
+
+  .footer-col,
+  .footer-col--brand,
+  .footer-col--fanpage {
+    padding-right: 0;
+  }
+
+  .fanpage-box {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .partner-heading {
+    font-size: 1.05rem;
+  }
+
+  .service-container {
+    height: auto;
+    flex-wrap: wrap;
+    gap: 10px 0;
+    padding: 8px 14px 4px;
+  }
+
+  .service-item {
+    flex: 0 0 50%;
+    min-width: 0;
+    padding: 8px 12px;
+  }
+
+  .service-divider {
+    display: none;
+  }
+
+  .service-title {
+    font-size: 15px;
+    line-height: 21px;
+  }
+
+  .service-sub {
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .footer-main {
+    padding: 28px 16px 16px;
+  }
+
+  .container-footer {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    padding-bottom: 22px;
+  }
+
+  .footer-heading {
+    font-size: 16px;
+    line-height: 20px;
+    margin-bottom: 12px;
+  }
+
+  .footer-desc,
+  .footer-link,
+  .contact-label {
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .footer-contact-list {
+    gap: 10px;
+  }
+
+  .fanpage-profile {
+    gap: 10px;
+  }
+
+  .fanpage-name {
+    font-size: 16px;
+    line-height: 22px;
+  }
+
+  .footer-social-wrap {
+    padding-top: 18px;
+    gap: 12px;
+  }
+
+  .footer-maps-link {
+    text-align: center;
+    line-height: 22px;
+    font-size: 14px;
+  }
+
+  .footer-bottom {
+    min-height: 56px;
+    height: auto;
+    padding: 10px 12px;
+  }
+
+  .footer-bottom-inner {
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+    row-gap: 2px;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-main {
+    padding: 24px 12px 14px;
+  }
+
+  .partner-container,
+  .service-container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .service-item {
+    flex: 0 0 100%;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .service-icon-wrap {
+    margin-bottom: 8px;
+  }
+
+  .footer-social {
+    gap: 8px;
+  }
+
+  .social-btn {
+    width: 33px;
+    height: 33px;
+  }
+}
