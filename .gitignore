@@ -1,4 +1,4 @@
-# Dependencies
+﻿# Dependencies
 node_modules/
 
 # Environment variables
@@ -40,6 +40,10 @@ Thumbs.db
 .env.development
 .env.production
 
-# Package lock (optional nếu team thống nhất)
+# Package lock (optional náº¿u team thá»‘ng nháº¥t)
 # package-lock.json
 # yarn.lock
+# Local uploads/temp
+server/uploads/reviews/
+tmp_utf8_test.txt
+
