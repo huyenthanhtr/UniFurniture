@@ -6,6 +6,13 @@ import { forkJoin } from 'rxjs';
 import { AdminOrdersService } from '../../services/admin-orders';
 import { AdminInvoiceService } from '../../services/admin-invoice';
 import { AdminProductsService } from '../../services/admin-products';
+import {
+  ADMIN_ORDER_STATUSES,
+  canSelectOrderStatus,
+  getOrderStatusLabel,
+  getOrderStatusRestrictionMessage,
+  normalizeOrderStatus,
+} from '../../utils/order-status-rules';
 
 @Component({
   selector: 'app-admin-order-detail',
@@ -22,7 +29,7 @@ export class AdminOrderDetail implements OnInit {
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
-  id!: string;
+  orderKey!: string;
   isLoading = false;
 
   order: any = null;
@@ -53,16 +60,7 @@ export class AdminOrderDetail implements OnInit {
   selectedPayment: any = null;
   warrantyRecordDraft = this.createEmptyWarrantyDraft();
 
-  readonly statuses = [
-    'pending',
-    'confirmed',
-    'processing',
-    'shipping',
-    'delivered',
-    'completed',
-    'cancelled',
-    'exchanged',
-  ];
+  readonly statuses = [...ADMIN_ORDER_STATUSES];
 
   private readonly paidStatuses = new Set(['paid']);
   private readonly pendingStatuses = new Set(['pending']);
@@ -70,9 +68,9 @@ export class AdminOrderDetail implements OnInit {
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((pm) => {
-      const id = pm.get('id');
-      if (id) {
-        this.id = id;
+      const orderKey = pm.get('id');
+      if (orderKey) {
+        this.orderKey = orderKey;
         this.load();
       }
     });
@@ -80,7 +78,7 @@ export class AdminOrderDetail implements OnInit {
 
   load() {
     this.isLoading = true;
-    this.api.getOrderById(this.id).subscribe({
+    this.api.getOrderById(this.orderKey).subscribe({
       next: (res: any) => {
         this.order = res?.order ?? null;
         this.customer = res?.customer ?? null;
@@ -90,19 +88,38 @@ export class AdminOrderDetail implements OnInit {
         this.display = res?.display ?? null;
         this.pricing = res?.pricing ?? null;
         this.warranty = res?.warranty ?? null;
-        this.editableStatus = this.order?.status || 'pending';
+        if (this.order) {
+          this.order.status = normalizeOrderStatus(this.order?.status);
+        }
+        this.resetEditableStatus();
         this.statusReasonDraft = '';
         this.warrantyError = '';
         this.showWarrantyForm = false;
         this.showWarrantyDetail = false;
         this.selectedWarrantyRecord = null;
         this.resetWarrantyDraft();
+        this.syncRouteWithOrderCode();
         this.loadProductImagesForItems();
       },
       error: () => {
         this.isLoading = false;
         this.cdr.detectChanges();
       },
+    });
+  }
+
+  private resetEditableStatus(): void {
+    this.editableStatus = normalizeOrderStatus(this.order?.status || 'pending') || 'pending';
+  }
+
+  private syncRouteWithOrderCode(): void {
+    const orderCode = String(this.order?.order_code || '').trim();
+    if (!orderCode || orderCode === this.orderKey) return;
+
+    this.orderKey = orderCode;
+    this.router.navigate(['/admin/orders', orderCode], {
+      queryParams: this.route.snapshot.queryParams,
+      replaceUrl: true,
     });
   }
 
@@ -203,12 +220,33 @@ export class AdminOrderDetail implements OnInit {
     });
   }
 
+  onEditableStatusChange(nextStatus: string): void {
+    this.editableStatus = String(nextStatus || '').toLowerCase();
+
+    if (!this.order?._id || !this.editableStatus || this.editableStatus === this.order.status) {
+      return;
+    }
+
+    const restrictionMessage = this.getOrderStatusRestrictionMessage(this.editableStatus);
+    if (restrictionMessage) {
+      this.resetEditableStatus();
+      this.showConfirmMessage(restrictionMessage);
+      return;
+    }
+
+    if (this.requiresStatusReason(this.editableStatus, this.order)) {
+      this.statusReasonDraft = '';
+      this.showStatusReasonForm = true;
+      this.cdr.detectChanges();
+    }
+  }
+
   askSaveStatus() {
     if (!this.order?._id || !this.editableStatus || this.editableStatus === this.order.status) return;
 
     const restrictionMessage = this.getOrderStatusRestrictionMessage(this.editableStatus);
     if (restrictionMessage) {
-      this.editableStatus = this.order?.status || this.editableStatus;
+      this.resetEditableStatus();
       this.showConfirmMessage(restrictionMessage);
       return;
     }
@@ -220,7 +258,7 @@ export class AdminOrderDetail implements OnInit {
       return;
     }
 
-    this.confirmMessage = `Đổi trạng thái đơn hàng sang ${this.orderStatusLabel(this.editableStatus)}?`;
+    this.confirmMessage = `Bạn có muốn cập nhật trạng thái đơn hàng sang "${this.orderStatusLabel(this.editableStatus)}" không?`;
     this.confirmMode = 'status';
     this.confirmAction = () => this.saveStatus();
     this.showConfirm = true;
@@ -233,13 +271,14 @@ export class AdminOrderDetail implements OnInit {
 
     this.api.patchOrderStatus(String(this.order._id), this.editableStatus).subscribe({
       next: (doc: any) => {
-        this.order = { ...this.order, ...(doc || {}), status: doc?.status || this.editableStatus };
-        this.editableStatus = this.order.status;
+        this.order = { ...this.order, ...(doc || {}), status: normalizeOrderStatus(doc?.status || this.editableStatus) };
+        this.resetEditableStatus();
         this.syncWarrantyFromOrder();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: () => {
+        this.resetEditableStatus();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -255,14 +294,15 @@ export class AdminOrderDetail implements OnInit {
 
     this.api.patchOrderStatus(String(this.order._id), this.editableStatus, reason).subscribe({
       next: (doc: any) => {
-        this.order = { ...this.order, ...(doc || {}), status: doc?.status || this.editableStatus };
-        this.editableStatus = this.order.status;
+        this.order = { ...this.order, ...(doc || {}), status: normalizeOrderStatus(doc?.status || this.editableStatus) };
+        this.resetEditableStatus();
         this.statusReasonDraft = '';
         this.syncWarrantyFromOrder();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: () => {
+        this.resetEditableStatus();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -278,12 +318,17 @@ export class AdminOrderDetail implements OnInit {
     }
     this.confirmMode = '';
     this.statusReasonDraft = '';
-    this.editableStatus = this.order?.status || this.editableStatus;
+    this.resetEditableStatus();
     this.cdr.detectChanges();
   }
 
   runConfirm() {
-    if (this.confirmAction) this.confirmAction();
+    if (this.confirmAction) {
+      this.confirmAction();
+      return;
+    }
+
+    this.closeConfirm();
   }
 
   syncWarrantyFromOrder(): void {
@@ -460,17 +505,7 @@ export class AdminOrderDetail implements OnInit {
   }
 
   orderStatusLabel(status: any): string {
-    const key = String(status || '').toLowerCase();
-    if (key === 'pending') return 'Chờ xác nhận';
-    if (key === 'confirmed') return 'Đã xác nhận';
-    if (key === 'cancel_pending') return 'Đã huỷ';
-    if (key === 'processing') return 'Đang xử lý';
-    if (key === 'shipping') return 'Đang giao';
-    if (key === 'delivered') return 'Đã giao';
-    if (key === 'completed') return 'Hoàn tất';
-    if (key === 'cancelled') return 'Đã huỷ';
-    if (key === 'exchanged') return 'Đã đổi hàng';
-    return status || '-';
+    return getOrderStatusLabel(status);
   }
 
   isCancelledOrder(): boolean {
@@ -519,48 +554,27 @@ export class AdminOrderDetail implements OnInit {
   }
 
   getStatusReasonTitle(status: string): string {
-    return String(status || '').toLowerCase() === 'exchanged' ? 'Lý do đổi hàng' : 'Lý do huỷ đơn';
+    return String(status || '').toLowerCase() === 'exchanged' ? 'Lý do đổi hàng' : 'Lý do hủy đơn';
   }
 
   getStatusReasonDialogTitle(status: string): string {
-    return String(status || '').toLowerCase() === 'exchanged' ? 'Xác nhận đổi hàng' : 'Xác nhận huỷ đơn';
+    return String(status || '').toLowerCase() === 'exchanged' ? 'Xác nhận chuyển sang đổi hàng' : 'Xác nhận hủy đơn hàng';
   }
 
   getStatusReasonPlaceholder(status: string): string {
-    return String(status || '').toLowerCase() === 'exchanged' ? 'Nhập lý do đổi hàng' : 'Nhập lý do huỷ đơn';
+    return String(status || '').toLowerCase() === 'exchanged' ? 'Nhập lý do đổi hàng' : 'Nhập lý do hủy đơn';
   }
 
   getStatusReasonSubmitText(status: string): string {
-    return String(status || '').toLowerCase() === 'exchanged' ? 'Xác nhận đổi hàng' : 'Xác nhận huỷ đơn';
+    return String(status || '').toLowerCase() === 'exchanged' ? 'Xác nhận cập nhật' : 'Xác nhận hủy đơn';
   }
 
   isOrderStatusSelectable(status: string): boolean {
-    return !this.getOrderStatusRestrictionMessage(status);
+    return canSelectOrderStatus(this.order?.status, status);
   }
 
   getOrderStatusRestrictionMessage(nextStatus: string): string {
-    const currentStatus = String(this.order?.status || '').toLowerCase();
-    const targetStatus = String(nextStatus || '').toLowerCase();
-
-    if (!targetStatus || targetStatus === currentStatus) {
-      return '';
-    }
-
-    if (targetStatus === 'cancelled') {
-      if (currentStatus === 'pending') {
-        return '';
-      }
-      return 'Đơn đang trong quá trình thực hiện nên không thể chuyển sang đã huỷ. Chỉ hỗ trợ huỷ khi đơn còn chờ xác nhận hoặc đang chờ xác nhận huỷ từ khách.';
-    }
-
-    if (targetStatus === 'exchanged') {
-      if (currentStatus === 'delivered' || currentStatus === 'completed') {
-        return '';
-      }
-      return 'Chỉ có thể chuyển sang trạng thái đổi hàng khi đơn đã giao hoặc đã hoàn tất.';
-    }
-
-    return '';
+    return getOrderStatusRestrictionMessage(this.order?.status, nextStatus);
   }
 
   private showConfirmMessage(message: string): void {

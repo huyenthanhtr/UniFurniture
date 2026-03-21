@@ -5,6 +5,13 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AdminOrdersService } from '../../services/admin-orders';
 import { AdminInvoiceService } from '../../services/admin-invoice';
+import {
+  ADMIN_ORDER_STATUSES,
+  canSelectOrderStatus,
+  getOrderStatusLabel,
+  getOrderStatusRestrictionMessage,
+  normalizeOrderStatus,
+} from '../../utils/order-status-rules';
 
 type SortDirection = 'asc' | 'desc';
 type PaymentStateKey = 'unpaid' | 'pending' | 'deposit_paid' | 'settled' | 'refunded';
@@ -71,6 +78,7 @@ export class AdminOrders implements OnInit, OnDestroy {
     nextStatus: string;
   } | null = null;
   readonly paymentStates: PaymentStateKey[] = ['pending', 'deposit_paid', 'settled', 'refunded'];
+  readonly statuses = [...ADMIN_ORDER_STATUSES];
 
   private searchDebounceId: ReturnType<typeof setTimeout> | null = null;
 
@@ -111,7 +119,8 @@ export class AdminOrders implements OnInit, OnDestroy {
         const items = Array.isArray(res?.items) ? res.items : [];
         this.orders = items.map((order: any) => ({
           ...order,
-          _selectedStatus: order.status,
+          status: normalizeOrderStatus(order.status),
+          _selectedStatus: normalizeOrderStatus(order.status),
           _selectedPaymentStatus: this.getPaymentStateKey(order),
         }));
         this.total = Number(res?.total ?? items.length ?? 0);
@@ -182,7 +191,7 @@ export class AdminOrders implements OnInit, OnDestroy {
     const restrictionMessage = this.getOrderStatusRestrictionMessage(order, nextStatus);
     if (restrictionMessage) {
       order._selectedStatus = oldStatus;
-      this.showResult('Không thể cập nhật', restrictionMessage, 'error');
+      this.showResult('Không thể cập nhật trạng thái', restrictionMessage, 'error');
       return;
     }
 
@@ -195,7 +204,7 @@ export class AdminOrders implements OnInit, OnDestroy {
       return;
     }
 
-    this.confirmMessage = `Đổi trạng thái đơn hàng sang ${this.orderStatusLabel(nextStatus)}?`;
+    this.confirmMessage = `Bạn có muốn cập nhật trạng thái đơn hàng sang "${this.orderStatusLabel(nextStatus)}" không?`;
     this.confirmKind = 'status';
     this.showConfirmPopup = true;
   }
@@ -237,7 +246,7 @@ export class AdminOrders implements OnInit, OnDestroy {
     this.api.patchOrderStatus(String(order._id), newStatus).subscribe({
       next: (doc: any) => {
         Object.assign(order, doc || {});
-        order.status = doc?.status || newStatus;
+        order.status = normalizeOrderStatus(doc?.status || newStatus);
         order._selectedStatus = order.status;
         this.pendingStatusChange = null;
         this.isLoading = false;
@@ -271,7 +280,7 @@ export class AdminOrders implements OnInit, OnDestroy {
     this.api.patchOrderStatus(String(order._id), newStatus, reason).subscribe({
       next: (doc: any) => {
         Object.assign(order, doc || {});
-        order.status = doc?.status || newStatus;
+        order.status = normalizeOrderStatus(doc?.status || newStatus);
         order._selectedStatus = order.status;
         this.pendingStatusChange = null;
         this.statusReasonDraft = '';
@@ -312,8 +321,22 @@ export class AdminOrders implements OnInit, OnDestroy {
     this.showResultPopup = true;
   }
 
+  closeResultPopup(): void {
+    this.showResultPopup = false;
+    this.orders = this.orders.map((order) => ({
+      ...order,
+      status: normalizeOrderStatus(order.status),
+      _selectedStatus: normalizeOrderStatus(order.status),
+      _selectedPaymentStatus: this.getPaymentStateKey(order),
+    }));
+    this.cdr.detectChanges();
+  }
+
   viewDetail(order: any): void {
-    this.router.navigate(['/admin/orders', order._id], {
+    const orderKey = String(order?.order_code || order?._id || '').trim();
+    if (!orderKey) return;
+
+    this.router.navigate(['/admin/orders', orderKey], {
       queryParams: this.route.snapshot.queryParams,
     });
   }
@@ -746,46 +769,15 @@ export class AdminOrders implements OnInit, OnDestroy {
   }
 
   orderStatusLabel(status: string): string {
-    const s = String(status || '').toLowerCase();
-    if (s === 'pending') return 'Chờ xác nhận';
-    if (s === 'confirmed') return 'Đã xác nhận';
-    if (s === 'processing') return 'Đang xử lý';
-    if (s === 'shipping') return 'Đang giao';
-    if (s === 'delivered') return 'Đã giao';
-    if (s === 'completed') return 'Hoàn tất';
-    if (s === 'cancelled') return 'Đã hủy';
-    if (s === 'exchanged') return 'Đã đổi hàng';
-    
-    return status || '-'; 
+    return getOrderStatusLabel(status);
   }
 
   isOrderStatusSelectable(order: any, status: string): boolean {
-    return !this.getOrderStatusRestrictionMessage(order, status);
+    return canSelectOrderStatus(order?.status, status);
   }
 
   getOrderStatusRestrictionMessage(order: any, nextStatus: string): string {
-    const currentStatus = String(order?.status || '').toLowerCase();
-    const targetStatus = String(nextStatus || '').toLowerCase();
-
-    if (!targetStatus || targetStatus === currentStatus) {
-      return '';
-    }
-
-    if (targetStatus === 'cancelled') {
-      if (currentStatus === 'pending') {
-        return '';
-      }
-      return 'Đơn đang trong quá trình thực hiện nên không thể chuyển sang đã hủy. Chỉ hỗ trợ hủy khi đơn còn chờ xác nhận hoặc đang chờ xác thực hủy từ khách.';
-    }
-
-    if (targetStatus === 'exchanged') {
-      if (currentStatus === 'delivered' || currentStatus === 'completed') {
-        return '';
-      }
-      return 'Chỉ có thể chuyển sang trạng thái đổi hàng khi đơn đã giao hoặc đã hoàn tất.';
-    }
-
-    return '';
+    return getOrderStatusRestrictionMessage(order?.status, nextStatus);
   }
   
   customerTypeLabel(type: string): string {
@@ -819,8 +811,8 @@ export class AdminOrders implements OnInit, OnDestroy {
 
   getStatusReasonDialogTitle(status: string): string {
     return String(status || '').toLowerCase() === 'exchanged' 
-      ? 'Xác nhận đổi hàng' 
-      : 'Xác nhận hủy đơn';
+      ? 'Xác nhận chuyển sang đổi hàng' 
+      : 'Xác nhận hủy đơn hàng';
   }
 
   getStatusReasonPlaceholder(status: string): string {
@@ -831,14 +823,14 @@ export class AdminOrders implements OnInit, OnDestroy {
 
   getStatusReasonSubmitText(status: string): string {
     return String(status || '').toLowerCase() === 'exchanged' 
-      ? 'Xác nhận đổi hàng' 
+      ? 'Xác nhận cập nhật' 
       : 'Xác nhận hủy đơn';
   }
 
   getStatusReasonSuccessMessage(status: string): string {
     return String(status || '').toLowerCase() === 'exchanged'
-      ? 'Đã chuyển đơn hàng sang trạng thái đã đổi hàng và lưu lý do.'
-      : 'Đã hủy đơn hàng và lưu lý do hủy thành công.';
+      ? 'Đơn hàng đã được cập nhật sang trạng thái "Đã đổi hàng" và lý do đã được lưu.'
+      : 'Đơn hàng đã được hủy và lý do hủy đã được lưu.';
   }
   
   private getSortParams(): { sortBy?: string; order?: SortDirection } {

@@ -49,7 +49,7 @@
 
         <div class="field">
           <label>Trạng thái đơn hàng</label>
-          <select [(ngModel)]="editableStatus" class="status-select status-highlight">
+          <select [(ngModel)]="editableStatus" (ngModelChange)="onEditableStatusChange($event)" class="status-select status-highlight">
             <option *ngFor="let s of statuses" [value]="s" [disabled]="!isOrderStatusSelectable(s)">{{ orderStatusLabel(s) }}</option>
           </select>
         </div>

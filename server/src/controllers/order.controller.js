@@ -52,9 +52,20 @@ function normalizeStatus(value) {
 
 function normalizeStoredOrderStatus(value) {
   const status = String(value || "").trim().toLowerCase();
-  if (status === "refunded") return "cancelled";
+  if (status === "refunded" || status === "cancel_pending") return "cancelled";
   return ORDER_STATUSES.includes(status) ? status : status;
 }
+
+const ADMIN_STATUS_TRANSITIONS = {
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["processing"],
+  processing: ["shipping"],
+  shipping: ["delivered"],
+  delivered: ["completed"],
+  completed: ["exchanged"],
+  cancelled: [],
+  exchanged: [],
+};
 
 async function getOrderInventoryItems(orderId) {
   const details = await OrderDetail.find({ order_id: orderId }).lean();
@@ -130,41 +141,59 @@ async function adjustSoldCountForOrder(orderId, direction = 1) {
   }
 }
 
-function canAdminSetCancelled(order) {
-  const status = String(order?.status || "").toLowerCase();
-  const cancelledBy = String(order?.cancellation_request?.cancelled_by || "").toLowerCase();
+function validateAdminStatusTransition(order, nextStatus) {
+  const rawTargetStatus = String(nextStatus || "").trim().toLowerCase();
+  const currentStatus = normalizeStoredOrderStatus(order?.status);
+  const targetStatus = normalizeStoredOrderStatus(nextStatus);
 
-  if (status === "pending") {
+  if (!targetStatus || rawTargetStatus === "cancel_pending") {
+    return { allowed: false, message: "Trạng thái đơn hàng không hợp lệ." };
+  }
+
+  if (targetStatus === currentStatus) {
     return { allowed: true, message: "" };
   }
 
-  if (status === "cancel_pending" && cancelledBy === "customer") {
+  const allowedNextStatuses = ADMIN_STATUS_TRANSITIONS[currentStatus] || [];
+  if (allowedNextStatuses.includes(targetStatus)) {
     return { allowed: true, message: "" };
+  }
+
+  if (currentStatus === "cancelled") {
+    return { allowed: false, message: "Đơn này đã được hủy nên không thể cập nhật thêm trạng thái." };
+  }
+
+  if (currentStatus === "exchanged") {
+    return { allowed: false, message: "Đơn này đã chuyển sang trạng thái đổi hàng nên không thể cập nhật thêm." };
+  }
+
+  if (targetStatus === "cancelled") {
+    return { allowed: false, message: "Chỉ có thể chuyển sang \"Đã hủy\" khi đơn đang ở trạng thái \"Chờ xác nhận\"." };
+  }
+
+  if (targetStatus === "exchanged") {
+    return { allowed: false, message: "Chỉ có thể chuyển sang \"Đã đổi hàng\" sau khi đơn đã ở trạng thái \"Hoàn tất\"." };
   }
 
   return {
     allowed: false,
-    message: "Đơn đang trong quá trình thực hiện nên không thể chuyển sang đã huỷ. Chỉ hỗ trợ huỷ khi đơn còn chờ xác nhận hoặc đang chờ xác nhận huỷ từ khách.",
+    message: "Trạng thái đơn hàng cần được cập nhật theo đúng thứ tự, không thể bỏ qua bước trung gian hoặc quay lại bước trước.",
   };
 }
 
-function canAdminSetExchanged(order) {
-  const status = String(order?.status || "").toLowerCase();
-  if (status === "delivered" || status === "completed") {
-    return { allowed: true, message: "" };
+async function findOrderByIdentifier(identifier, options = {}) {
+  const value = String(identifier || "").trim();
+  const { lean = false } = options;
+  if (!value) return null;
+
+  if (mongoose.Types.ObjectId.isValid(value)) {
+    const byId = lean ? await Order.findById(value).lean() : await Order.findById(value);
+    if (byId) return byId;
   }
 
-  return {
-    allowed: false,
-    message: "Chỉ có thể chuyển sang trạng thái đổi hàng khi đơn đã giao hoặc đã hoàn tất.",
-  };
-}
-
-function canAdminSetCancelPending() {
-  return {
-    allowed: false,
-    message: "Admin không thể tự chuyển đơn sang trạng thái chờ xác nhận huỷ. Trạng thái này chỉ được tạo khi khách hàng gửi yêu cầu huỷ đơn.",
-  };
+  return lean
+    ? await Order.findOne({ order_code: value }).lean()
+    : await Order.findOne({ order_code: value });
 }
 
 function addYears(dateInput, years) {
@@ -689,12 +718,7 @@ async function getOrders(req, res, next) {
 async function getOrderById(req, res, next) {
   try {
     const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: "Invalid id" });
-    }
-
-    const orderDoc = await Order.findById(id).lean();
+    const orderDoc = await findOrderByIdentifier(id, { lean: true });
     const order = orderDoc
       ? {
           ...orderDoc,
@@ -707,8 +731,8 @@ async function getOrderById(req, res, next) {
     const customer = order.customer_id ? await Customer.findById(order.customer_id).lean() : null;
     const profile = await resolveProfile(order, order.customer_id);
     const [items, payments] = await Promise.all([
-      OrderDetail.find({ order_id: id }).sort({ createdAt: 1, _id: 1 }).lean(),
-      Payment.find({ order_id: id }).sort({ createdAt: -1, _id: -1 }).lean(),
+      OrderDetail.find({ order_id: order._id }).sort({ createdAt: 1, _id: 1 }).lean(),
+      Payment.find({ order_id: order._id }).sort({ createdAt: -1, _id: -1 }).lean(),
     ]);
 
     const variantIds = items
@@ -793,7 +817,7 @@ async function getOrderById(req, res, next) {
     }));
 
     const itemMap = new Map(itemsWithReview.map((item) => [String(item._id || ""), item]));
-    const collectionHistory = await getWarrantyHistoryForOrder(id, itemMap);
+    const collectionHistory = await getWarrantyHistoryForOrder(order._id, itemMap);
     const legacyHistory = collectionHistory.length === 0
       ? (Array.isArray(warrantySummary.history) ? warrantySummary.history : [])
           .map((record) => normalizeWarrantyHistoryRecord(record, itemMap))
@@ -905,27 +929,10 @@ async function patchOrderStatus(req, res, next) {
     const doc = await Order.findById(id);
     if (!doc) return res.status(404).json({ error: "Order not found" });
 
-    const previousStatus = String(doc.status || "").toLowerCase();
-
-    if (nextStatus === "cancelled") {
-      const cancelEligibility = canAdminSetCancelled(doc);
-      if (!cancelEligibility.allowed) {
-        return res.status(400).json({ error: cancelEligibility.message });
-      }
-    }
-
-    if (nextStatus === "cancel_pending") {
-      const cancelPendingEligibility = canAdminSetCancelPending();
-      if (!cancelPendingEligibility.allowed) {
-        return res.status(400).json({ error: cancelPendingEligibility.message });
-      }
-    }
-
-    if (nextStatus === "exchanged") {
-      const exchangeEligibility = canAdminSetExchanged(doc);
-      if (!exchangeEligibility.allowed) {
-        return res.status(400).json({ error: exchangeEligibility.message });
-      }
+    const previousStatus = normalizeStoredOrderStatus(doc.status);
+    const transitionValidation = validateAdminStatusTransition(doc, nextStatus);
+    if (!transitionValidation.allowed) {
+      return res.status(400).json({ error: transitionValidation.message });
     }
 
     if (INVENTORY_DEDUCT_STATUSES.has(nextStatus) && !doc.inventory_deducted) {
@@ -952,7 +959,7 @@ async function patchOrderStatus(req, res, next) {
       doc.sold_counted_at = null;
     }
 
-    doc.status = nextStatus;
+    doc.status = normalizeStoredOrderStatus(nextStatus);
 
     if (nextStatus === "confirmed" && !doc.confirmed_at) {
       doc.confirmed_at = new Date();
@@ -963,20 +970,22 @@ async function patchOrderStatus(req, res, next) {
     }
 
     if (nextStatus === "cancelled") {
-      if (!statusReason) {
+      const existingCancellation = doc.cancellation_request || {};
+      const existingReason = String(existingCancellation.reason || "").trim();
+
+      if (!statusReason && !existingReason) {
         return res.status(400).json({ error: "LÃ½ do huá»· Ä‘Æ¡n lÃ  báº¯t buá»™c." });
       }
 
-      const existingCancellation = doc.cancellation_request || {};
       const over10mWithDeposit =
         Number(doc.total_amount || 0) >= 10000000 && Number(doc.deposit_amount || 0) > 0;
 
       doc.cancellation_request = {
-        reason: statusReason,
+        reason: statusReason || existingReason,
         note: String(existingCancellation.note || "").trim(),
         phone: String(existingCancellation.phone || doc.shipping_phone || "").trim(),
-        cancelled_by: "admin",
-        requested_at: new Date(),
+        cancelled_by: String(existingCancellation.cancelled_by || "").toLowerCase() === "customer" ? "customer" : "admin",
+        requested_at: existingCancellation.requested_at || new Date(),
         previous_status: previousStatus,
         over_10m_with_deposit: over10mWithDeposit,
       };
@@ -1292,8 +1301,7 @@ module.exports = {
   requestCancelOrder,
   createCheckoutOrder,
   addWarrantyRecord,
-  canAdminSetCancelled,
-  canAdminSetExchanged,
+  validateAdminStatusTransition,
   SOLD_COUNT_STATUSES,
 };
 

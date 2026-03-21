@@ -134,7 +134,7 @@
         <li
           class="list-group-item pointer list-hover"
           *ngFor="let order of installationOrders"
-          (click)="goToOrderDetail(order._id)">
+          (click)="goToOrderDetail(order.order_code || order._id)">
           <div class="d-flex justify-content-between align-items-center mb-1 gap-8">
             <strong class="text-dark">{{ order.order_code }}</strong>
             <span class="badge" [ngClass]="getStatusBadgeClass(order.status)">
@@ -232,7 +232,7 @@
           <tr
             *ngFor="let order of recentOrders"
             class="pointer list-hover"
-            (click)="goToOrderDetail(order._id)">
+            (click)="goToOrderDetail(order.order_code || order._id)">
             <td class="font-weight-bold text-primary">{{ order.order_code }}</td>
             <td><div class="customer-name">{{ order.shipping_name || 'Khách vãng lai' }}</div></td>
             <td>{{ getOrderDate(order) | date:'dd/MM/yyyy HH:mm' }}</td>
