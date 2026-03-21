@@ -1,0 +1,61 @@
+<div class="alert warning" *ngIf="order.backendStatus === 'cancelled'">
+  Đơn hàng đã bị hủy. Vui lòng liên hệ hỗ trợ nếu cần thêm thông tin.
+</div>
+
+<div class="alert info" *ngIf="order.backendStatus === 'refunded'">
+  Đơn hàng đã được hoàn tiền. Vui lòng kiểm tra lại giao dịch tại phương thức thanh toán.
+</div>
+
+<div class="alert warning cancel-pending-alert" *ngIf="order.backendStatus === 'cancel_pending'" [attr.id]="'cancel-pending-' + order.id">
+  Đơn hàng đang chờ xác nhận hủy. Vui lòng chờ quản trị viên xử lý.
+  <div *ngIf="order.cancellationRequest?.over10mWithDeposit" class="cancel-note">
+    Lưu ý: Đơn hàng trên 10 triệu đã đặt cọc 10% sẽ không được hoàn lại tiền cọc.
+  </div>
+</div>
+
+<div class="card action-history-card" *ngIf="hasCancellationHistory()">
+  <h3>Lịch sử yêu cầu hủy của bạn</h3>
+  <div class="action-history-grid">
+    <p><strong>Lý do hủy:</strong> {{ order.cancellationRequest?.reason || '-' }}</p>
+    <p><strong>SĐT xác nhận:</strong> {{ order.cancellationRequest?.phone || '-' }}</p>
+    <p><strong>Thời gian gửi:</strong> {{ order.cancellationRequest?.requestedAt ? (order.cancellationRequest?.requestedAt | date:'dd/MM/yyyy HH:mm') : '-' }}</p>
+    <p><strong>Trạng thái:</strong> {{ order.statusLabel }}</p>
+    <p class="full"><strong>Ghi chú:</strong> {{ order.cancellationRequest?.note || '-' }}</p>
+  </div>
+</div>
+
+<div class="cancel-modal" *ngIf="order.cancelForm.open">
+  <div class="cancel-modal__backdrop" (click)="toggleCancelClick.emit()"></div>
+  <div class="card cancel-modal__content">
+    <h3>Yêu cầu hủy đơn hàng</h3>
+
+    <div class="cancel-form">
+      <label>
+        Lý do hủy
+        <select [(ngModel)]="order.cancelForm.reason">
+          <option value="">-- Chọn lý do --</option>
+          <option *ngFor="let reason of cancelReasons" [value]="reason">{{ reason }}</option>
+        </select>
+      </label>
+
+      <label>
+        Ghi chú thêm (tùy chọn)
+        <textarea rows="3" [(ngModel)]="order.cancelForm.note" placeholder="Nhập thêm thông tin nếu cần..."></textarea>
+      </label>
+
+      <label>
+        SĐT xác nhận
+        <input type="text" [(ngModel)]="order.cancelForm.phone" placeholder="Nhập số điện thoại để admin liên hệ" />
+      </label>
+
+      <div class="cancel-note">Lưu ý: Đơn hàng trên 10 triệu đã đặt cọc 10% sẽ không được hoàn lại tiền cọc.</div>
+
+      <div class="cancel-form__actions">
+        <button type="button" class="btn-secondary" (click)="toggleCancelClick.emit()" [disabled]="order.cancelForm.submitting">Đóng</button>
+        <button type="button" class="btn-primary" (click)="submitCancelClick.emit()" [disabled]="order.cancelForm.submitting">
+          {{ order.cancelForm.submitting ? 'Đang gửi...' : 'Gửi yêu cầu hủy' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
