@@ -34,7 +34,12 @@ export class Header {
     }
   }
 
-  logout() {
+  goMyOrders() {
+    this.router.navigate(['/tai-khoan/don-hang']);
+  }
+
+  logout(event?: Event) {
+    event?.stopPropagation();
     this.ui.clearCart();
     localStorage.removeItem('user_profile');
     this.userProfile = null;

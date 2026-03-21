@@ -42,7 +42,7 @@
         </svg>
         <div class="action-text">
           <span class="action-label">{{ userProfile.full_name }}</span>
-          <span class="action-sublabel" (click)="logout()" style="color: #ef4444; cursor: pointer;">Đăng xuất</span>
+          <span class="action-sublabel" (click)="logout($event)" style="color: #ef4444; cursor: pointer;">Đăng xuất</span>
         </div>
       </button>
       } @else {

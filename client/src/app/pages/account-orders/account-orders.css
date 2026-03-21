@@ -1,0 +1,102 @@
+
+.account-orders-page {
+  background: #f7f4ef;
+  min-height: 100vh;
+  padding: 24px 0 48px;
+}
+
+.account-orders-container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.account-orders-container h1 {
+  margin: 0 0 14px;
+  font-size: 28px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e6dfd4;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.muted {
+  color: #6b5a4b;
+}
+
+.error {
+  color: #b42318;
+}
+
+.order-list {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.order-item {
+  border: 1px solid #efe6da;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.order-item__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.order-item__head h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.order-item__head p {
+  margin: 0;
+  color: #6b5a4b;
+}
+
+.badge {
+  background: #f5efe7;
+  color: #684f39;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 600;
+  height: fit-content;
+}
+
+.order-item__meta {
+  margin-top: 8px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: #3d332b;
+}
+
+.order-item__actions {
+  margin-top: 10px;
+  text-align: right;
+}
+
+.btn-primary,
+.btn-secondary {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: #245fa5;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #eff6ff;
+  color: #1f4f87;
+  border: 1px solid #c8d6ea;
+}
