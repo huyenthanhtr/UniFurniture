@@ -1,8 +1,8 @@
 const { Vonage } = require('@vonage/server-sdk');
 
 const vonage = new Vonage({
-    apiKey: "dac273e1",
-    apiSecret: process.env.VOYAGE_SECRECT
+    apiKey: process.env.VONAGE_API_KEY,
+    apiSecret: process.env.VONAGE_API_SECRET
 });
 
 async function sendOtpSms(toPhone, otp) {
@@ -14,8 +14,9 @@ async function sendOtpSms(toPhone, otp) {
         toAreaCode = '84' + toAreaCode;
     }
     const to = toAreaCode.replace('+', ''); // Vonage expects no plus sign usually
-    
+
     const text = `Ma xac nhan dang ky UniFurniture cua ban la: ${otp}`;
+    console.log(`[OTP DEBUG] Phone: ${to}, OTP: ${otp}`);
 
     try {
         const resp = await vonage.sms.send({ to, from, text });

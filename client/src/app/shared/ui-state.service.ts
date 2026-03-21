@@ -34,6 +34,11 @@ export class UiStateService {
         this.isAuthOpen.set(true);
     }
     closeAuth() { this.isAuthOpen.set(false); }
+    
+    // AI Chat modal/container
+    isAiChatOpen = signal(false);
+    toggleAiChat() { this.isAiChatOpen.update(v => !v); }
+    closeAiChat() { this.isAiChatOpen.set(false); }
 
     // Cart popup
     isCartOpen = signal(false);

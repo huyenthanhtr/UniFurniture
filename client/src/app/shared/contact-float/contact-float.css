@@ -1,4 +1,4 @@
-﻿/* ===== WRAPPER ===== */
+/* ===== WRAPPER ===== */
 .contact-float-wrap {
     position: fixed;
     bottom: 28px;
@@ -54,6 +54,13 @@
 
 .contact-channel--messenger {
     background: #0084FF;
+}
+
+.contact-channel--ai {
+    background: #ff4d4f;
+    border: none;
+    cursor: pointer;
+    width: 100%;
 }
 
 .contact-channel--zalo {

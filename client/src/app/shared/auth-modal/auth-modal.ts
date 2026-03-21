@@ -1,12 +1,14 @@
 import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { UiStateService } from '../ui-state.service';
 
 @Component({
     selector: 'app-auth-modal',
-    imports: [CommonModule, FormsModule],
+    standalone: true,
+    imports: [CommonModule, FormsModule, RouterLink],
     templateUrl: './auth-modal.html',
     styleUrl: './auth-modal.css',
 })
@@ -64,6 +66,7 @@ export class AuthModal {
             error: (err) => {
                 this.isLoading = false;
                 this.errorMessage = err.error?.message || 'Email/SĐT hoặc mật khẩu không chính xác.';
+                this.cdr.detectChanges();
             }
         });
     }
@@ -71,6 +74,23 @@ export class AuthModal {
     onRegister() {
         this.errorMessage = '';
         this.successMessage = '';
+
+        if (!this.registerData.name || !this.registerData.phone || !this.registerData.password) {
+            this.errorMessage = 'Vui lòng điền đầy đủ các thông tin bắt buộc (*).';
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (this.registerData.email && !emailRegex.test(this.registerData.email)) {
+            this.errorMessage = 'Định dạng email không hợp lệ.';
+            return;
+        }
+
+        const phoneRegex = /^[0-9]{9,10}$/;
+        if (!phoneRegex.test(this.registerData.phone)) {
+            this.errorMessage = 'Số điện thoại phải có 9 hoặc 10 chữ số.';
+            return;
+        }
 
         if (!this.registerData.password || this.registerData.password.length < 8) {
             this.errorMessage = 'Mật khẩu phải có ít nhất 8 ký tự.';
@@ -107,6 +127,7 @@ export class AuthModal {
             error: (err) => {
                 this.isLoading = false;
                 this.errorMessage = err.error?.message || 'Có lỗi xảy ra khi đăng ký.';
+                this.cdr.detectChanges();
             }
         });
     }
@@ -144,6 +165,7 @@ export class AuthModal {
             error: (err) => {
                 this.isLoading = false;
                 this.errorMessage = err.error?.message || 'Mã OTP không hợp lệ hoặc đã hết hạn.';
+                this.cdr.detectChanges();
             }
         });
     }
