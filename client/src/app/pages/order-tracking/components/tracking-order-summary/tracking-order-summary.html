@@ -1,0 +1,76 @@
+﻿<div class="order-head card">
+  <div class="order-head__top">
+    <div>
+      <h2>Đơn hàng {{ order.orderCode }}</h2>
+      <p>Ngày đặt: {{ order.orderedAt }}</p>
+    </div>
+    <div class="status-pill">{{ order.statusLabel }}</div>
+  </div>
+
+  <div class="timeline timeline--inline" *ngIf="!isCancelledOrRefunded">
+    <div
+      class="timeline-step"
+      *ngFor="let step of timelineSteps; let i = index"
+      [class.active]="i === currentStepIndex"
+      [class.done]="i < currentStepIndex"
+    >
+      <div class="timeline-dot"></div>
+      <div class="timeline-label">{{ step.label }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="complete-box" *ngIf="order.backendStatus === 'delivered'">
+  <button type="button" class="btn-complete" (click)="completeOrderClick.emit()">Hoàn tất đơn hàng</button>
+</div>
+
+<div class="detail-grid">
+  <div class="card">
+    <h3>Thông tin giao hàng</h3>
+    <p><strong>Tên:</strong> {{ order.customerName }}</p>
+    <p><strong>SĐT:</strong> {{ order.phone }}</p>
+    <p><strong>Địa chỉ:</strong> {{ order.shippingAddress }}</p>
+  </div>
+
+  <div class="card">
+    <h3>Thanh toán</h3>
+    <p><strong>Phương thức:</strong> {{ order.paymentMethod }}</p>
+    <p><strong>Tạm tính:</strong> {{ formatCurrency(order.subtotal) }}</p>
+    <p><strong>Khuyến mãi: </strong>
+      <span *ngIf="order.discountPercent > 0">
+        {{ order.promotionCode || 'Mã giảm giá' }} - {{ order.discountPercent }}% ({{ formatCurrency(order.discountAmount) }})
+      </span>
+      <span *ngIf="order.discountPercent === 0">Không có</span>
+    </p>
+    <p class="total"><strong>Tổng tiền (đã gồm phí giao):</strong> {{ formatCurrency(order.total) }}</p>
+  </div>
+</div>
+
+<div class="card product-card" *ngIf="showProductCard || canRequestCancel || order.cancelForm.open">
+  <h3>Danh sách sản phẩm</h3>
+  <div class="product-row" *ngFor="let product of order.products">
+    <img [src]="product.imageUrl" [alt]="product.name" />
+    <div class="product-info">
+      <h4>{{ product.name }}</h4>
+      <p>{{ product.classification }}</p>
+    </div>
+    <div class="product-meta">
+      <span>x{{ product.quantity }}</span>
+      <strong>{{ formatCurrency(product.unitPrice) }}</strong>
+    </div>
+  </div>
+
+  <div class="order-action-inline" *ngIf="canRequestCancel || order.cancelForm.open">
+    <p class="order-action-note">Chỉ áp dụng hủy đơn với trạng thái Chờ xác nhận hoặc Đã xác nhận trong vòng 24 giờ.</p>
+    <div class="order-action-buttons">
+      <a class="history-btn history-btn--contact" [href]="shopZaloUrl" target="_blank" rel="noopener">Liên hệ Shop</a>
+      <button
+        type="button"
+        class="history-btn history-btn--cancel"
+        (click)="toggleCancelClick.emit()"
+      >
+        {{ canRequestCancel ? 'Yêu cầu hủy đơn' : 'Không thể hủy đơn' }}
+      </button>
+    </div>
+  </div>
+</div>

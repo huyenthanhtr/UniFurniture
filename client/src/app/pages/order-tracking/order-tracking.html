@@ -27,269 +27,65 @@
     <div class="alert error" *ngIf="errorMessage">{{ errorMessage }}</div>
 
     <div class="order-wrap" *ngFor="let order of orders">
+      <app-tracking-order-summary
+        [order]="order"
+        [timelineSteps]="timelineSteps"
+        [currentStepIndex]="currentStepIndex(order)"
+        [isCancelledOrRefunded]="isCancelledOrRefunded(order)"
+        [canRequestCancel]="canRequestCancel(order)"
+        [showProductCard]="order.backendStatus !== 'completed'"
+        [shopZaloUrl]="shopZaloUrl"
+        (completeOrderClick)="completeOrder(order)"
+        (toggleCancelClick)="toggleCancelForm(order)"
+      />
 
-      <div class="order-head card">
-        <div class="order-head__top">
-          <div>
-            <h2>Đơn hàng {{ order.orderCode }}</h2>
-            <p>Ngày đặt: {{ order.orderedAt }}</p>
-          </div>
-          <div class="status-pill">{{ order.statusLabel }}</div>
-        </div>
+      <app-tracking-cancel-flow
+        [order]="order"
+        [cancelReasons]="cancelReasons"
+        (toggleCancelClick)="toggleCancelForm(order)"
+        (submitCancelClick)="submitCancelRequest(order)"
+      />
 
-        <div class="timeline timeline--inline" *ngIf="!isCancelledOrRefunded(order)">
-          <div
-            class="timeline-step"
-            *ngFor="let step of timelineSteps; let i = index"
-            [class.active]="i === currentStepIndex(order)"
-            [class.done]="i < currentStepIndex(order)"
-          >
-            <div class="timeline-dot"></div>
-            <div class="timeline-label">{{ step.label }}</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="alert warning" *ngIf="order.backendStatus === 'cancelled'">
-        Đơn hàng đã bị hủy. Vui lòng liên hệ hỗ trợ nếu cần thêm thông tin.
-      </div>
-
-      <div class="alert info" *ngIf="order.backendStatus === 'refunded'">
-        Đơn hàng đã được hoàn tiền. Vui lòng kiểm tra lại giao dịch tại phương thức thanh toán.
-      </div>
-      <div class="complete-box" *ngIf="order.backendStatus === 'delivered'">
-        <button type="button" (click)="completeOrder(order)">Hoàn tất đơn hàng</button>
-      </div>
-
-      <div class="alert warning cancel-pending-alert" *ngIf="isCancelPending(order)" [attr.id]="'cancel-pending-' + order.id">
-        Đơn hàng đang chờ xác nhận hủy. Vui lòng chờ admin xử lý.
-        <div *ngIf="order.cancellationRequest?.over10mWithDeposit" class="cancel-note">
-          Lưu ý: Đơn trên 10 triệu đã đặt cọc 10% sẽ không được hoàn lại tiền cọc.
-        </div>
-      </div>
-
-      <div class="card action-history-card" *ngIf="hasCancellationHistory(order)">
-        <h3>Lịch sử yêu cầu hủy của bạn</h3>
-        <div class="action-history-grid">
-          <p><strong>Lý do hủy:</strong> {{ order.cancellationRequest?.reason || '-' }}</p>
-          <p><strong>SĐT xác nhận:</strong> {{ order.cancellationRequest?.phone || '-' }}</p>
-          <p><strong>Thời gian gửi:</strong> {{ order.cancellationRequest?.requestedAt ? (order.cancellationRequest?.requestedAt | date:'dd/MM/yyyy HH:mm') : '-' }}</p>
-          <p><strong>Trạng thái:</strong> {{ order.statusLabel }}</p>
-          <p class="full"><strong>Ghi chú:</strong> {{ order.cancellationRequest?.note || '-' }}</p>
-        </div>
-      </div>
-
-      <div class="detail-grid">
-        <div class="card">
-          <h3>Thông tin giao hàng</h3>
-          <p><strong>Tên:</strong> {{ order.customerName }}</p>
-          <p><strong>SĐT:</strong> {{ order.phone }}</p>
-          <p><strong>Địa chỉ:</strong> {{ order.shippingAddress }}</p>
-        </div>
-
-        <div class="card">
-          <h3>Thanh toán</h3>
-          <p><strong>Phương thức:</strong> {{ order.paymentMethod }}</p>
-          <p><strong>Tạm tính:</strong> {{ formatCurrency(order.subtotal) }}</p>
-          <p><strong>Khuyến mãi: </strong>
-            <span *ngIf="order.discountPercent > 0">
-              {{ order.promotionCode || 'Mã giảm giá' }} - {{ order.discountPercent }}% ({{ formatCurrency(order.discountAmount) }})
-            </span>
-            <span *ngIf="order.discountPercent === 0">Không có</span>
-          </p>
-          <p class="total"><strong>Tổng tiền (đã gồm phí giao):</strong> {{ formatCurrency(order.total) }}</p>
-        </div>
-      </div>
-
-      <div class="card product-card">
-        <h3>Danh sách sản phẩm</h3>
-        <div class="product-row" *ngFor="let product of order.products">
-          <img [src]="product.imageUrl" [alt]="product.name" />
-          <div class="product-info">
-            <h4>{{ product.name }}</h4>
-            <p>{{ product.classification }}</p>
-          </div>
-          <div class="product-meta">
-            <span>x{{ product.quantity }}</span>
-            <strong>{{ formatCurrency(product.unitPrice) }}</strong>
-          </div>
-        </div>
-
-        <div class="order-action-inline" *ngIf="canRequestCancel(order) || order.cancelForm.open">
-          <p class="order-action-note">Chỉ áp dụng hủy đơn với trạng thái Chờ xác nhận hoặc Đã xác nhận trong vòng 24 giờ.</p>
-          <div class="order-action-buttons">
-            <a class="history-btn history-btn--contact" [href]="shopZaloUrl" target="_blank" rel="noopener">Liên hệ Shop</a>
-            <button
-              type="button"
-              class="history-btn history-btn--cancel"
-              (click)="toggleCancelForm(order)"
-            >
-              {{ canRequestCancel(order) ? 'Yêu cầu hủy đơn' : 'Không thể hủy đơn' }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="cancel-modal" *ngIf="order.cancelForm.open">
-        <div class="cancel-modal__backdrop" (click)="toggleCancelForm(order)"></div>
-        <div class="card cancel-modal__content">
-          <h3>Yêu cầu hủy đơn hàng</h3>
-
-          <div class="cancel-form">
-            <label>
-              Lý do hủy
-              <select [(ngModel)]="order.cancelForm.reason">
-                <option value="">-- Chọn lý do --</option>
-                <option *ngFor="let reason of cancelReasons" [value]="reason">{{ reason }}</option>
-              </select>
-            </label>
-
-            <label>
-              Ghi chú thêm (tùy chọn)
-              <textarea rows="3" [(ngModel)]="order.cancelForm.note" placeholder="Nhập thêm thông tin nếu cần..."></textarea>
-            </label>
-
-            <label>
-              SĐT xác nhận
-              <input type="text" [(ngModel)]="order.cancelForm.phone" placeholder="Nhập số điện thoại để admin gọi lại" />
-            </label>
-
-            <div class="cancel-note">Lưu ý: Đơn trên 10 triệu đã đặt cọc 10% sẽ không được hoàn lại.</div>
-
-            <div class="cancel-form__actions">
-              <button type="button" class="btn-secondary" (click)="toggleCancelForm(order)" [disabled]="order.cancelForm.submitting">Đóng</button>
-              <button type="button" (click)="submitCancelRequest(order)" [disabled]="order.cancelForm.submitting">
-                {{ order.cancelForm.submitting ? 'Đang gửi...' : 'Gửi yêu cầu hủy' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card review-card" *ngIf="showReviewSection(order)">
-        <h3>Đánh giá sản phẩm</h3>
-        <p class="review-note">Đánh giá từng sản phẩm riêng (1-5 sao), thêm nhận xét, ảnh và video.</p>
-
-        <ng-container *ngFor="let product of order.products; let idx = index">
-        <div class="review-item" [class.review-item--alt]="idx % 2 === 1" *ngIf="!product.submittedReview">
-          <div class="review-item__head">
-            <img [src]="product.imageUrl" [alt]="product.name" />
-            <div>
-              <h4>{{ product.name }}</h4>
-              <p>{{ product.classification }}</p>
-            </div>
-          </div>
-
-          <div class="stars">
-            <button
-              type="button"
-              *ngFor="let star of [1,2,3,4,5]"
-              (click)="setRating(product, star)"
-              [class.filled]="star <= product.review.rating"
-            >★</button>
-          </div>
-
-          <textarea
-            rows="3"
-            placeholder="Nhập nhận xét của bạn..."
-            [(ngModel)]="product.review.comment"
-          ></textarea>
-
-          <div class="upload-grid">
-            <label>
-              <span class="upload-label">Thêm ảnh <small>{{ imageCountLabel(product) }}</small></span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                (change)="onImageSelected($event, product)"
-                [disabled]="isImageLimitReached(product)"
-              />
-            </label>
-            <label>
-              <span class="upload-label">Thêm video <small>{{ videoCountLabel(product) }}</small></span>
-              <input
-                type="file"
-                accept="video/*"
-                multiple
-                (change)="onVideoSelected($event, product)"
-                [disabled]="isVideoLimitReached(product)"
-              />
-            </label>
-          </div>
-
-          <div class="preview-list" *ngIf="product.review.imagePreviews.length > 0">
-            <div class="preview-item" *ngFor="let preview of product.review.imagePreviews; let imageIndex = index">
-              <img [src]="preview" alt="Ảnh đánh giá" />
-              <button type="button" class="preview-remove" (click)="removeImageAt(product, imageIndex)">&times;</button>
-            </div>
-          </div>
-
-          <div class="preview-list video" *ngIf="product.review.videoPreviews.length > 0">
-            <div class="preview-item" *ngFor="let preview of product.review.videoPreviews; let videoIndex = index">
-              <video [src]="preview" controls></video>
-              <button type="button" class="preview-remove" (click)="removeVideoAt(product, videoIndex)">&times;</button>
-            </div>
-          </div>
-        </div>
-      </ng-container>
-
-        <div class="review-action">
-          <button
-            type="button"
-            (click)="submitReview(order)"
-            [disabled]="reviewSubmittingOrderId === order.id"
-          >
-            {{ reviewSubmittingOrderId === order.id ? 'Đang gửi...' : 'Gửi đánh giá' }}
-          </button>
-        </div>
-      </div>
-
-      <div class="card submitted-review-card" *ngIf="hasSubmittedReviews(order)">
-        <h3>Lịch sử đánh giá của bạn</h3>
-        <div class="submitted-review-item" *ngFor="let product of order.products">
-          <ng-container *ngIf="product.submittedReview as submitted">
-            <div class="review-item__head review-item__head--history">
-              <img [src]="product.imageUrl" [alt]="product.name" />
-              <div class="review-item__head-main">
-                <h4>{{ product.name }}</h4>
-                <p>{{ product.classification }}</p>
-                <p class="submitted-meta">
-                  {{ reviewModerationLabel(submitted.status) }}
-                  <span *ngIf="submitted.createdAt">• {{ submitted.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-                </p>
-              </div>
-              <div class="history-actions">
-                <button type="button" class="history-btn" (click)="viewProductFromHistory(product, 'top')">Xem lại sản phẩm</button>
-                <button type="button" class="history-btn history-btn--green" (click)="buyAgain(product)">Mua lại</button>
-                <button type="button" class="history-btn" (click)="viewProductFromHistory(product, 'review')">Xem bình luận</button>
-              </div>
-            </div>
-
-            <div class="stars stars-readonly">
-              <button type="button" *ngFor="let star of [1,2,3,4,5]" [class.filled]="star <= submitted.rating" disabled>★</button>
-            </div>
-
-            <p class="submitted-content">{{ submitted.content || 'Khách hàng không để lại nhận xét.' }}</p>
-
-            <div class="preview-list" *ngIf="submitted.images.length > 0">
-              <div class="preview-item" *ngFor="let image of submitted.images">
-                <img [src]="image" alt="Ảnh đã gửi" />
-              </div>
-            </div>
-
-            <div class="preview-list video" *ngIf="submitted.videos.length > 0">
-              <div class="preview-item" *ngFor="let video of submitted.videos">
-                <video [src]="video" controls></video>
-              </div>
-            </div>
-          </ng-container>
-        </div>
-      </div>
-
-      <div class="alert success" *ngIf="order.reviewSubmitted" [attr.id]="'review-success-' + order.id">
-        Cảm ơn bạn đã gửi đánh giá cho đơn {{ order.orderCode }}.
-      </div>
+      <app-tracking-review-flow
+        [order]="order"
+        [reviewSubmittingProductKey]="reviewSubmittingProductKey"
+        [reviewInlineErrors]="reviewInlineErrors"
+        [cameraOpen]="cameraOpen"
+        [cameraError]="cameraError"
+        [cameraMode]="cameraMode"
+        [cameraDevices]="cameraDevices"
+        [selectedCameraId]="selectedCameraId"
+        [cameraRecording]="cameraRecording"
+        [cameraRecordedSeconds]="cameraRecordedSeconds"
+        (setRatingClick)="setRating($event.product, $event.value)"
+        (imageSelected)="onImageSelected($event.event, $event.product)"
+        (videoSelected)="onVideoSelected($event.event, $event.product)"
+        (removeImageClick)="removeImageAt($event.product, $event.index)"
+        (removeVideoClick)="removeVideoAt($event.product, $event.index)"
+        (submitSingleReviewClick)="submitSingleReview($event.order, $event.product)"
+        (openCameraImageClick)="openCameraForImage($event)"
+        (openCameraVideoClick)="openCameraForVideo($event)"
+        (closeCameraClick)="closeCamera()"
+        (switchCameraFacingClick)="switchCameraFacing()"
+        (cameraDeviceChangeClick)="onCameraDeviceChange($event)"
+        (capturePhotoClick)="capturePhotoFromCamera()"
+        (startVideoRecordingClick)="startVideoRecording()"
+        (stopVideoRecordingClick)="stopVideoRecording()"
+        (viewProductClick)="viewProductFromHistory($event.product, $event.target)"
+        (buyAgainClick)="buyAgain($event)"
+      />
     </div>
   </section>
+</div>
+
+<div class="tracking-toast" *ngIf="toastMessage">{{ toastMessage }}</div>
+
+
+<div class="review-thanks-modal" *ngIf="reviewThanksOpen">
+  <div class="review-thanks-modal__backdrop" (click)="closeReviewThanks()"></div>
+  <div class="review-thanks-modal__content">
+    <h4>Đánh giá đã được ghi nhận</h4>
+    <p>{{ reviewThanksMessage }}</p>
+    <button type="button" (click)="closeReviewThanks()">Đóng</button>
+  </div>
 </div>

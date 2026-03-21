@@ -153,3 +153,21 @@
 .remove-link:hover {
   color: #ef4b2b !important;
 }
+
+.qty-control--locked {
+  background: #f9fafb;
+}
+
+.qty-control--locked .qty-btn {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.qty-control--locked .qty-btn:hover {
+  color: #555;
+}
+
+.qty-control--locked .qty-input {
+  color: #374151;
+  cursor: default;
+}
