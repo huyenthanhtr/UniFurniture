@@ -399,9 +399,3 @@ tbody tr:last-child td {
   font-size: 18px;
 }
 
-/* Chỉnh lại Header h1 cho chuẩn font-size đồng bộ */
-.page-header h1 {
-  font-size: 24px; /* Fix cứng hoặc dùng calc như Category */
-  font-weight: 700;
-  color: #333;
-}
