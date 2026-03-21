@@ -575,6 +575,7 @@ async function getOrders(req, res, next) {
       startDate,
       endDate,
       q,
+      accountId,
       sortBy = "ordered_at",
       order = "desc",
     } = req.query;
@@ -590,6 +591,10 @@ async function getOrders(req, res, next) {
     if (status) {
       const normalized = normalizeStatus(status);
       if (normalized) andConditions.push({ status: normalized });
+    }
+
+    if (accountId && mongoose.Types.ObjectId.isValid(String(accountId))) {
+      andConditions.push({ account_id: new mongoose.Types.ObjectId(String(accountId)) });
     }
 
     if (q) {
