@@ -23,6 +23,7 @@ export class AdminCustomerDetail implements OnInit {
   customer: any = null;
   profile: any = null;
   addresses: any[] = [];
+  orders: any[] = [];
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((pm) => {
@@ -43,6 +44,7 @@ export class AdminCustomerDetail implements OnInit {
         this.customer = res?.customer ?? null;
         this.profile = res?.profile ?? null;
         this.addresses = res?.addresses ?? [];
+        this.orders = res?.orders ?? [];
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -60,17 +62,81 @@ export class AdminCustomerDetail implements OnInit {
   }
 
   get visibleAddresses(): any[] {
-    if (!Array.isArray(this.addresses) || this.addresses.length === 0) return [];
-    if (this.merged?.has_account && this.addresses.length > 1) {
-      return [this.addresses[0]];
-    }
-    return this.addresses;
+    return Array.isArray(this.addresses) ? this.addresses : [];
   }
 
   viewAddress(address: any) {
     this.router.navigate(['/admin/customers', this.id, 'addresses', address._id], {
       queryParams: this.route.snapshot.queryParams,
     });
+  }
+
+  viewOrder(order: any): void {
+    const orderKey = String(order?.order_code || order?._id || '').trim();
+    if (!orderKey) return;
+
+    this.router.navigate(['/admin/orders', orderKey], {
+      queryParams: {
+        ...this.route.snapshot.queryParams,
+        source: 'customer',
+        customerId: this.id,
+        readonly: '1',
+      },
+    });
+  }
+
+  canViewAddressDetail(address: any): boolean {
+    return !!String(address?._id || '').trim();
+  }
+
+  orderStatusLabel(status: any): string {
+    const key = String(status || '').toLowerCase();
+    if (key === 'pending') return 'Chờ xác nhận';
+    if (key === 'confirmed') return 'Đã xác nhận';
+    if (key === 'processing') return 'Đang xử lý';
+    if (key === 'shipping') return 'Đang giao';
+    if (key === 'delivered') return 'Đã giao';
+    if (key === 'completed') return 'Hoàn tất';
+    if (key === 'cancelled') return 'Đã huỷ';
+    if (key === 'exchanged') return 'Đã đổi hàng';
+    return '-';
+  }
+
+  orderStatusClass(status: any): string {
+    const key = String(status || '').toLowerCase();
+    if (key === 'pending') return 'status-pending';
+    if (key === 'confirmed') return 'status-confirmed';
+    if (key === 'processing') return 'status-processing';
+    if (key === 'shipping') return 'status-shipping';
+    if (key === 'delivered') return 'status-delivered';
+    if (key === 'completed') return 'status-completed';
+    if (key === 'cancelled') return 'status-cancelled';
+    if (key === 'exchanged') return 'status-exchanged';
+    return 'status-default';
+  }
+
+  paymentStateLabel(order: any): string {
+    const total = Number(order?.payment_summary?.total_amount || order?.total_amount || 0);
+    const paidTotal = Number(order?.payment_summary?.paid_total || 0);
+    const depositAmount = Number(order?.payment_summary?.deposit_amount || order?.deposit_amount || 0);
+    const depositPaidTotal = Number(order?.payment_summary?.deposit_paid_total || 0);
+    const latestStatus = String(order?.payment_summary?.status || '').toLowerCase();
+    const paymentCount = Number(order?.payment_summary?.count || 0);
+
+    if (latestStatus === 'refunded') return 'Hoàn tiền';
+    if (latestStatus === 'failed') return 'Thất bại';
+    if (total > 0 && paidTotal >= total) return 'Tất toán';
+    if (depositAmount > 0 && depositPaidTotal >= depositAmount) return 'Đã cọc';
+    if (paymentCount > 0) return 'Đang chờ';
+    return 'Chưa thanh toán';
+  }
+
+  paymentStateClass(order: any): string {
+    const label = this.paymentStateLabel(order);
+    if (label === 'Tất toán') return 'badge-active';
+    if (label === 'Đã cọc' || label === 'Đang chờ') return 'badge-warn';
+    if (label === 'Hoàn tiền' || label === 'Thất bại') return 'badge-inactive';
+    return 'badge-muted';
   }
 
   customerTypeLabel(type: any): string {

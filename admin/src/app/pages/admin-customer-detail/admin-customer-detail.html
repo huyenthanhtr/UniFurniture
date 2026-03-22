@@ -81,8 +81,8 @@
         <span class="muted">({{ visibleAddresses.length }} &#273;&#7883;a ch&#7881;)</span>
       </div>
 
-      <div class="table-wrap">
-        <table>
+      <div class="table-wrap compact-table-wrap">
+        <table class="detail-table address-table">
           <thead>
             <tr>
               <th>T&#234;n ng&#432;&#7901;i nh&#7853;n</th>
@@ -99,7 +99,7 @@
             </tr>
 
             <tr *ngFor="let address of visibleAddresses">
-              <td class="cell-title" (click)="viewAddress(address)">
+              <td class="cell-title" [class.is-clickable]="canViewAddressDetail(address)" (click)="viewAddress(address)">
                 <strong>{{ address.customer_address_name || '-' }}</strong>
               </td>
               <td>{{ address.address_phone || '-' }}</td>
@@ -111,6 +111,47 @@
               </td>
               <td class="actions-cell">
                 <button class="btn btn-ghost btn-sm" (click)="viewAddress(address)">Chi ti&#7871;t</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" *ngIf="merged.has_account">
+      <div class="addresses-header">
+        <h3>L&#7883;ch s&#7917; &#273;&#417;n h&#224;ng</h3>
+        <span class="muted">({{ orders.length }} &#273;&#417;n)</span>
+      </div>
+
+      <div class="table-wrap compact-table-wrap">
+        <table class="detail-table order-history-table">
+          <thead>
+            <tr>
+              <th>M&#227; &#273;&#417;n</th>
+              <th>Ng&#224;y &#273;&#7863;t</th>
+              <th>T&#7893;ng ti&#7873;n</th>
+              <th>Thanh to&#225;n</th>
+              <th>Tr&#7841;ng th&#225;i</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngIf="orders.length===0">
+              <td colspan="5" class="state">Kh&#225;ch h&#224;ng ch&#432;a c&#243; l&#7883;ch s&#7917; &#273;&#417;n h&#224;ng.</td>
+            </tr>
+
+            <tr *ngFor="let order of orders" class="order-row" (click)="viewOrder(order)">
+              <td class="cell-title is-clickable">
+                <strong>{{ order.order_code || order._id }}</strong>
+              </td>
+              <td>{{ (order.ordered_at || order.createdAt) | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ order.total_amount | number }}</td>
+              <td>
+                <span class="badge" [ngClass]="paymentStateClass(order)">{{ paymentStateLabel(order) }}</span>
+              </td>
+              <td>
+                <span class="badge order-status-badge" [ngClass]="orderStatusClass(order.status)">{{ orderStatusLabel(order.status) }}</span>
               </td>
             </tr>
           </tbody>

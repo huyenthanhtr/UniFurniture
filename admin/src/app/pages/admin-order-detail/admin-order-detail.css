@@ -384,6 +384,10 @@ tbody tr:last-child td {
   padding: 18px;
 }
 
+.readonly-note {
+  display: none;
+}
+
 .btn {
   padding: 10px 14px;
   border-radius: 12px;

@@ -1400,9 +1400,9 @@ async function createCheckoutOrder(req, res, next) {
     const existingAddress = await CustomerAddress.findOne({
       customer_id: checkoutCustomer.customerId,
       address_line: safeAddress,
+      ward: { $in: ["", null, undefined, "-", "Khac", "Khác"] },
       district: safeDistrict,
       province: safeProvince,
-      address_phone: safePhone,
     }).lean();
 
     if (!existingAddress) {
@@ -1411,7 +1411,7 @@ async function createCheckoutOrder(req, res, next) {
         customer_address_name: safeName,
         address_phone: safePhone,
         address_line: safeAddress,
-        ward: "-",
+        ward: "",
         district: safeDistrict,
         province: safeProvince,
         status: "active",

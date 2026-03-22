@@ -317,7 +317,7 @@ export class AccountAddressesTab implements OnInit {
       customer_address_name: String(form.fullName || '').trim(),
       address_phone: String(form.phone || '').trim(),
       address_line: String(form.address || '').trim(),
-      ward: 'Khac',
+      ward: '',
       district: String(form.district || '').trim(),
       province: String(form.province || '').trim(),
       is_default: Boolean(form.isDefault),
@@ -331,7 +331,7 @@ export class AccountAddressesTab implements OnInit {
       phone: '',
       province: '',
       district: '',
-      ward: 'Khac',
+      ward: '',
       address: '',
       isDefault: false,
     };
