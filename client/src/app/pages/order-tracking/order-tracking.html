@@ -18,6 +18,105 @@
     </div>
   </section>
 
+  <!-- ══════════════════════════════════════════
+       PENDING QR BLOCK
+       Hiện khi: đơn đang chờ CK + còn trong 5 phút hiệu lực
+       (khách lỡ đóng tab khi đang ở trang checkout-payment)
+  ══════════════════════════════════════════ -->
+  <section class="tracking-content" *ngIf="pendingQr">
+    <div class="pending-qr-card">
+
+      <!-- Header -->
+      <div class="pending-qr-header">
+        <span class="pending-qr-icon">🏦</span>
+        <div>
+          <div class="fw-bold">Đơn hàng đang chờ thanh toán</div>
+          <div class="small text-muted">Mã đơn: <strong>{{ pendingQr.orderCode }}</strong></div>
+        </div>
+        <!-- Đồng hồ -->
+        <div class="pending-qr-timer ms-auto" [class.urgent]="pendingQrSecondsLeft <= 60">
+          {{ pendingQrTimerDisplay }}
+        </div>
+      </div>
+
+      <!-- Chọn cọc / full (chỉ khi > 10tr) -->
+      <div *ngIf="pendingQr.requireDeposit" class="d-flex gap-3 my-3">
+        <div
+          class="pqr-choice flex-1"
+          [class.selected]="pendingQrChoice === 'deposit'"
+          (click)="pendingQrChoice = 'deposit'"
+        >
+          <div class="radio-dot" [class.active]="pendingQrChoice === 'deposit'"></div>
+          <div>
+            <div class="fw-semibold small">Đặt cọc 10%</div>
+            <div class="fw-bold text-danger">{{ formatCurrency(pendingQr.depositAmount) }}</div>
+          </div>
+        </div>
+        <div
+          class="pqr-choice flex-1"
+          [class.selected]="pendingQrChoice === 'full'"
+          (click)="pendingQrChoice = 'full'"
+        >
+          <div class="radio-dot" [class.active]="pendingQrChoice === 'full'"></div>
+          <div>
+            <div class="fw-semibold small">Thanh toán đủ 100%</div>
+            <div class="fw-bold text-primary">{{ formatCurrency(pendingQr.total) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Số tiền nổi bật -->
+      <div class="pqr-payable my-3">
+        <span class="small text-muted me-2">Số tiền cần chuyển:</span>
+        <strong class="text-danger fs-6">{{ formatCurrency(pendingQrAmount) }}</strong>
+      </div>
+
+      <!-- QR + STK -->
+      <div class="pqr-bank-row">
+        <img [src]="bankInfo.qrUrl" alt="QR" class="pqr-qr-img" />
+        <table class="pqr-bank-table">
+          <tr>
+            <td class="label">Tên TK</td>
+            <td class="fw-semibold">{{ bankInfo.accountName }}</td>
+          </tr>
+          <tr>
+            <td class="label">Số TK</td>
+            <td>
+              <span class="fw-semibold me-2">{{ bankInfo.accountNumber }}</span>
+              <button class="btn-copy" type="button"
+                (click)="copyPendingQrValue(bankInfo.accountNumber, 'account')">
+                {{ pendingQrCopied === 'account' ? '✓ Đã copy' : 'Copy' }}
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td class="label">Ngân hàng</td>
+            <td>{{ bankInfo.bankName }}</td>
+          </tr>
+          <tr>
+            <td class="label">Nội dung CK</td>
+            <td>
+              <span class="text-danger fw-semibold me-2">CK {{ pendingQr.orderCode }}</span>
+              <button class="btn-copy" type="button"
+                (click)="copyPendingQrValue('CK ' + pendingQr.orderCode, 'content')">
+                {{ pendingQrCopied === 'content' ? '✓ Đã copy' : 'Copy' }}
+              </button>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="small text-muted mt-3">
+        <i class="bi bi-info-circle me-1"></i>
+        Mã QR còn hiệu lực trong {{ pendingQrTimerDisplay }}. Vui lòng tạo lại phiên thanh toán nếu chưa chuyển khoản.
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       ERROR / RESULTS
+  ══════════════════════════════════════════ -->
   <section class="tracking-content" id="tracking-feedback" *ngIf="errorMessage && !orders.length">
     <div class="alert error">{{ errorMessage }}</div>
   </section>
@@ -82,7 +181,6 @@
 
 <div class="tracking-toast" *ngIf="toastMessage">{{ toastMessage }}</div>
 
-
 <div class="review-thanks-modal" *ngIf="reviewThanksOpen">
   <div class="review-thanks-modal__backdrop" (click)="closeReviewThanks()"></div>
   <div class="review-thanks-modal__content">
@@ -91,4 +189,3 @@
     <button type="button" (click)="closeReviewThanks()">Đóng</button>
   </div>
 </div>
-

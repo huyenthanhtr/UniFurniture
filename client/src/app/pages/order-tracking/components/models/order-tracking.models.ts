@@ -72,6 +72,10 @@ export interface TrackingOrder {
   subtotal: number;
   discountAmount: number;
   total: number;
+  paymentState: 'pending' | 'deposit_paid' | 'settled';
+  paymentStateLabel: string;
+  paidAmount: number;
+  remainingAmount: number;
   backendStatus: BackendStatus;
   statusLabel: string;
   products: TrackingProduct[];

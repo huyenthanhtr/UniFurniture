@@ -1,0 +1,133 @@
+﻿<div class="qr-page" *ngIf="qrState">
+  <div class="qr-container">
+
+    <!-- ── Header: Mã đơn ── -->
+    <div class="qr-header text-center mb-4">
+      <div class="qr-icon mb-2">🏦</div>
+      <h4 class="fw-bold mb-2">Thanh toán chuyển khoản</h4>
+      <div class="order-code-badge">{{ qrState.orderCode }}</div>
+    </div>
+
+    <!-- ── Đồng hồ đếm ngược ── -->
+    <div class="timer-box mb-4 text-center" [class.urgent]="timerUrgent">
+      <div class="timer-label small mb-1">Mã QR có hiệu lực trong</div>
+      <div class="timer-display">{{ timerDisplay }}</div>
+      <div class="small mt-1">
+        Vui lòng tạo lại phiên thanh toán nếu chưa chuyển khoản.
+      </div>
+    </div>
+
+    <!-- ── Chọn hình thức (CHỈ hiện khi đơn > 10tr) ── -->
+    <div *ngIf="qrState.requireDeposit" class="choice-group mb-4">
+      <div class="choice-label fw-semibold mb-2">Chọn hình thức thanh toán:</div>
+      <div class="d-flex gap-3">
+
+        <div
+          class="choice-option choice-option--deposit flex-1"
+          [class.selected]="paymentChoice === 'deposit'"
+          (click)="selectChoice('deposit')"
+        >
+          <div class="radio-dot" [class.active]="paymentChoice === 'deposit'"></div>
+          <div>
+            <div class="fw-semibold">Đặt cọc 10%</div>
+            <div class="small text-muted">Tối thiểu bắt buộc</div>
+            <div class="amount-highlight text-danger">{{ formatCurrency(qrState.depositAmount) }}</div>
+          </div>
+        </div>
+
+        <div
+          class="choice-option choice-option--full flex-1"
+          [class.selected]="paymentChoice === 'full'"
+          (click)="selectChoice('full')"
+        >
+          <div class="radio-dot" [class.active]="paymentChoice === 'full'"></div>
+          <div>
+            <div class="fw-semibold">Thanh toán đủ 100%</div>
+            <div class="small text-muted">Toàn bộ đơn hàng</div>
+            <div class="amount-highlight text-primary">{{ formatCurrency(qrState.total) }}</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Số tiền cần chuyển (nổi bật) ── -->
+    <div class="payable-box mb-4">
+      <div class="payable-label">Số tiền cần chuyển</div>
+      <div class="payable-value">{{ formatCurrency(amountToPay) }}</div>
+    </div>
+
+    <!-- ── QR + Thông tin STK ── -->
+    <div class="bank-card mb-4">
+      <div class="row g-3 align-items-center">
+
+        <div class="col-12 col-md-5 text-center">
+          <img [src]="bankInfo.qrUrl" alt="QR chuyển khoản" class="qr-img" />
+          <div class="small text-muted mt-2">Quét mã để chuyển khoản</div>
+        </div>
+
+        <div class="col-12 col-md-7">
+          <table class="bank-table w-100">
+            <tr>
+              <td class="label">Tên TK</td>
+              <td class="fw-semibold">{{ bankInfo.accountName }}</td>
+            </tr>
+            <tr>
+              <td class="label">Số TK</td>
+              <td>
+                <span class="fw-semibold me-2">{{ bankInfo.accountNumber }}</span>
+                <button type="button" class="btn-copy"
+                  (click)="copyValue(bankInfo.accountNumber, 'account', $event)">
+                  {{ copiedField === 'account' ? '✓ Đã copy' : 'Copy' }}
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td class="label">Ngân hàng</td>
+              <td>{{ bankInfo.bankName }}</td>
+            </tr>
+            <tr>
+              <td class="label">Nội dung CK</td>
+              <td>
+                <span class="text-danger fw-semibold me-2">{{ transferContent }}</span>
+                <button type="button" class="btn-copy"
+                  (click)="copyValue(transferContent, 'content', $event)">
+                  {{ copiedField === 'content' ? '✓ Đã copy' : 'Copy' }}
+                </button>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Lưu ý ── -->
+    <div class="notice-box small mb-4">
+      <i class="bi bi-info-circle me-1"></i>
+      Nhập <strong>đúng nội dung chuyển khoản</strong> để đơn được xử lý tự động.
+      Nếu lỡ đóng trang, hãy
+      <a [routerLink]="['/tra-cuu-van-don']" [queryParams]="{code: qrState.orderCode}">
+        tra cứu lại mã đơn
+      </a>
+      để xem lại mã QR trong thời gian còn hiệu lực.
+    </div>
+
+    <!-- ── Lỗi hủy ── -->
+    <div *ngIf="cancelError" class="alert alert-danger py-2 px-3 small mb-3">
+      {{ cancelError }}
+    </div>
+
+    <!-- ── Nút hủy ── -->
+    <div class="text-center">
+      <button
+        type="button"
+        class="btn-cancel-order"
+        (click)="cancelOrder()"
+        [disabled]="cancelling"
+      >
+        {{ cancelling ? 'Đang hủy...' : 'Hủy đơn hàng' }}
+      </button>
+    </div>
+
+  </div>
+</div>

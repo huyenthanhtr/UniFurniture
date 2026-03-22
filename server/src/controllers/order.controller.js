@@ -49,7 +49,7 @@ function getPaymentTypeCode(type) {
   const key = String(type || "").trim().toLowerCase();
   if (key === "deposit") return "DEP";
   if (key === "remaining") return "REM";
-  return "FUL";
+  return "FULL";
 }
 
 function buildBankTransferTransactionId(orderCode, paymentType) {
@@ -588,6 +588,7 @@ async function getOrders(req, res, next) {
       startDate,
       endDate,
       q,
+      accountId,
       sortBy = "ordered_at",
       order = "desc",
     } = req.query;
@@ -603,6 +604,10 @@ async function getOrders(req, res, next) {
     if (status) {
       const normalized = normalizeStatus(status);
       if (normalized) andConditions.push({ status: normalized });
+    }
+
+    if (accountId && mongoose.Types.ObjectId.isValid(String(accountId))) {
+      andConditions.push({ account_id: new mongoose.Types.ObjectId(String(accountId)) });
     }
 
     if (q) {
@@ -1277,7 +1282,7 @@ async function createCheckoutOrder(req, res, next) {
       : 'full';
 
     const paymentAmount = paymentType === 'deposit' ? finalDeposit : finalTotal;
-    const paymentStatus = method === 'bank_transfer' ? 'paid' : 'pending';
+    const paymentStatus = 'pending';
 
     await Payment.create({
       order_id: orderDoc._id,
@@ -1325,6 +1330,71 @@ async function createCheckoutOrder(req, res, next) {
     next(err);
   }
 }
+
+
+async function demoTransferTimeoutComplete(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const orderId = order._id;
+    const totalAmount = Math.max(Number(order.total_amount || 0), 0);
+    const expectedDeposit = getExpectedDepositAmount(totalAmount, order.deposit_amount);
+    const requireDeposit = totalAmount >= 10000000;
+
+    const allPayments = await Payment.find({ order_id: orderId }).sort({ createdAt: -1, _id: -1 });
+
+    const ensurePayment = async (type, amount) => {
+      let payment = allPayments.find((item) => String(item.type || '').toLowerCase() === type);
+      if (!payment) {
+        payment = await Payment.create({
+          order_id: orderId,
+          type,
+          method: 'bank_transfer',
+          amount,
+          status: 'pending',
+          paid_at: null,
+        });
+        allPayments.unshift(payment);
+      }
+      return payment;
+    };
+
+    // Demo fixed rule:
+    // - ??n < 10tr: t? x?c nh?n full (t?t to?n) khi h?t 5 ph?t
+    // - ??n >= 10tr: t? x?c nh?n ?? c?c khi h?t 5 ph?t
+    if (requireDeposit && expectedDeposit > 0) {
+      const depositPayment = await ensurePayment('deposit', expectedDeposit);
+      depositPayment.status = 'paid';
+      depositPayment.paid_at = depositPayment.paid_at || new Date();
+      await depositPayment.save();
+    } else {
+      const fullPayment = await ensurePayment('full', totalAmount);
+      fullPayment.status = 'paid';
+      fullPayment.paid_at = fullPayment.paid_at || new Date();
+      await fullPayment.save();
+    }
+
+    const refreshedPayments = await Payment.find({ order_id: orderId }).sort({ createdAt: -1, _id: -1 });
+    const payment_summary = buildPaymentSummary(order, refreshedPayments);
+
+    return res.status(200).json({
+      message: 'Da cap nhat trang thai thanh toan demo.',
+      order_id: orderId,
+      payment_summary,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
 module.exports = {
   getOrders,
   getOrderById,
@@ -1332,6 +1402,7 @@ module.exports = {
   requestCancelOrder,
   createCheckoutOrder,
   addWarrantyRecord,
+  demoTransferTimeoutComplete,
   validateAdminStatusTransition,
   SOLD_COUNT_STATUSES,
 };

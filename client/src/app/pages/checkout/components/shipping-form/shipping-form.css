@@ -17,7 +17,7 @@
 
 .address-row {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr;
+  grid-template-columns: 0.72fr 1fr 1fr;
   gap: 10px;
 }
 
@@ -29,6 +29,9 @@
   align-items: center;
   gap: 8px;
   background: #f8f8f8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .required-star {

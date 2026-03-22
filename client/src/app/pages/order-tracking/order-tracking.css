@@ -117,6 +117,29 @@
   font-size: 12px;
 }
 
+.status-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.status-pill--payment-pending {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.status-pill--payment-deposit {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-pill--payment-settled {
+  background: #dcfce7;
+  color: #166534;
+}
+
 .timeline {
   margin-bottom: 14px;
   display: grid;
@@ -162,6 +185,14 @@
 .complete-box {
   margin: 0 0 14px;
   text-align: right;
+}
+
+.complete-note {
+  margin-top: 8px !important;
+  margin-bottom: 0 !important;
+  color: #9a3412 !important;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .complete-box button,
@@ -1021,3 +1052,152 @@
   margin: 10px 0 2px;
 }
 
+/* ═══════════════════════════════════════════
+   THÊM VÀO order-tracking.css
+   Pending QR block — hiện khi khách tra cứu đơn đang chờ CK
+═══════════════════════════════════════════ */
+
+.pending-qr-card {
+  background: #fff;
+  border: 1.5px solid #fcd34d;
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(251,191,36,0.15);
+  animation: fadeUp 0.3s ease both;
+}
+
+.pending-qr-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.pending-qr-icon { font-size: 1.6rem; }
+
+/* Đồng hồ */
+.pending-qr-timer {
+  font-size: 1.4rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #166534;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 10px;
+  padding: 4px 14px;
+  letter-spacing: 1px;
+  transition: all 0.3s;
+}
+
+.pending-qr-timer.urgent {
+  color: #92400e;
+  background: #fff7ed;
+  border-color: #fbbf24;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* Chọn hình thức */
+.pqr-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1.5px solid #e8e0d8;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pqr-choice:hover  { border-color: #c8923a; background: #fdf8f2; }
+.pqr-choice.selected { border-color: #c8923a; background: #fdf8f2; }
+
+.radio-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.2s;
+}
+.radio-dot.active {
+  border-color: #c8923a;
+  background: #c8923a;
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+/* Số tiền */
+.pqr-payable {
+  background: #fff7ed;
+  border: 1.5px dashed #fdba74;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+}
+
+/* QR + STK row */
+.pqr-bank-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pqr-qr-img {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  border: 1px solid #e8e0d8;
+  border-radius: 8px;
+  padding: 4px;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.pqr-bank-table {
+  border-collapse: collapse;
+  font-size: 13px;
+  flex: 1;
+}
+.pqr-bank-table tr { border-bottom: 1px solid #f0ebe3; }
+.pqr-bank-table tr:last-child { border-bottom: none; }
+.pqr-bank-table td { padding: 6px 4px; vertical-align: top; }
+.pqr-bank-table td.label { color: #888; white-space: nowrap; padding-right: 10px; width: 80px; }
+
+.btn-copy {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  padding: 1px 7px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-copy:hover { background: #e5e7eb; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.3); }
+  50%       { box-shadow: 0 0 0 5px rgba(251,191,36,0); }
+}
+
+@media (max-width: 480px) {
+  .pending-qr-header { flex-wrap: wrap; }
+  .pending-qr-timer  { margin-left: 0; }
+  .pqr-bank-row      { flex-direction: column; }
+}
+
+.btn-complete:disabled {
+  background: #bfc7d3;
+  cursor: not-allowed;
+}
+
+.payment-remaining {
+  color: #9a3412 !important;
+  font-weight: 700;
+}

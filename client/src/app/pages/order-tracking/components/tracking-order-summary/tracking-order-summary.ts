@@ -21,6 +21,26 @@ export class TrackingOrderSummaryComponent {
   @Output() completeOrderClick = new EventEmitter<void>();
   @Output() toggleCancelClick = new EventEmitter<void>();
 
+  paymentBadgeClass(): string {
+    switch (this.order?.paymentState) {
+      case 'settled':
+        return 'status-pill--payment-settled';
+      case 'deposit_paid':
+        return 'status-pill--payment-deposit';
+      default:
+        return 'status-pill--payment-pending';
+    }
+  }
+
+  isCodOrder(): boolean {
+    const method = String(this.order?.paymentMethod || '').toLowerCase();
+    return method.includes('cod');
+  }
+
+  canCompleteOrder(): boolean {
+    return this.order?.backendStatus === 'delivered';
+  }
+
   formatCurrency(value: number): string {
     return `${new Intl.NumberFormat('vi-VN').format(value)}đ`;
   }

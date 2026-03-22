@@ -118,6 +118,23 @@ export class OrderTrackingDataService {
     const discountAmount = Number(pricing.discount_amount ?? 0);
     const discountPercent = subtotal > 0 ? Math.round((discountAmount / subtotal) * 100) : 0;
 
+    const totalAmount = Number(pricing.grand_total ?? order.total_amount ?? 0);
+    const expectedDeposit = totalAmount >= 10000000
+      ? Math.max(0, Number(order?.deposit_amount || Math.round(totalAmount * 0.1)))
+      : 0;
+
+    const paidPayments = payments.filter((item: any) => String(item?.status || '').toLowerCase() === 'paid');
+    const paidAmount = paidPayments.reduce((sum: number, item: any) => sum + Number(item?.amount || 0), 0);
+    const depositPaidAmount = paidPayments
+      .filter((item: any) => String(item?.type || '').toLowerCase() === 'deposit')
+      .reduce((sum: number, item: any) => sum + Number(item?.amount || 0), 0);
+
+    const hasSettled = totalAmount > 0 && paidAmount >= totalAmount;
+    const hasDepositPaid = expectedDeposit > 0 && depositPaidAmount >= expectedDeposit;
+    const paymentState = hasSettled ? 'settled' : hasDepositPaid ? 'deposit_paid' : 'pending';
+    const paymentStateLabel = hasSettled ? '\u0054\u1ea5t to\u00e1n' : hasDepositPaid ? '\u0110\u00e3 c\u1ecdc' : 'Ch\u1edd thanh to\u00e1n';
+    const remainingAmount = Math.max(totalAmount - paidAmount, 0);
+
     const products: TrackingProduct[] = items.map((item: any, index: number) => ({
       id: String(item?._id || item?.variant_id || `item-${index}`),
       orderDetailId: String(item?._id || ''),
@@ -182,7 +199,11 @@ export class OrderTrackingDataService {
       discountPercent,
       subtotal,
       discountAmount,
-      total: Number(pricing.grand_total ?? order.total_amount ?? 0),
+      total: totalAmount,
+      paymentState,
+      paymentStateLabel,
+      paidAmount,
+      remainingAmount,
       backendStatus,
       statusLabel: this.statusLabel(backendStatus),
       products,

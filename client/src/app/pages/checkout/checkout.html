@@ -1,31 +1,53 @@
 ﻿<div class="checkout-page">
   <div class="container py-5">
     <div class="row g-4 align-items-start">
-      <div class="col-12 col-lg-7">
+
+      <!-- ══════════════════════════════
+           CỘT TRÁI: Form + Coupon + PTTT
+      ══════════════════════════════ -->
+      <div class="col-12 col-lg-6">
+
+        <!-- Gợi ý đăng nhập -->
         <div class="login-hint d-flex align-items-center justify-content-between mb-4 px-4 py-3 rounded-3">
           <span class="small text-muted">Đăng nhập để mua hàng tiện lợi và nhận nhiều ưu đãi hơn nữa</span>
-          <button type="button" class="btn btn-sm btn-outline-primary ms-3 text-nowrap" (click)="openLoginModal()">Đăng nhập</button>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-primary ms-3 text-nowrap"
+            (click)="openLoginModal()"
+          >Đăng nhập</button>
         </div>
 
+        <!-- Lỗi submit -->
         <div *ngIf="submitError" class="alert alert-danger mb-3" role="alert">
           {{ submitError }}
         </div>
 
+        <!-- 1. Form thông tin giao hàng -->
         <app-shipping-form
           [form]="form"
           (formChange)="onFormChange($event)"
         ></app-shipping-form>
 
-        <app-payment-method
-          [form]="form"
-          [total]="total"
-          [requireDeposit]="requireDeposit"
-          [depositAmount]="depositAmount"
-          (formChange)="onFormChange($event)"
-        ></app-payment-method>
+        <!-- 2. Mã khuyến mãi (đặt SAU shipping, TRƯỚC payment) -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body px-4 py-3">
+            <h6 class="fw-semibold mb-3">
+              <i class="bi bi-ticket-perforated me-2 text-primary"></i>Mã khuyến mãi
+            </h6>
+            <app-coupon-picker
+              [subtotal]="subtotal"
+              [appliedCode]="form.couponCode"
+              (couponApplied)="onCouponApplied($event)"
+            ></app-coupon-picker>
+          </div>
+        </div>
+
       </div>
 
-      <div class="col-12 col-lg-5">
+      <!-- ══════════════════════════════
+           CỘT PHẢI: Giỏ hàng + Tóm tắt + Nút TT
+      ══════════════════════════════ -->
+      <div class="col-12 col-lg-6">
         <div class="sticky-summary">
           <app-order-summary
             [cartItems]="cartItems"
@@ -37,14 +59,14 @@
             [depositAmount]="depositAmount"
             [isSubmitting]="isSubmitting"
             [canSubmit]="canSubmit()"
-            [appliedCoupon]="form.couponCode"
-            (couponApplied)="onCouponApplied($event)"
+            [form]="form"
             (quantityChange)="onQuantityChange($event)"
-            (removeItem)="onRemoveItem($event)"
+            (formChange)="onFormChange($event)"
             (placeOrder)="placeOrder()"
           ></app-order-summary>
         </div>
       </div>
+
     </div>
   </div>
 </div>
