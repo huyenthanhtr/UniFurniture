@@ -95,6 +95,7 @@ export const MAX_REVIEW_IMAGES = 5;
 export const MAX_REVIEW_VIDEOS = 5;
 export const SHOP_ZALO_URL = 'https://zalo.me/0123456789';
 
+// Đã khôi phục Tiếng Việt có dấu chuẩn
 export const CANCEL_REASONS = [
   'Đổi ý không muốn mua nữa',
   'Muốn đổi địa chỉ hoặc thời gian nhận',

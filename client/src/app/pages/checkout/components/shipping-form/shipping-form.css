@@ -3,6 +3,35 @@
   border-radius: 12px;
 }
 
+.saved-address-box {
+  border: 1px solid #ead8be;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fffefb 0%, #fff9f0 100%);
+  padding: 12px;
+}
+
+.saved-address-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.saved-address-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.saved-address-tools {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
 .country-field {
   background: #f8f8f8;
   cursor: not-allowed;
@@ -90,6 +119,14 @@
 }
 
 @media (max-width: 991px) {
+  .saved-address-tools {
+    flex-direction: column;
+  }
+
+  .saved-address-tools .btn {
+    width: 100%;
+  }
+
   .address-row {
     grid-template-columns: 1fr;
   }

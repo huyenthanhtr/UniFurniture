@@ -1,0 +1,78 @@
+﻿<div class="account-page">
+  <div class="account-login-prompt" *ngIf="needsLogin()">
+    <div class="login-prompt-card">
+      <div class="login-prompt-badge">👤</div>
+      <h3>Đăng nhập để xem tài khoản</h3>
+      <p>
+        Quản lý đơn hàng, sổ địa chỉ, danh sách yêu thích và thông tin cá nhân của bạn tại một nơi.
+      </p>
+      <div class="login-prompt-actions">
+        <button type="button" class="btn-login-primary" (click)="openLogin()">Đăng nhập</button>
+        <button type="button" class="btn-login-secondary" (click)="openRegister()">Đăng ký</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="account-layout" *ngIf="!needsLogin()">
+    <aside class="account-sidebar">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">
+          <img
+            *ngIf="avatarUrl"
+            [src]="avatarUrl"
+            [alt]="displayName"
+            class="sidebar-avatar-img"
+            (error)="onSidebarAvatarError()"
+          />
+          <div *ngIf="!avatarUrl" class="sidebar-avatar-placeholder">
+            {{ displayInitial }}
+          </div>
+        </div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-name">{{ displayName }}</div>
+          <div class="sidebar-phone">{{ displayPhone }}</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button
+          *ngFor="let tab of tabs"
+          type="button"
+          class="sidebar-nav-item"
+          [class.active]="activeTab() === tab.key"
+          (click)="setTab(tab.key)"
+        >
+          <span class="nav-icon">{{ tab.icon }}</span>
+          <span class="nav-label">{{ tab.label }}</span>
+        </button>
+
+        <div class="sidebar-divider"></div>
+
+        <button type="button" class="sidebar-nav-item sidebar-nav-item--logout" (click)="requestLogout()">
+          <span class="nav-icon">🚪</span>
+          <span class="nav-label">Đăng xuất</span>
+        </button>
+      </nav>
+    </aside>
+
+    <main class="account-content">
+      <app-account-profile *ngIf="activeTab() === 'profile'" [profile]="profile()"></app-account-profile>
+      <app-account-addresses *ngIf="activeTab() === 'addresses'" [profile]="profile()"></app-account-addresses>
+      <app-account-orders *ngIf="activeTab() === 'orders'" [profile]="profile()"></app-account-orders>
+      <app-account-wishlist *ngIf="activeTab() === 'wishlist'" [profile]="profile()"></app-account-wishlist>
+      <app-account-security *ngIf="activeTab() === 'security'" [profile]="profile()"></app-account-security>
+    </main>
+  </div>
+</div>
+
+<div class="account-logout-backdrop" *ngIf="showLogoutConfirm()" (click)="cancelLogout()">
+  <div class="account-logout-modal" (click)="$event.stopPropagation()">
+    <div class="account-logout-modal__icon">🚪</div>
+    <h3>Bạn muốn đăng xuất?</h3>
+    <p>Bạn sẽ cần đăng nhập lại để quản lý tài khoản.</p>
+    <div class="account-logout-modal__actions">
+      <button type="button" class="account-logout-btn account-logout-btn--cancel" (click)="cancelLogout()">Hủy</button>
+      <button type="button" class="account-logout-btn account-logout-btn--confirm" (click)="confirmLogout()">Đăng xuất</button>
+    </div>
+  </div>
+</div>

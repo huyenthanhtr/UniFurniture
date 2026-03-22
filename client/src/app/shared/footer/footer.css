@@ -3,7 +3,7 @@
 =========================== */
 .partner-section {
     background: #FFFFFF;
-    padding: 0 0 10px;
+    padding: 8px 0 10px;
     font-family: 'Montserrat', sans-serif;
 }
 
@@ -15,6 +15,7 @@
 
 .partner-header {
     border-bottom: 2px solid #e53e3e;
+    padding-top: 4px;
     padding-bottom: 8px;
     margin-bottom: 16px;
     display: flex;

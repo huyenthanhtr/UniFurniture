@@ -7,14 +7,14 @@
         (mouseenter)="openProductsMenu()" (mouseleave)="scheduleCloseProductsMenu()" (focusin)="openProductsMenu()"
         (focusout)="scheduleCloseProductsMenu()">
         <a [routerLink]="['/products']" class="navbar-link" (click)="onMobileNavClick()">
-          S&#7843;n ph&#7849;m
+          Sản phẩm
           <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
             <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
           </svg>
         </a>
 
         <div class="dropdown-panel dropdown-panel--products" [class.has-submenu]="activeSubItems().length > 0"
-          role="menu" aria-label="Danh m&#7909;c s&#7843;n ph&#7849;m" (mouseenter)="openProductsMenu()"
+          role="menu" aria-label="Danh mục sản phẩm" (mouseenter)="openProductsMenu()"
           (mouseleave)="scheduleCloseProductsMenu()">
           <div class="product-mega" [class.has-submenu]="activeSubItems().length > 0">
             <div class="product-mega__left">
@@ -43,17 +43,17 @@
 
       <li class="navbar-item" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: false }">
         <a [routerLink]="['/khuyen-mai']" class="navbar-link" (click)="onMobileNavClick()">
-          Khuy&#7871;n m&#227;i
+          Khuyến mãi
         </a>
       </li>
 
 
       <li class="navbar-item" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: true }">
-        <a [routerLink]="['/ve-unifurniture']" class="navbar-link" (click)="onMobileNavClick()">V&#7873; U-Home Furni</a>
+        <a [routerLink]="['/ve-unifurniture']" class="navbar-link" (click)="onMobileNavClick()">Về U-Home Furni</a>
       </li>
 
       <li class="navbar-item" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: true }">
-        <a [routerLink]="['/cong-dong']" class="navbar-link" (click)="onMobileNavClick()">C&#7897;ng &#273;&#7891;ng</a>
+        <a [routerLink]="['/cong-dong']" class="navbar-link" (click)="onMobileNavClick()">Cộng đồng</a>
       </li>
 
       <li class="navbar-item navbar-item--tracking" routerLinkActive="navbar-item--active" [routerLinkActiveOptions]="{ exact: true }">
@@ -79,4 +79,3 @@
     </ul>
   </div>
 </nav>
-

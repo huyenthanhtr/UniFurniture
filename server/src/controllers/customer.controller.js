@@ -44,6 +44,9 @@ function buildQMatch(q) {
       { "profile.phone": { $regex: kw, $options: "i" } },
       { "profile.email": { $regex: kw, $options: "i" } },
       { "profile.address": { $regex: kw, $options: "i" } },
+      { "address_docs.address_phone": { $regex: kw, $options: "i" } },
+      { "address_docs.customer_address_name": { $regex: kw, $options: "i" } },
+      { "address_docs.address_line": { $regex: kw, $options: "i" } },
     ],
   };
 }

@@ -8,7 +8,10 @@
       <div class="col-12 col-lg-6">
 
         <!-- Gợi ý đăng nhập -->
-        <div class="login-hint d-flex align-items-center justify-content-between mb-4 px-4 py-3 rounded-3">
+        <div
+          *ngIf="!isLoggedIn()"
+          class="login-hint d-flex align-items-center justify-content-between mb-4 px-4 py-3 rounded-3"
+        >
           <span class="small text-muted">Đăng nhập để mua hàng tiện lợi và nhận nhiều ưu đãi hơn nữa</span>
           <button
             type="button"

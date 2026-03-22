@@ -84,12 +84,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     qrUrl: 'assets/images/qrcode-default.png',
   };
   readonly timelineSteps: TimelineStep[] = [
-    { label: 'Đã đặt hàng' },
-    { label: 'Đã xác nhận' },
-    { label: 'Đang xử lý' },
-    { label: 'Đang giao hàng' },
-    { label: 'Đã giao hàng' },
-    { label: 'Hoàn tất' },
+    { label: 'Ðã d?t hàng' },
+    { label: 'Ðã xác nh?n' },
+    { label: 'Ðang x? lý' },
+    { label: 'Ðang giao hàng' },
+    { label: 'Ðã giao hàng' },
+    { label: 'Hoàn t?t' },
   ];
 
   constructor(
@@ -147,7 +147,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
 
   private showReviewThanks(productName: string): void {
-    this.reviewThanksMessage = `Cảm ơn bạn đã gửi đánh giá cho sản phẩm ${productName}.`;
+    this.reviewThanksMessage = `C?m on b?n dã g?i dánh giá cho s?n ph?m ${productName}.`;
     this.reviewThanksOpen = true;
   }
 
@@ -178,7 +178,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     const codes = this.trackingData.parseCodes(this.searchCode);
 
     if (!codes.length) {
-      this.errorMessage = 'Vui lòng nhập ít nhất 1 mã vận đơn.';
+      this.errorMessage = 'Vui lòng nh?p ít nh?t 1 mã v?n don.';
       this.infoMessage = '';
       this.orders = [];
       this.cdr.detectChanges();
@@ -202,7 +202,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       this.syncPendingQrByResults(foundOrders);
 
       if (!foundOrders.length) {
-        this.errorMessage = 'Không tìm thấy đơn hàng nào. Vui lòng kiểm tra lại mã vận đơn.';
+        this.errorMessage = 'Không tìm th?y don hàng nào. Vui lòng ki?m tra l?i mã v?n don.';
         this.cdr.detectChanges();
         this.pendingRestoreScrollY = null;
         this.scrollToAnchor('tracking-feedback');
@@ -210,14 +210,14 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       }
 
       if (missingCodes.length) {
-        this.infoMessage = `Không tìm thấy ${missingCodes.length} mã: ${missingCodes.join(', ')}`;
+        this.infoMessage = `Không tìm th?y ${missingCodes.length} mã: ${missingCodes.join(', ')}`;
       }
 
       this.persistTrackingState(window.scrollY);
       this.cdr.detectChanges();
       this.restoreOrScrollToResults();
     } catch {
-      this.errorMessage = 'Không thể tra cứu đơn hàng lúc này. Vui lòng thử lại sau.';
+      this.errorMessage = 'Không th? tra c?u don hàng lúc này. Vui lòng th? l?i sau.';
       this.orders = [];
       this.cdr.detectChanges();
       this.pendingRestoreScrollY = null;
@@ -257,9 +257,9 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   reviewModerationLabel(status: string): string {
     const key = String(status || '').toLowerCase();
-    if (key === 'approved') return 'Đã duyệt';
-    if (key === 'rejected') return 'Đã từ chối';
-    return 'Đang chờ duyệt';
+    if (key === 'approved') return 'Ðã duy?t';
+    if (key === 'rejected') return 'Ðã t? ch?i';
+    return 'Ðang ch? duy?t';
   }
 
   isCancelPending(order: TrackingOrder): boolean {
@@ -302,12 +302,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     const phone = String(order.cancelForm.phone || '').trim();
 
     if (!reason) {
-      this.errorMessage = `Vui lòng chọn lý do cho đơn hàng${order.orderCode}.`;
+      this.errorMessage = `Vui lòng ch?n lý do cho don hàng${order.orderCode}.`;
       return;
     }
 
     if (!phone) {
-      this.errorMessage = `Vui lòng nhập số điện thoại xác nhận cho đơn hàng ${order.orderCode}.`;
+      this.errorMessage = `Vui lòng nh?p s? di?n tho?i xác nh?n cho don hàng ${order.orderCode}.`;
       return;
     }
 
@@ -328,7 +328,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       ) as BackendStatus | '';
 
       order.backendStatus = 'cancelled';
-      order.statusLabel = 'Đã hủy';
+      order.statusLabel = 'Ðã h?y';
       order.cancelForm.open = false;
       order.cancellationRequest = {
         reason,
@@ -344,7 +344,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
       this.scrollToAnchor('tracking-feedback');
     } catch (error: any) {
-      this.errorMessage = error?.error?.error || `Không thể gửi yêu cầu hủy cho đơn hàng ${order.orderCode}.`;
+      this.errorMessage = error?.error?.error || `Không th? g?i yêu c?u h?y cho don hàng ${order.orderCode}.`;
       this.cdr.detectChanges();
     } finally {
       order.cancelForm.submitting = false;
@@ -375,7 +375,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   viewProductFromHistory(product: TrackingProduct, target: 'top' | 'review' = 'top'): void {
     const productPath = String(product.productSlug || product.productId || '').trim();
     if (!productPath) {
-      this.infoMessage = 'Không tìm thấy liên kết sản phẩm để mở lại.';
+      this.infoMessage = 'Không tìm th?y liên k?t s?n ph?m d? m? l?i.';
       return;
     }
 
@@ -397,7 +397,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   buyAgain(product: TrackingProduct): void {
     const productId = String(product.productId || '').trim();
     if (!productId) {
-      this.infoMessage = 'Không thể mua lại vì thiếu thông tin sản phẩm.';
+      this.infoMessage = 'Không th? mua l?i vì thi?u thông tin s?n ph?m.';
       return;
     }
 
@@ -412,7 +412,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       1,
     );
     this.ui.openCart();
-    this.infoMessage = `Đã thêm ${product.name} vào giỏ hàng.`;
+    this.infoMessage = `Ðã thêm ${product.name} vào gi? hàng.`;
   }
 
   setRating(product: TrackingProduct, value: number): void {
@@ -422,15 +422,15 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   getRatingLabel(rating: number): string {
     switch (rating) {
       case 5:
-        return 'Rất hài lòng';
+        return 'R?t hài lòng';
       case 4:
         return 'Hài lòng';
       case 3:
         return 'Trung bình';
       case 2:
-        return 'Chưa hài lòng';
+        return 'Chua hài lòng';
       case 1:
-        return 'Tệ';
+        return 'T?';
       default:
         return '';
     }
@@ -442,7 +442,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     const remaining = MAX_REVIEW_IMAGES - product.review.imageFiles.length;
 
     if (remaining <= 0) {
-      this.infoMessage = `Mỗi sản phẩm chỉ tải tối đa ${MAX_REVIEW_IMAGES} ảnh.`;
+      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_IMAGES} ?nh.`;
       input.value = '';
       return;
     }
@@ -454,7 +454,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     });
 
     if (acceptedFiles.length < files.length) {
-      this.infoMessage = `Mỗi sản phẩm chỉ tải tối đa ${MAX_REVIEW_IMAGES} ảnh.`;
+      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_IMAGES} ?nh.`;
     }
 
     input.value = '';
@@ -466,7 +466,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     const remaining = MAX_REVIEW_VIDEOS - product.review.videoFiles.length;
 
     if (remaining <= 0) {
-      this.infoMessage = `Mỗi sản phẩm chỉ tải tối đa ${MAX_REVIEW_VIDEOS} video.`;
+      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_VIDEOS} video.`;
       input.value = '';
       return;
     }
@@ -478,7 +478,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     });
 
     if (acceptedFiles.length < files.length) {
-      this.infoMessage = `Mỗi sản phẩm chỉ tải tối đa ${MAX_REVIEW_VIDEOS} video.`;
+      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_VIDEOS} video.`;
     }
 
     input.value = '';
@@ -513,7 +513,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   }
 
   imageCountLabel(product: TrackingProduct): string {
-    return `${product.review.imageFiles.length}/${MAX_REVIEW_IMAGES} ảnh`;
+    return `${product.review.imageFiles.length}/${MAX_REVIEW_IMAGES} ?nh`;
   }
 
   videoCountLabel(product: TrackingProduct): string {
@@ -547,13 +547,13 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     this.reviewInlineErrors[key] = '';
 
     if (!this.hasAnyInteraction(product)) {
-      this.reviewInlineErrors[key] = 'Vui lòng chọn số sao trước khi gửi đánh giá.';
+      this.reviewInlineErrors[key] = 'Vui lòng ch?n s? sao tru?c khi g?i dánh giá.';
       this.cdr.detectChanges();
       return;
     }
 
     if (product.review.rating < 1) {
-      this.reviewInlineErrors[key] = 'Vui lòng chọn số sao cho sản phẩm này trước khi gửi đánh giá.';
+      this.reviewInlineErrors[key] = 'Vui lòng ch?n s? sao cho s?n ph?m này tru?c khi g?i dánh giá.';
       this.cdr.detectChanges();
       return;
     }
@@ -599,7 +599,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       const reviewableProducts = order.products.filter((item) => !!item.orderDetailId);
       order.reviewSubmitted = reviewableProducts.length > 0 && reviewableProducts.every((item) => !!item.submittedReview);
       this.reviewInlineErrors[key] = '';
-      this.showToast(`Đã gửi đánh giá cho sản phẩm ${product.name}.`);
+      this.showToast(`Ðã g?i dánh giá cho s?n ph?m ${product.name}.`);
       this.showReviewThanks(product.name);
       this.cdr.detectChanges();
 
@@ -613,11 +613,11 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
         await this.trackingData.applyExistingReviews(order);
         const reviewableProducts = order.products.filter((item) => !!item.orderDetailId);
         order.reviewSubmitted = reviewableProducts.length > 0 && reviewableProducts.every((item) => !!item.submittedReview);
-        this.reviewInlineErrors[key] = error?.error?.message || 'Sản phẩm này đã được đánh giá trước đó, không thể chỉnh sửa.';
+        this.reviewInlineErrors[key] = error?.error?.message || 'S?n ph?m này dã du?c dánh giá tru?c dó, không th? ch?nh s?a.';
         this.showToast(this.reviewInlineErrors[key]);
         this.cdr.detectChanges();
       } else {
-        this.reviewInlineErrors[key] = 'Không thể gửi đánh giá lúc này. Vui lòng thử lại sau.';
+        this.reviewInlineErrors[key] = 'Không th? g?i dánh giá lúc này. Vui lòng th? l?i sau.';
         this.showToast(this.reviewInlineErrors[key]);
         this.cdr.detectChanges();
       }
@@ -666,7 +666,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     }
 
     if (this.isImageLimitReached(this.cameraProduct)) {
-      this.infoMessage = `Mỗi sản phẩm chỉ tải tối đa ${MAX_REVIEW_IMAGES} ảnh.`;
+      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_IMAGES} ?nh.`;
       return;
     }
 
@@ -680,7 +680,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
     const context = canvas.getContext('2d');
     if (!context) {
-      this.cameraError = 'Không thể chụp ảnh từ camera.';
+      this.cameraError = 'Không th? ch?p ?nh t? camera.';
       return;
     }
 
@@ -688,7 +688,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
     if (!blob) {
-      this.cameraError = 'Không thể tạo ảnh từ camera.';
+      this.cameraError = 'Không th? t?o ?nh t? camera.';
       return;
     }
 
@@ -708,12 +708,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     }
 
     if (this.isVideoLimitReached(this.cameraProduct)) {
-      this.infoMessage = `Mỗi sản phẩm chỉ tải tối đa ${MAX_REVIEW_VIDEOS} video.`;
+      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_VIDEOS} video.`;
       return;
     }
 
     if (typeof MediaRecorder === 'undefined') {
-      this.cameraError = 'Trình duyệt không hỗ trợ quay video trực tiếp.';
+      this.cameraError = 'Trình duy?t không h? tr? quay video tr?c ti?p.';
       return;
     }
 
@@ -787,12 +787,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   private async openCamera(product: TrackingProduct, mode: 'image' | 'video'): Promise<void> {
     if (mode === 'image' && this.isImageLimitReached(product)) {
-      this.infoMessage = `Mỗi sản phẩm chỉ tải tối đa ${MAX_REVIEW_IMAGES} ảnh.`;
+      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_IMAGES} ?nh.`;
       return;
     }
 
     if (mode === 'video' && this.isVideoLimitReached(product)) {
-      this.infoMessage = `Mỗi sản phẩm chỉ tải tối đa ${MAX_REVIEW_VIDEOS} video.`;
+      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_VIDEOS} video.`;
       return;
     }
 
@@ -807,7 +807,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   private async startCamera(): Promise<void> {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      this.cameraError = 'Thiết bị không hỗ trợ camera trên trình duyệt này.';
+      this.cameraError = 'Thi?t b? không h? tr? camera trên trình duy?t này.';
       return;
     }
 
@@ -823,7 +823,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       await this.bindCameraStream();
       await this.loadCameraDevices();
     } catch {
-      this.cameraError = 'Không thể mở camera. Vui lòng cấp quyền truy cập camera.';
+      this.cameraError = 'Không th? m? camera. Vui lòng c?p quy?n truy c?p camera.';
     }
   }
 
@@ -976,7 +976,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Nếu state cũ bị thiếu total/deposit thì lấy theo dữ liệu đơn vừa tra cứu
+    // N?u state cu b? thi?u total/deposit thì l?y theo d? li?u don v?a tra c?u
     const normalizedSource: PendingQrState = {
       ...this.pendingQrSource,
       total: Number(this.pendingQrSource.total || matchedOrder.total || 0),
@@ -1083,5 +1083,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     requestAnimationFrame(tryScroll);
   }
 }
+
+
 
 

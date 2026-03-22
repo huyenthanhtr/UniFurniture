@@ -26,7 +26,7 @@ export class OrderTrackingDataService {
   }
 
   formatCurrency(value: number): string {
-    return `${new Intl.NumberFormat('vi-VN').format(value)}đ`;
+    return `${new Intl.NumberFormat('vi-VN').format(value)}d`;
   }
 
   async uploadReviewMedia(files: File[]): Promise<{ images: string[]; videos: string[] }> {
@@ -79,8 +79,8 @@ export class OrderTrackingDataService {
     return raw;
   }
 
-  statusLabel(status: BackendStatus): string {
-    const map: Record<BackendStatus, string> = {
+    statusLabel(status: BackendStatus | 'exchanged'): string {
+    const map: Record<string, string> = {
       pending: 'Đã đặt hàng',
       confirmed: 'Đã xác nhận',
       cancel_pending: 'Đã hủy',
@@ -90,8 +90,9 @@ export class OrderTrackingDataService {
       completed: 'Hoàn tất',
       cancelled: 'Đã hủy',
       refunded: 'Đã hoàn tiền',
+      exchanged: 'Đã đổi hàng',
     };
-    return map[status] || status;
+    return map[String(status || '').toLowerCase()] || status;
   }
 
   async fetchOrderByCode(code: string): Promise<TrackingOrder | null> {
@@ -248,4 +249,7 @@ export class OrderTrackingDataService {
     return method || 'Không xác định';
   }
 }
+
+
+
 

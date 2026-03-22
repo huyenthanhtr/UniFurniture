@@ -1,3 +1,9 @@
 const makeGenericRouter = require("./generic.routes");
 const Profile = require("../models/Profile");
-module.exports = makeGenericRouter(Profile);
+const { changePassword } = require("../controllers/profile.controller");
+
+const router = makeGenericRouter(Profile);
+
+router.post("/:id/change-password", changePassword);
+
+module.exports = router;

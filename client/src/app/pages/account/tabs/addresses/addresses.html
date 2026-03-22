@@ -1,0 +1,170 @@
+﻿<div class="tab-section address-tab">
+  <div class="tab-header">
+    <div class="header-content">
+      <h2 class="tab-title">Sổ địa chỉ</h2>
+      <p class="tab-subtitle">Quản lý địa chỉ giao hàng để thanh toán nhanh chóng hơn.</p>
+    </div>
+    <button type="button" class="btn-primary-lux btn-add" (click)="openAddForm()" *ngIf="!showForm()">
+      <span>+</span> Thêm địa chỉ mới
+    </button>
+  </div>
+
+  <div *ngIf="error()" class="alert-error">{{ error() }}</div>
+
+  <div *ngIf="loading()" class="loading-state">
+    <div class="spinner-sm"></div>
+    <span>Đang tải danh sách địa chỉ...</span>
+  </div>
+
+  <div *ngIf="showForm()" class="address-form-card">
+    <div class="form-header">
+      <h3 class="form-section-title">
+        {{ editingId() ? 'Cập nhật địa chỉ' : 'Thêm địa chỉ giao hàng mới' }}
+      </h3>
+      <p>Vui lòng điền chính xác thông tin để đảm bảo hàng được giao tận tay.</p>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Họ tên người nhận *</label>
+        <input
+          class="form-input"
+          type="text"
+          [class.required-invalid]="isInvalid('fullName')"
+          [(ngModel)]="form.fullName"
+          (blur)="markTouched('fullName')"
+          placeholder="Ví dụ: Nguyễn Văn A"
+        />
+        <div *ngIf="isInvalid('fullName')" class="required-star">* Bắt buộc</div>
+      </div>
+
+      <div class="form-group">
+        <label>Số điện thoại *</label>
+        <input
+          class="form-input"
+          type="tel"
+          [class.required-invalid]="isPhoneInvalid()"
+          [ngModel]="form.phone"
+          (ngModelChange)="onPhoneInput($event)"
+          (blur)="markTouched('phone')"
+          maxlength="13"
+          placeholder="09xxxxxxxx hoặc +84xxxxxxxxx"
+        />
+        <div *ngIf="isPhoneInvalid()" class="required-star">{{ phoneErrorMessage() }}</div>
+      </div>
+
+      <div class="form-group">
+        <label>Tỉnh/Thành phố *</label>
+        <select
+          class="form-input"
+          [class.required-invalid]="isInvalid('province')"
+          [ngModel]="form.province"
+          (ngModelChange)="onProvinceChange($event)"
+          (blur)="markTouched('province')"
+        >
+          <option value="">Chọn Tỉnh/TP</option>
+          <option *ngFor="let item of provinces" [value]="item.value">{{ item.label }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Quận/Huyện *</label>
+        <select
+          class="form-input"
+          [class.required-invalid]="isInvalid('district')"
+          [disabled]="!form.province || loadingDistricts()"
+          [ngModel]="form.district"
+          (ngModelChange)="onDistrictChange($event)"
+          (blur)="markTouched('district')"
+        >
+          <option value="">{{ loadingDistricts() ? 'Đang tải Quận/Huyện...' : 'Chọn Quận/Huyện' }}</option>
+          <option *ngFor="let item of districtOptions" [value]="item.value">{{ item.label }}</option>
+        </select>
+      </div>
+
+      <div class="form-group form-group--full" *ngIf="isInvalid('province') || isInvalid('district')">
+        <div class="required-star">* Tỉnh/TP và Quận/Huyện là bắt buộc</div>
+      </div>
+
+      <div class="form-group form-group--full">
+        <label>Địa chỉ chi tiết *</label>
+        <input
+          class="form-input"
+          type="text"
+          [class.required-invalid]="isInvalid('address')"
+          [(ngModel)]="form.address"
+          (blur)="markTouched('address')"
+          placeholder="Số nhà, tên đường..."
+        />
+        <div *ngIf="isInvalid('address')" class="required-star">* Bắt buộc</div>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <div class="form-check">
+        <input type="checkbox" id="isDefault" [(ngModel)]="form.isDefault" />
+        <label for="isDefault">Đặt làm địa chỉ mặc định</label>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-secondary-lux" (click)="cancelForm()">Hủy bỏ</button>
+        <button type="button" class="btn-save-lux" (click)="saveAddress()" [disabled]="saving() || !canSubmitAddress()">
+          <span *ngIf="!saving()">Lưu địa chỉ</span>
+          <span *ngIf="saving()"><span class="spinner-sm"></span> Đang lưu...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading() && addresses().length === 0 && !showForm()" class="empty-state">
+    <div class="empty-icon">📍</div>
+    <h3>Chưa có địa chỉ nào</h3>
+    <p>Bạn chưa lưu địa chỉ giao hàng nào. Hãy thêm ngay để rút ngắn thời gian đặt hàng.</p>
+    <button type="button" class="btn-primary-lux" (click)="openAddForm()">+ Thêm địa chỉ đầu tiên</button>
+  </div>
+
+  <div class="address-list" *ngIf="!loading() && addresses().length > 0 && !showForm()">
+    <article class="address-card" *ngFor="let addr of addresses()" [class.is-default]="addr.isDefault">
+      <div class="address-card__body">
+        <div class="address-info">
+          <div class="name-row">
+            <span class="client-name">{{ addr.fullName }}</span>
+            <span *ngIf="addr.isDefault" class="default-badge">Mặc định</span>
+          </div>
+          <div class="phone-row">
+            <span class="icon">📞</span> {{ addr.phone }}
+          </div>
+          <div class="detail-row">
+            <span class="icon">📍</span>
+            {{ addr.address }}, {{ addr.district }}, {{ addr.province }}
+          </div>
+        </div>
+
+        <div class="address-actions">
+          <button type="button" class="action-btn edit" (click)="openEditForm(addr)">
+            Sửa
+          </button>
+          <div class="divider"></div>
+          <button type="button" class="action-btn delete" (click)="deleteAddress(addr)">
+            Xóa
+          </button>
+          <button type="button" class="btn-set-default" (click)="setDefault(addr)" *ngIf="!addr.isDefault">
+            Đặt mặc định
+          </button>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+
+<div class="address-modal-backdrop" *ngIf="modalVisible()" (click)="closeModal()">
+  <div class="address-modal" (click)="$event.stopPropagation()">
+    <div class="address-modal__icon" [class.is-error]="modalType() === 'error'">
+      <span *ngIf="modalType() === 'error'">✕</span>
+      <span *ngIf="modalType() === 'success'">✓</span>
+    </div>
+    <h3 class="address-modal__title">{{ modalTitle() }}</h3>
+    <p class="address-modal__message">{{ modalMessage() }}</p>
+    <button type="button" class="address-modal__btn" (click)="closeModal()">Đóng</button>
+  </div>
+</div>
