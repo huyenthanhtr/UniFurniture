@@ -45,6 +45,19 @@ function getExpectedDepositAmount(totalAmount, depositAmount) {
   return total >= 10000000 ? Math.round(total * 0.1) : 0;
 }
 
+function getPaymentTypeCode(type) {
+  const key = String(type || "").trim().toLowerCase();
+  if (key === "deposit") return "DEP";
+  if (key === "remaining") return "REM";
+  return "FUL";
+}
+
+function buildBankTransferTransactionId(orderCode, paymentType) {
+  const normalizedOrderCode = String(orderCode || "").trim();
+  if (!normalizedOrderCode) return null;
+  return `${normalizedOrderCode}-${getPaymentTypeCode(paymentType)}`;
+}
+
 function normalizeStatus(value) {
   const status = String(value || "").trim().toLowerCase();
   return ORDER_STATUSES.includes(status) ? status : null;
@@ -1267,12 +1280,14 @@ async function createCheckoutOrder(req, res, next) {
     const paymentStatus = method === 'bank_transfer' ? 'paid' : 'pending';
 
     await Payment.create({
-      payment_code: `PAY${Date.now().toString().slice(-8)}`,
       order_id: orderDoc._id,
       type: paymentType,
       method,
       amount: paymentAmount,
       status: paymentStatus,
+      transaction_id: method === "bank_transfer"
+        ? buildBankTransferTransactionId(orderDoc.order_code, paymentType)
+        : null,
       paid_at: paymentStatus === 'paid' ? new Date() : null,
     });
 

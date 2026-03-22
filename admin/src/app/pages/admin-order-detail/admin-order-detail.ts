@@ -45,8 +45,6 @@ export class AdminOrderDetail implements OnInit {
   editableStatus = 'pending';
   statusReasonDraft = '';
   warrantyError = '';
-  editablePaymentId = '';
-  editablePaymentStatus = '';
 
   showConfirm = false;
   showStatusReason = false;
@@ -54,18 +52,15 @@ export class AdminOrderDetail implements OnInit {
   showWarrantyForm = false;
   showWarrantyDetail = false;
   confirmMessage = '';
-  confirmMode: 'status' | 'warranty' | 'payment' | '' = '';
+  confirmMode: 'status' | 'warranty' | '' = '';
   confirmAction: null | (() => void) = null;
   selectedWarrantyRecord: any = null;
-  selectedPayment: any = null;
   warrantyRecordDraft = this.createEmptyWarrantyDraft();
 
   readonly statuses = [...ADMIN_ORDER_STATUSES];
 
   private readonly paidStatuses = new Set(['paid']);
   private readonly pendingStatuses = new Set(['pending']);
-  readonly paymentStatuses = ['pending', 'paid', 'failed', 'refunded'];
-
   ngOnInit(): void {
     this.route.paramMap.subscribe((pm) => {
       const orderKey = pm.get('id');
@@ -448,66 +443,6 @@ export class AdminOrderDetail implements OnInit {
     const total = this.toNumber(this.order?.total_amount);
     if (total <= 0) return false;
     return this.paidAmount >= total;
-  }
-
-  private syncEditablePayment(): void {
-    const firstPayment = this.payments[0] || null;
-    this.editablePaymentId = String(firstPayment?._id || '');
-    this.editablePaymentStatus = String(firstPayment?.status || 'pending');
-  }
-
-  get selectedEditablePayment(): any | null {
-    return this.payments.find((payment) => String(payment?._id || '') === this.editablePaymentId) || null;
-  }
-
-  onEditablePaymentChange(): void {
-    const payment = this.selectedEditablePayment;
-    this.editablePaymentStatus = String(payment?.status || 'pending');
-  }
-
-  askSavePaymentStatus(): void {
-    const payment = this.selectedEditablePayment;
-    const nextStatus = String(this.editablePaymentStatus || '').toLowerCase();
-    const currentStatus = String(payment?.status || '').toLowerCase();
-
-    if (!payment?._id || !nextStatus || nextStatus === currentStatus) return;
-
-    this.selectedPayment = payment;
-    this.confirmMessage = `Đổi trạng thái thanh toán sang ${this.getPaymentStatusText(nextStatus)}?`;
-    this.confirmMode = 'payment';
-    this.confirmAction = () => this.savePaymentStatus();
-    this.showConfirm = true;
-    this.cdr.detectChanges();
-  }
-
-  savePaymentStatus(): void {
-    const payment = this.selectedPayment;
-    const nextStatus = String(this.editablePaymentStatus || '').toLowerCase();
-    if (!payment?._id || !nextStatus) return;
-
-    this.showConfirm = false;
-    this.isLoading = true;
-
-    const payload: any = { status: nextStatus };
-    if (nextStatus === 'paid' || nextStatus === 'refunded') {
-      payload.paid_at = payment?.paid_at || new Date().toISOString();
-    } else {
-      payload.paid_at = null;
-    }
-
-    this.api.patchPayment(String(payment._id), payload).subscribe({
-      next: () => {
-        this.selectedPayment = null;
-        this.confirmMode = '';
-        this.load();
-      },
-      error: () => {
-        this.selectedPayment = null;
-        this.confirmMode = '';
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      },
-    });
   }
 
   orderStatusLabel(status: any): string {

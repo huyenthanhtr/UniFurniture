@@ -1,4 +1,4 @@
-﻿import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -747,13 +747,11 @@ export class AdminOrders implements OnInit, OnDestroy {
 
   getPaymentStateText(state: any): string {
     const key = String(state || '').toLowerCase();
-    
     if (key === 'settled') return 'Tất toán';
     if (key === 'deposit_paid') return 'Đã cọc';
     if (key === 'pending') return 'Đang chờ thanh toán';
     if (key === 'unpaid') return 'Chưa thanh toán';
     if (key === 'refunded') return 'Đã hoàn tiền';
-    
     return 'Chưa rõ';
   }
 
@@ -815,26 +813,26 @@ export class AdminOrders implements OnInit, OnDestroy {
   }
 
   getStatusReasonTitle(status: string): string {
-    return String(status || '').toLowerCase() === 'exchanged' 
-      ? 'Lý do đổi hàng' 
+    return String(status || '').toLowerCase() === 'exchanged'
+      ? 'Lý do đổi hàng'
       : 'Lý do hủy đơn';
   }
 
   getStatusReasonDialogTitle(status: string): string {
-    return String(status || '').toLowerCase() === 'exchanged' 
-      ? 'Xác nhận chuyển sang đổi hàng' 
+    return String(status || '').toLowerCase() === 'exchanged'
+      ? 'Xác nhận chuyển sang đổi hàng'
       : 'Xác nhận hủy đơn hàng';
   }
 
   getStatusReasonPlaceholder(status: string): string {
-    return String(status || '').toLowerCase() === 'exchanged' 
-      ? 'Nhập lý do đổi hàng...' 
+    return String(status || '').toLowerCase() === 'exchanged'
+      ? 'Nhập lý do đổi hàng...'
       : 'Nhập lý do hủy đơn...';
   }
 
   getStatusReasonSubmitText(status: string): string {
-    return String(status || '').toLowerCase() === 'exchanged' 
-      ? 'Xác nhận cập nhật' 
+    return String(status || '').toLowerCase() === 'exchanged'
+      ? 'Xác nhận cập nhật'
       : 'Xác nhận hủy đơn';
   }
 
