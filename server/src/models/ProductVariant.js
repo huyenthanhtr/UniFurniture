@@ -10,11 +10,13 @@ const ProductVariantSchema = new mongoose.Schema(
     price: { type: Number, required: true, default: 0 },
     compare_at_price: { type: Number, default: 0 },
     stock_quantity: { type: Number, default: 0 },
-    status: { type: String, enum: ["available", "unavailable"], default: "available" },
     variant_status: { type: String, enum: ["active", "inactive"], default: "active" },
     sold: { type: Number, default: 0 },
   },
   { timestamps: true, collection: "product_variants" }
 );
+
+ProductVariantSchema.index({ product_id: 1, variant_status: 1, createdAt: -1 });
+ProductVariantSchema.index({ product_id: 1, variant_status: 1, stock_quantity: -1, sold: 1 });
 
 module.exports = mongoose.model("ProductVariant", ProductVariantSchema, "product_variants");

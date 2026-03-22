@@ -49,7 +49,6 @@ router.post("/", async (req, res) => {
       price: Number(req.body.price || 0),
       compare_at_price: Number(req.body.compare_at_price || 0),
       stock_quantity: Number(req.body.stock_quantity || 0),
-      status: String(req.body.status || "available").toLowerCase() === "unavailable" ? "unavailable" : "available",
       variant_status: String(req.body.variant_status || "active").toLowerCase() === "inactive" ? "inactive" : "active",
       sold: Number(req.body.sold || 0),
     };
@@ -77,7 +76,6 @@ router.put("/:id", async (req, res) => {
       price: Number(req.body.price || 0),
       compare_at_price: Number(req.body.compare_at_price || 0),
       stock_quantity: Number(req.body.stock_quantity || 0),
-      status: String(req.body.status || "available").toLowerCase() === "unavailable" ? "unavailable" : "available",
       variant_status: String(req.body.variant_status || "active").toLowerCase() === "inactive" ? "inactive" : "active",
       sold: Number(req.body.sold || 0),
     };
@@ -113,9 +111,6 @@ router.patch("/:id", async (req, res) => {
     if (req.body.compare_at_price !== undefined) update.compare_at_price = Number(req.body.compare_at_price || 0);
     if (req.body.stock_quantity !== undefined) update.stock_quantity = Number(req.body.stock_quantity || 0);
     if (req.body.sold !== undefined) update.sold = Number(req.body.sold || 0);
-    if (req.body.status !== undefined) {
-      update.status = String(req.body.status).toLowerCase() === "unavailable" ? "unavailable" : "available";
-    }
     if (req.body.variant_status !== undefined) {
       update.variant_status = String(req.body.variant_status).toLowerCase() === "inactive" ? "inactive" : "active";
     }

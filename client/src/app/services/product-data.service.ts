@@ -81,7 +81,6 @@ export interface ProductVariantDocument {
   price?: number;
   compare_at_price?: number;
   stock_quantity?: number;
-  status?: string;
   variant_status?: string;
 }
 
@@ -530,7 +529,7 @@ export class ProductDataService {
               ),
             variants: this.http
               .get<ApiListResponse<ProductVariantDocument>>(`${this.apiBaseUrl}/product-variants`, {
-                params: { product_id: productId, limit: '200', sort: 'price' },
+                params: { product_id: productId, variant_status: 'active', limit: '200', sort: 'price' },
               })
               .pipe(
                 timeout(15000),
@@ -608,13 +607,10 @@ export class ProductDataService {
 
     if (normalizedVariantId) {
       return this.http
-        .get<ApiListResponse<ProductVariantDocument>>(`${this.apiBaseUrl}/product-variants`, {
-          params: { product_id: productId, limit: '200' },
-        })
+        .get<ProductVariantDocument>(`${this.apiBaseUrl}/product-variants/${normalizedVariantId}`)
         .pipe(
           timeout(10000),
-          map((response) => {
-            const variant = (response.items || []).find((item) => item._id === normalizedVariantId);
+          map((variant) => {
             const stock = this.toNullableNumber(variant?.stock_quantity);
             return stock === null ? undefined : stock;
           }),

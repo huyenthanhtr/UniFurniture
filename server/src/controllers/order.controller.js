@@ -1175,11 +1175,14 @@ async function createCheckoutOrder(req, res, next) {
         variantDoc = await ProductVariant.findById(variantId).lean();
       }
 
+      if (variantDoc && String(variantDoc.variant_status || '').toLowerCase() !== 'active') {
+        variantDoc = null;
+      }
+
       if (!variantDoc && productId && mongoose.Types.ObjectId.isValid(productId)) {
         variantDoc = await ProductVariant.findOne({
           product_id: productId,
           variant_status: 'active',
-          status: 'available',
         })
           .sort({ stock_quantity: -1, sold: 1, _id: 1 })
           .lean();

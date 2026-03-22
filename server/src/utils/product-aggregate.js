@@ -66,9 +66,7 @@ async function recalculateProductAggregates(productId) {
   ]);
 
   const sellableVariants = allVariants.filter(
-    (v) =>
-      String(v.variant_status || "").toLowerCase() === "active" &&
-      String(v.status || "").toLowerCase() === "available"
+    (v) => String(v.variant_status || "").toLowerCase() === "active"
   );
 
   const sold = allVariants.reduce((sum, v) => sum + Number(v.sold || 0), 0);

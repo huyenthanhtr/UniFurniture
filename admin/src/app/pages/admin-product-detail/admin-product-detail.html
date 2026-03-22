@@ -133,7 +133,7 @@
               <td data-label="Màu">{{ v.color || '-' }}</td>
               <td data-label="Giá">{{ v.price | number }}</td>
               <td data-label="Tồn">{{ v.stock_quantity ?? '-' }}</td>
-              <td data-label="Trạng thái">{{ activeStatusLabel(v.variant_status || v.status) }}</td>
+              <td data-label="Trạng thái">{{ activeStatusLabel(v.variant_status) }}</td>
               <td class="actions" data-label="Hành động">
                 <button class="btn btn-ghost" (click)="viewVariant(v); $event.stopPropagation()">Chi tiết</button>
               </td>
@@ -193,7 +193,7 @@
           </div>
           <div class="readonly-field">
             <label>Trạng thái bán</label>
-            <div>{{ activeStatusLabel(selectedVariant.variant_status || selectedVariant.status) }}</div>
+            <div>{{ activeStatusLabel(selectedVariant.variant_status) }}</div>
           </div>
           <div class="readonly-field">
             <label>Đã bán</label>
