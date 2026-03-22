@@ -61,7 +61,18 @@ export class AdminOrderDetail implements OnInit {
 
   private readonly paidStatuses = new Set(['paid']);
   private readonly pendingStatuses = new Set(['pending']);
+  readonlyView = false;
+  private returnSource = '';
+  private returnCustomerId = '';
+
   ngOnInit(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      this.returnSource = String(params.get('source') || '').trim().toLowerCase();
+      this.returnCustomerId = String(params.get('customerId') || '').trim();
+      this.readonlyView = String(params.get('readonly') || '').trim() === '1';
+      this.cdr.detectChanges();
+    });
+
     this.route.paramMap.subscribe((pm) => {
       const orderKey = pm.get('id');
       if (orderKey) {
@@ -190,8 +201,15 @@ export class AdminOrderDetail implements OnInit {
   }
 
   back() {
+    if (this.isReadonlyFromCustomer() && this.returnCustomerId) {
+      this.router.navigate(['/admin/customers', this.returnCustomerId], {
+        queryParams: this.getReturnQueryParams(),
+      });
+      return;
+    }
+
     this.router.navigate(['/admin/orders'], {
-      queryParams: this.route.snapshot.queryParams,
+      queryParams: this.getReturnQueryParams(),
     });
   }
 
@@ -216,6 +234,11 @@ export class AdminOrderDetail implements OnInit {
   }
 
   onEditableStatusChange(nextStatus: string): void {
+    if (this.readonlyView) {
+      this.resetEditableStatus();
+      return;
+    }
+
     this.editableStatus = String(nextStatus || '').toLowerCase();
 
     if (!this.order?._id || !this.editableStatus || this.editableStatus === this.order.status) {
@@ -237,6 +260,7 @@ export class AdminOrderDetail implements OnInit {
   }
 
   askSaveStatus() {
+    if (this.readonlyView) return;
     if (!this.order?._id || !this.editableStatus || this.editableStatus === this.order.status) return;
 
     const restrictionMessage = this.getOrderStatusRestrictionMessage(this.editableStatus);
@@ -261,6 +285,7 @@ export class AdminOrderDetail implements OnInit {
   }
 
   saveStatus() {
+    if (this.readonlyView) return;
     this.showConfirm = false;
     this.isLoading = true;
 
@@ -281,6 +306,7 @@ export class AdminOrderDetail implements OnInit {
   }
 
   saveStatusWithReason(): void {
+    if (this.readonlyView) return;
     const reason = this.statusReasonDraft.trim();
     if (!reason || !this.order?._id) return;
 
@@ -548,6 +574,7 @@ export class AdminOrderDetail implements OnInit {
   }
 
   openWarrantyForm(): void {
+    if (this.readonlyView) return;
     this.warrantyError = '';
     this.resetWarrantyDraft();
     const firstItemId = String(this.items[0]?._id || '').trim();
@@ -579,6 +606,7 @@ export class AdminOrderDetail implements OnInit {
   }
 
   askCreateWarrantyRecord(): void {
+    if (this.readonlyView) return;
     if (!this.canSubmitWarrantyRecord) return;
     this.showWarrantyForm = false;
     this.confirmMessage = 'Xác nhận thêm đợt bảo hành/bảo trì này?';
@@ -589,6 +617,7 @@ export class AdminOrderDetail implements OnInit {
   }
 
   saveWarrantyRecord(): void {
+    if (this.readonlyView) return;
     if (!this.order?._id || !this.canSubmitWarrantyRecord) return;
 
     this.showConfirm = false;
@@ -757,5 +786,17 @@ export class AdminOrderDetail implements OnInit {
 
   canViewProduct(item: any): boolean {
     return !!String(item?.product_id || '').trim();
+  }
+
+  isReadonlyFromCustomer(): boolean {
+    return this.readonlyView && this.returnSource === 'customer';
+  }
+
+  private getReturnQueryParams(): any {
+    const nextParams: any = { ...this.route.snapshot.queryParams };
+    delete nextParams.source;
+    delete nextParams.customerId;
+    delete nextParams.readonly;
+    return nextParams;
   }
 }

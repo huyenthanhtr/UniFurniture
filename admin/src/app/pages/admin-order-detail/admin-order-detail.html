@@ -10,7 +10,7 @@
       <button class="btn btn-ghost btn-icon-only" (click)="exportInvoice()" title="Xuất hoá đơn" aria-label="Xuất hoá đơn">
         <i class="bi bi-file-earmark-pdf"></i>
       </button>
-      <button class="btn btn-primary" (click)="askSaveStatus()" [disabled]="!order || editableStatus === order.status">
+      <button *ngIf="!readonlyView" class="btn btn-primary" (click)="askSaveStatus()" [disabled]="!order || editableStatus === order.status">
         Lưu
       </button>
     </div>
@@ -19,6 +19,9 @@
   <div class="state" *ngIf="isLoading">Đang tải...</div>
 
   <div class="body" *ngIf="!isLoading && order">
+    <div class="state readonly-note" *ngIf="readonlyView">
+      Chế độ chỉ xem từ chi tiết khách hàng. Không thể cập nhật trạng thái tại màn này.
+    </div>
     <section class="card">
       <h3>Thông tin đơn hàng</h3>
       <div class="grid">
@@ -49,7 +52,7 @@
 
         <div class="field">
           <label>Trạng thái đơn hàng</label>
-          <select [(ngModel)]="editableStatus" (ngModelChange)="onEditableStatusChange($event)" class="status-select status-highlight">
+          <select [(ngModel)]="editableStatus" (ngModelChange)="onEditableStatusChange($event)" class="status-select status-highlight" [disabled]="readonlyView">
             <option *ngFor="let s of statuses" [value]="s" [disabled]="!isOrderStatusSelectable(s)">{{ orderStatusLabel(s) }}</option>
           </select>
         </div>
@@ -250,6 +253,7 @@
         </div>
 
         <button
+          *ngIf="!readonlyView"
           class="btn btn-ghost btn-icon-only"
           (click)="openWarrantyForm()"
           title="Thêm đợt bảo hành"

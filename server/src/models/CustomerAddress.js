@@ -6,7 +6,7 @@ const CustomerAddressSchema = new mongoose.Schema(
     customer_address_name: {type: String, required: true},
     address_phone: {type: String, required: true},
     address_line: {type: String, required: true},
-    ward: {type: String, required: true},
+    ward: {type: String, default: ""},
     district: {type: String, required: true},
     province: {type: String, required: true},
     is_default: { type: Boolean, default: false },

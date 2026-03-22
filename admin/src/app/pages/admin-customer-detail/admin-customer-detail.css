@@ -84,22 +84,34 @@
   -webkit-overflow-scrolling: touch;
 }
 
-table {
+.compact-table-wrap {
+  display: block;
+  width: 100%;
+  background: #fff;
+}
+
+.detail-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 720px;
+  table-layout: fixed;
+  min-width: 0;
 }
 
 th,
 td {
-  padding: 12px;
+  padding: 12px 14px;
   border-bottom: 1px solid #f2ede8;
   text-align: left;
   vertical-align: middle;
+  font-size: 14px;
 }
 
 th {
   background: #faf7f3;
+  font-size: 13px;
+  font-weight: 700;
+  color: #5f5347;
+  white-space: nowrap;
 }
 
 tbody tr:last-child td {
@@ -110,11 +122,16 @@ tbody tr:last-child td {
   cursor: pointer;
 }
 
+.cell-title:not(.is-clickable) {
+  cursor: default;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 26px;
+  min-width: 112px;
   padding: 4px 12px;
   border-radius: 999px;
   border: 1px solid transparent;
@@ -136,6 +153,18 @@ tbody tr:last-child td {
   border-color: #f3c7c3;
 }
 
+.badge-warn {
+  color: #9a3412;
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.badge-muted {
+  color: #475467;
+  background: #f8fafc;
+  border-color: #d0d5dd;
+}
+
 .th-actions,
 .actions-cell {
   width: 110px;
@@ -152,6 +181,7 @@ tbody tr:last-child td {
 .btn-sm {
   padding: 8px 12px;
   border-radius: 10px;
+  font-size: 13px;
 }
 
 .btn-ghost {
@@ -160,10 +190,144 @@ tbody tr:last-child td {
   border-color: #ddd2c6;
 }
 
+.address-table th:nth-child(1),
+.address-table td:nth-child(1) {
+  width: 18%;
+}
+
+.address-table th:nth-child(2),
+.address-table td:nth-child(2) {
+  width: 16%;
+}
+
+.address-table th:nth-child(3),
+.address-table td:nth-child(3) {
+  width: 46%;
+}
+
+.address-table th:nth-child(4),
+.address-table td:nth-child(4) {
+  width: 12%;
+  text-align: center;
+}
+
+.address-table th:nth-child(5),
+.address-table td:nth-child(5) {
+  width: 8%;
+  text-align: center;
+}
+
+.order-history-table th:nth-child(1),
+.order-history-table td:nth-child(1) {
+  width: 22%;
+}
+
+.order-history-table th:nth-child(2),
+.order-history-table td:nth-child(2) {
+  width: 18%;
+}
+
+.order-history-table th:nth-child(3),
+.order-history-table td:nth-child(3) {
+  width: 18%;
+  text-align: right;
+}
+
+.order-history-table th:nth-child(4),
+.order-history-table td:nth-child(4) {
+  width: 21%;
+  text-align: center;
+}
+
+.order-history-table th:nth-child(5),
+.order-history-table td:nth-child(5) {
+  width: 21%;
+  text-align: center;
+}
+
+.address-table td:nth-child(1),
+.address-table td:nth-child(3),
+.order-history-table td:nth-child(1) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-status-badge.status-pending {
+  color: #92400e;
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.order-status-badge.status-confirmed {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.order-status-badge.status-processing {
+  color: #7c3aed;
+  background: #f5f3ff;
+  border-color: #c4b5fd;
+}
+
+.order-status-badge.status-shipping {
+  color: #0f766e;
+  background: #f0fdfa;
+  border-color: #99f6e4;
+}
+
+.order-status-badge.status-delivered {
+  color: #0f766e;
+  background: #ecfeff;
+  border-color: #67e8f9;
+}
+
+.order-status-badge.status-completed {
+  color: #166534;
+  background: #ecfdf3;
+  border-color: #86efac;
+}
+
+.order-status-badge.status-cancelled {
+  color: #b42318;
+  background: #fff1f0;
+  border-color: #f3c7c3;
+}
+
+.order-status-badge.status-exchanged {
+  color: #9a3412;
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.order-status-badge.status-default {
+  color: #475467;
+  background: #f8fafc;
+  border-color: #d0d5dd;
+}
+
 .state {
   text-align: center;
   opacity: 0.75;
   padding: 18px;
+}
+
+.is-clickable {
+  cursor: pointer;
+}
+
+.order-row {
+  cursor: pointer;
+}
+
+.order-row:hover {
+  background: #fcfaf7;
+}
+
+.inline-meta.strong {
+  font-weight: 600;
+  color: #4b3f35;
 }
 
 @media (max-width: 980px) {
@@ -190,7 +354,15 @@ tbody tr:last-child td {
     padding: 12px;
   }
 
-  .table-wrap {
+  .table-wrap,
+  .compact-table-wrap {
     overflow-x: auto;
+    display: block;
+    width: 100%;
+  }
+
+  .detail-table {
+    width: 100%;
+    min-width: 760px;
   }
 }

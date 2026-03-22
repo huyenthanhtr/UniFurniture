@@ -84,12 +84,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     qrUrl: 'assets/images/qrcode-default.png',
   };
   readonly timelineSteps: TimelineStep[] = [
-    { label: 'Ðã d?t hàng' },
-    { label: 'Ðã xác nh?n' },
-    { label: 'Ðang x? lý' },
-    { label: 'Ðang giao hàng' },
-    { label: 'Ðã giao hàng' },
-    { label: 'Hoàn t?t' },
+    { label: 'Đã đặt hàng' },
+    { label: 'Đã xác nhận' },
+    { label: 'Đang xử lý' },
+    { label: 'Đang giao hàng' },
+    { label: 'Đã giao hàng' },
+    { label: 'Hoàn tất' },
   ];
 
   constructor(
@@ -147,7 +147,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
 
   private showReviewThanks(productName: string): void {
-    this.reviewThanksMessage = `C?m on b?n dã g?i dánh giá cho s?n ph?m ${productName}.`;
+    this.reviewThanksMessage = `Cảm ơn bạn đã gửi đánh giá cho sản phẩm ${productName}.`;
     this.reviewThanksOpen = true;
   }
 
@@ -178,7 +178,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     const codes = this.trackingData.parseCodes(this.searchCode);
 
     if (!codes.length) {
-      this.errorMessage = 'Vui lòng nh?p ít nh?t 1 mã v?n don.';
+      this.errorMessage = 'Vui lòng nhập ít nhất 1 mã vận đơn.';
       this.infoMessage = '';
       this.orders = [];
       this.cdr.detectChanges();
@@ -202,7 +202,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       this.syncPendingQrByResults(foundOrders);
 
       if (!foundOrders.length) {
-        this.errorMessage = 'Không tìm th?y don hàng nào. Vui lòng ki?m tra l?i mã v?n don.';
+        this.errorMessage = 'Không tìm thấy đơn hàng nào. Vui lòng kiểm tra lại mã vận đơn.';
         this.cdr.detectChanges();
         this.pendingRestoreScrollY = null;
         this.scrollToAnchor('tracking-feedback');
@@ -210,14 +210,14 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       }
 
       if (missingCodes.length) {
-        this.infoMessage = `Không tìm th?y ${missingCodes.length} mã: ${missingCodes.join(', ')}`;
+        this.infoMessage = `Không tìm thấy ${missingCodes.length} mã: ${missingCodes.join(', ')}`;
       }
 
       this.persistTrackingState(window.scrollY);
       this.cdr.detectChanges();
       this.restoreOrScrollToResults();
     } catch {
-      this.errorMessage = 'Không th? tra c?u don hàng lúc này. Vui lòng th? l?i sau.';
+      this.errorMessage = 'Không thể tra cứu đơn hàng lúc này. Vui lòng thử lại sau.';
       this.orders = [];
       this.cdr.detectChanges();
       this.pendingRestoreScrollY = null;
@@ -257,9 +257,9 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   reviewModerationLabel(status: string): string {
     const key = String(status || '').toLowerCase();
-    if (key === 'approved') return 'Ðã duy?t';
-    if (key === 'rejected') return 'Ðã t? ch?i';
-    return 'Ðang ch? duy?t';
+    if (key === 'approved') return 'Đã duyệt';
+    if (key === 'rejected') return 'Đã từ chối';
+    return 'Đang chờ duyệt';
   }
 
   isCancelPending(order: TrackingOrder): boolean {
@@ -302,12 +302,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     const phone = String(order.cancelForm.phone || '').trim();
 
     if (!reason) {
-      this.errorMessage = `Vui lòng ch?n lý do cho don hàng${order.orderCode}.`;
+      this.errorMessage = `Vui lòng chọn lý do cho đơn hàng ${order.orderCode}.`;
       return;
     }
 
     if (!phone) {
-      this.errorMessage = `Vui lòng nh?p s? di?n tho?i xác nh?n cho don hàng ${order.orderCode}.`;
+      this.errorMessage = `Vui lòng nhập số điện thoại xác nhận cho đơn hàng ${order.orderCode}.`;
       return;
     }
 
@@ -328,7 +328,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       ) as BackendStatus | '';
 
       order.backendStatus = 'cancelled';
-      order.statusLabel = 'Ðã h?y';
+      order.statusLabel = 'Đã hủy';
       order.cancelForm.open = false;
       order.cancellationRequest = {
         reason,
@@ -344,7 +344,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
       this.scrollToAnchor('tracking-feedback');
     } catch (error: any) {
-      this.errorMessage = error?.error?.error || `Không th? g?i yêu c?u h?y cho don hàng ${order.orderCode}.`;
+      this.errorMessage = error?.error?.error || `Không thể gửi yêu cầu hủy cho đơn hàng ${order.orderCode}.`;
       this.cdr.detectChanges();
     } finally {
       order.cancelForm.submitting = false;
@@ -375,7 +375,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   viewProductFromHistory(product: TrackingProduct, target: 'top' | 'review' = 'top'): void {
     const productPath = String(product.productSlug || product.productId || '').trim();
     if (!productPath) {
-      this.infoMessage = 'Không tìm th?y liên k?t s?n ph?m d? m? l?i.';
+      this.infoMessage = 'Không tìm thấy liên kết sản phẩm để mở lại.';
       return;
     }
 
@@ -397,7 +397,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   buyAgain(product: TrackingProduct): void {
     const productId = String(product.productId || '').trim();
     if (!productId) {
-      this.infoMessage = 'Không th? mua l?i vì thi?u thông tin s?n ph?m.';
+      this.infoMessage = 'Không thể mua lại vì thiếu thông tin sản phẩm.';
       return;
     }
 
@@ -412,7 +412,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       1,
     );
     this.ui.openCart();
-    this.infoMessage = `Ðã thêm ${product.name} vào gi? hàng.`;
+    this.infoMessage = `Đã thêm ${product.name} vào giỏ hàng.`;
   }
 
   setRating(product: TrackingProduct, value: number): void {
@@ -422,7 +422,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   getRatingLabel(rating: number): string {
     switch (rating) {
       case 5:
-        return 'R?t hài lòng';
+        return 'Rất hài lòng';
       case 4:
         return 'Hài lòng';
       case 3:
@@ -430,7 +430,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       case 2:
         return 'Chua hài lòng';
       case 1:
-        return 'T?';
+        return 'Tệ';
       default:
         return '';
     }
@@ -599,7 +599,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       const reviewableProducts = order.products.filter((item) => !!item.orderDetailId);
       order.reviewSubmitted = reviewableProducts.length > 0 && reviewableProducts.every((item) => !!item.submittedReview);
       this.reviewInlineErrors[key] = '';
-      this.showToast(`Ðã g?i dánh giá cho s?n ph?m ${product.name}.`);
+      this.showToast(`Đã gửi đánh giá cho sản phẩm ${product.name}.`);
       this.showReviewThanks(product.name);
       this.cdr.detectChanges();
 
