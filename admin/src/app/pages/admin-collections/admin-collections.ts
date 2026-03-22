@@ -281,53 +281,78 @@ changePage(page: number): void {
       reader.readAsDataURL(file);
     }
   }
+private normalizeId(value: any): string {
+  if (!value) return '';
 
+  if (typeof value === 'string' || typeof value === 'number') {
+    return String(value).trim();
+  }
+
+  if (typeof value === 'object') {
+    if (value.$oid) return String(value.$oid).trim();
+    if (value._id) return this.normalizeId(value._id);
+    if (value.id) return this.normalizeId(value.id);
+  }
+
+  return '';
+}
+
+private getProductCollectionId(product: any): string {
+  return this.normalizeId(product?.collection_id);
+}
+
+private belongsToCollection(product: any, targetId: string): boolean {
+  const candidates: any[] = [];
+
+  if (product.collection_id) candidates.push(product.collection_id);
+  if (product.collection) candidates.push(product.collection);
+
+  if (Array.isArray(product.collection_ids)) {
+    candidates.push(...product.collection_ids);
+  }
+
+  if (Array.isArray(product.collections)) {
+    candidates.push(...product.collections);
+  }
+
+  return candidates.some(candidate => this.normalizeId(candidate) === targetId);
+}
   // --- XỬ LÝ MODAL SẢN PHẨM ---
 // --- XỬ LÝ MODAL SẢN PHẨM ---
-  viewProducts(collection: any) {
-    this.selectedCollectionForProducts = collection;
-    this.showProductsModal = true;
-    this.isLoadingProducts = true;
-    this.collectionProducts = [];
-    this.cdr.detectChanges();
+viewProducts(collection: any): void {
+  this.selectedCollectionForProducts = collection;
+  this.showProductsModal = true;
+  this.isLoadingProducts = true;
+  this.collectionProducts = [];
+  this.cdr.detectChanges();
 
-    // 1. Lấy ID chuẩn của bộ sưu tập đang click
-    const targetId = String(collection._id?.$oid || collection._id).trim();
+  const targetId = this.normalizeId(collection?._id);
 
-    // 2. Ép Backend trả về toàn bộ sản phẩm (Không truyền collection_id lên nữa)
-    const params: any = { limit: 1000 }; 
+  this.collectionService.getProductsByCollection(targetId).subscribe({
+    next: (res: any) => {
+      this.collectionProducts = Array.isArray(res?.items)
+        ? res.items
+        : Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res)
+        ? res
+        : [];
 
-    this.productService.getProducts(params).subscribe({
-      next: (res: any) => {
-        setTimeout(() => {
-          let allProducts = res.items || res.data || res || []; 
-          
-          // 3. FRONTEND TỰ RA TAY LỌC DỮ LIỆU
-          this.collectionProducts = allProducts.filter((p: any) => {
-            // Nếu sản phẩm không có trường collection_id thì loại luôn
-            if (!p.collection_id) return false;
+      console.log('Collection được chọn:', collection);
+      console.log('targetId:', targetId);
+      console.log('Products thuộc collection:', this.collectionProducts);
 
-            // Lấy ID bộ sưu tập của từng sản phẩm
-            const prodColId = String(p.collection_id?.$oid || p.collection_id).trim();
-
-            // So sánh: Chỉ giữ lại những sản phẩm có ID khớp với bộ sưu tập đang click
-            return prodColId === targetId;
-          });
-          
-          this.isLoadingProducts = false;
-          this.cdr.detectChanges();
-        }, 0);
-      },
-      error: (err: any) => {
-        setTimeout(() => {
-          console.error('Lỗi tải sản phẩm của bộ sưu tập:', err);
-          this.collectionProducts = [];
-          this.isLoadingProducts = false;
-          this.cdr.detectChanges();
-        }, 0);
-      }
-    });
-  }
+      this.isLoadingProducts = false;
+      this.cdr.detectChanges();
+    },
+    error: (err: any) => {
+      console.error('Lỗi tải sản phẩm theo bộ sưu tập:', err);
+      this.collectionProducts = [];
+      this.isLoadingProducts = false;
+      this.cdr.detectChanges();
+    }
+  });
+}
   closeProductsModal() {
     this.showProductsModal = false;
     this.selectedCollectionForProducts = null;
