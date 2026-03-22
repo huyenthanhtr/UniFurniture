@@ -5,7 +5,7 @@
       <div class="sub">{{ product?.slug || '' }}</div>
     </div>
 
-    <div class="actions">
+    <div class="header-actions">
       <button class="btn btn-ghost btn-back" (click)="back()">← Quay lại</button>
       <button class="btn btn-primary" [disabled]="!product" (click)="goEdit()">Sửa</button>
     </div>
@@ -134,7 +134,7 @@
               <td data-label="Giá">{{ v.price | number }}</td>
               <td data-label="Tồn">{{ v.stock_quantity ?? '-' }}</td>
               <td data-label="Trạng thái">{{ activeStatusLabel(v.variant_status) }}</td>
-              <td class="actions" data-label="Hành động">
+              <td class="actions-cell" data-label="Hành động">
                 <button class="btn btn-ghost" (click)="viewVariant(v); $event.stopPropagation()">Chi tiết</button>
               </td>
             </tr>
