@@ -1,0 +1,99 @@
+﻿<div class="tab-section">
+  <div class="camera-overlay" *ngIf="isCameraOpen()">
+    <div class="camera-box">
+      <div class="camera-header">
+        <h3>Chụp ảnh đại diện</h3>
+        <button class="close-btn" (click)="stopCamera()">&times;</button>
+      </div>
+      <video #videoElement autoplay playsinline></video>
+      <canvas #canvasElement style="display: none;"></canvas>
+      
+      <div class="camera-btns">
+        <button type="button" class="btn-cancel" (click)="stopCamera()">Hủy bỏ</button>
+        <button type="button" class="btn-capture" (click)="capturePhoto()">
+          📸 Chụp ảnh ngay
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="tab-title">Hồ sơ cá nhân</h2>
+
+  <div class="profile-layout">
+    <aside class="profile-avatar-card">
+      <div class="avatar-wrap">
+        <img *ngIf="avatarPreview" [src]="avatarPreview" alt="Avatar" class="avatar-img" />
+        <div *ngIf="!avatarPreview" class="avatar-placeholder">{{ initials }}</div>
+      </div>
+
+      <input #galleryInput type="file" accept="image/*" hidden (change)="onAvatarChange($event)" />
+
+      <div class="avatar-actions">
+        <button type="button" class="btn-upload btn-primary-lux"
+                (click)="galleryInput.click()" [disabled]="uploadingAvatar()">
+          <span *ngIf="!uploadingAvatar()">📤 Tải ảnh lên</span>
+          <span *ngIf="uploadingAvatar()"><span class="spinner-sm"></span> Đang tải...</span>
+        </button>
+
+        <button type="button" class="btn-upload btn-outline-lux"
+                (click)="openRealCamera()" [disabled]="uploadingAvatar()">
+          📷 Chụp ảnh trực tiếp
+        </button>
+      </div>
+    </aside>
+
+    <section class="profile-form-card">
+      <div class="form-group">
+        <label>Số tài khoản</label>
+        <div class="form-control-readonly">
+          <span style="color: #c8923a; font-weight: 700; margin-right: 5px;">VN</span> 
+          +84 {{ profile?.phone || '—' }}
+          <span class="readonly-badge">Đã xác thực</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="fullName">Tên tài khoản</label>
+        <input
+          id="fullName"
+          type="text"
+          class="form-input"
+          placeholder="Ví dụ: Nguyễn Văn A"
+          [(ngModel)]="form.fullName"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email liên hệ tài khoản <span style="font-weight: 400; color: #aaa;">(Không bắt buộc)</span></label>
+        <input
+          id="email"
+          type="email"
+          class="form-input"
+          placeholder="nguyenvana@gmail.com"
+          [(ngModel)]="form.email"
+        />
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-save" (click)="save()" [disabled]="saving()">
+          <span *ngIf="!saving()">Lưu thay đổi hồ sơ</span>
+          <span *ngIf="saving()" style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+            <span class="spinner-sm"></span> Đang xử lý...
+          </span>
+        </button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="profile-modal-backdrop" *ngIf="modalVisible()" (click)="closeModal()">
+  <div class="profile-modal" (click)="$event.stopPropagation()">
+    <div class="profile-modal__icon" [class.is-error]="modalType() === 'error'">
+      <span *ngIf="modalType() === 'error'">✕</span>
+      <span *ngIf="modalType() === 'success'">✓</span>
+    </div>
+    <h3 class="profile-modal__title">{{ modalTitle() }}</h3>
+    <p class="profile-modal__message">{{ modalMessage() }}</p>
+    <button type="button" class="profile-modal__btn" (click)="closeModal()">Đóng</button>
+  </div>
+</div>

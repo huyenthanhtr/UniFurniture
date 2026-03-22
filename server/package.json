@@ -9,7 +9,8 @@
     "dev": "node server.js",
     "rebuild:sold": "node src/scripts/rebuild-sold-counts.js",
     "reconcile:completed-orders": "node src/scripts/reconcile-completed-orders.js",
-    "rebuild:payment-ids": "node src/scripts/rebuild-payment-identifiers.js"
+    "rebuild:payment-ids": "node src/scripts/rebuild-payment-identifiers.js",
+    "migrate:customer-address-links": "node src/scripts/migrate-customer-address-links.js"
   },
   "dependencies": {
     "@vonage/server-sdk": "^3.26.4",

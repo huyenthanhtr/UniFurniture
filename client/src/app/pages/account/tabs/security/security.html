@@ -1,0 +1,96 @@
+﻿<div class="tab-section security-tab">
+  <h2 class="tab-title">Đổi mật khẩu</h2>
+
+  <div class="security-card">
+    <p class="security-note">Để bảo mật tài khoản, vui lòng không chia sẻ mật khẩu cho người khác.</p>
+
+    <div class="form-group">
+      <label>Mật khẩu hiện tại *</label>
+      <div class="password-input-wrap">
+        <input
+          class="form-input"
+          [class.required-invalid]="hasFieldError('oldPassword')"
+          [type]="showOldPassword() ? 'text' : 'password'"
+          [(ngModel)]="form.oldPassword"
+          (blur)="markTouched('oldPassword')"
+          placeholder="Nhập mật khẩu cũ"
+        />
+        <button
+          type="button"
+          class="toggle-password-btn"
+          [attr.aria-label]="showOldPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          (click)="togglePasswordVisibility('old')"
+        >
+          <i class="bi" [ngClass]="showOldPassword() ? 'bi-eye-slash' : 'bi-eye'"></i>
+        </button>
+      </div>
+      <div *ngIf="hasFieldError('oldPassword')" class="required-star">{{ fieldErrors().oldPassword }}</div>
+    </div>
+
+    <div class="form-group">
+      <label>Mật khẩu mới *</label>
+      <div class="password-input-wrap">
+        <input
+          class="form-input"
+          [class.required-invalid]="hasFieldError('newPassword')"
+          [type]="showNewPassword() ? 'text' : 'password'"
+          [(ngModel)]="form.newPassword"
+          (blur)="markTouched('newPassword')"
+          placeholder="Tối thiểu 6 ký tự"
+        />
+        <button
+          type="button"
+          class="toggle-password-btn"
+          [attr.aria-label]="showNewPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          (click)="togglePasswordVisibility('new')"
+        >
+          <i class="bi" [ngClass]="showNewPassword() ? 'bi-eye-slash' : 'bi-eye'"></i>
+        </button>
+      </div>
+      <div *ngIf="hasFieldError('newPassword')" class="required-star">{{ fieldErrors().newPassword }}</div>
+    </div>
+
+    <div class="form-group">
+      <label>Xác nhận mật khẩu mới *</label>
+      <div class="password-input-wrap">
+        <input
+          class="form-input"
+          [class.required-invalid]="hasFieldError('confirmPassword')"
+          [type]="showConfirmPassword() ? 'text' : 'password'"
+          [(ngModel)]="form.confirmPassword"
+          (blur)="markTouched('confirmPassword')"
+          placeholder="Nhập lại mật khẩu mới"
+        />
+        <button
+          type="button"
+          class="toggle-password-btn"
+          [attr.aria-label]="showConfirmPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          (click)="togglePasswordVisibility('confirm')"
+        >
+          <i class="bi" [ngClass]="showConfirmPassword() ? 'bi-eye-slash' : 'bi-eye'"></i>
+        </button>
+      </div>
+      <div *ngIf="hasFieldError('confirmPassword')" class="required-star">{{ fieldErrors().confirmPassword }}</div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="security-submit-btn" (click)="changePassword()" [disabled]="saving()">
+        <span *ngIf="!saving()">Đổi mật khẩu</span>
+        <span *ngIf="saving()" class="saving-inline"><span class="spinner-sm"></span> Đang xử lý...</span>
+      </button>
+      <div *ngIf="submitError()" class="submit-error">{{ submitError() }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="security-modal-backdrop" *ngIf="modalVisible()" (click)="closeModal()">
+  <div class="security-modal" (click)="$event.stopPropagation()">
+    <div class="security-modal__icon" [class.is-error]="modalType() === 'error'">
+      <span *ngIf="modalType() === 'error'">✕</span>
+      <span *ngIf="modalType() === 'success'">✓</span>
+    </div>
+    <h3 class="security-modal__title">{{ modalTitle() }}</h3>
+    <p class="security-modal__message">{{ modalMessage() }}</p>
+    <button type="button" class="security-modal__btn" (click)="closeModal()">Đóng</button>
+  </div>
+</div>

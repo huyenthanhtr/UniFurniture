@@ -1,6 +1,42 @@
-<div class="card shadow-sm mb-4">
+﻿<div class="card shadow-sm mb-4">
   <div class="card-body px-4 py-4">
     <h6 class="fw-bold mb-4">Thông tin giao hàng</h6>
+
+    <div *ngIf="isLoggedIn" class="saved-address-box mb-3">
+      <div class="saved-address-header">
+        <strong>Sổ địa chỉ đã lưu</strong>
+        <span *ngIf="loadingSavedAddresses" class="small text-muted">Đang tải...</span>
+      </div>
+
+      <div *ngIf="savedAddressError" class="required-star mb-2">{{ savedAddressError }}</div>
+
+      <div *ngIf="!loadingSavedAddresses && savedAddresses.length > 0" class="saved-address-actions">
+        <select
+          class="form-select"
+          [ngModel]="selectedSavedAddressId"
+          (ngModelChange)="onSavedAddressChange($event)"
+        >
+          <option value="">Chọn địa chỉ đã lưu</option>
+          <option *ngFor="let item of savedAddresses" [value]="item._id">
+            {{ item.fullName }} - {{ item.phone }} - {{ item.address }}, {{ item.district }}, {{ item.province }}
+            {{ item.isDefault ? '(Mặc định)' : '' }}
+          </option>
+        </select>
+      </div>
+
+      <div class="saved-address-tools" *ngIf="!loadingSavedAddresses">
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="useManualAddressEntry()">
+          Nhập địa chỉ mới
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-primary" (click)="openAddressBook()">
+          Quản lý sổ địa chỉ
+        </button>
+      </div>
+
+      <div *ngIf="!loadingSavedAddresses && savedAddresses.length === 0" class="small text-muted">
+        Bạn chưa có địa chỉ lưu sẵn. Hãy nhập mới bên dưới.
+      </div>
+    </div>
 
     <div class="mb-3">
       <input
@@ -53,11 +89,14 @@
       <select
         class="form-select"
         [class.required-invalid]="isInvalid('province')"
-        [value]="form.province"
-        (change)="onProvinceChange($any($event.target).value)"
+        [ngModel]="form.province"
+        (ngModelChange)="onProvinceChange($event)"
         (blur)="markTouched('province')"
       >
         <option value="">Chọn Tỉnh/TP</option>
+        <option *ngIf="form.province && !hasProvinceOption(form.province)" [value]="form.province">
+          {{ form.province }}
+        </option>
         <option *ngFor="let item of provinces" [value]="item.value">{{ item.label }}</option>
       </select>
 
@@ -65,11 +104,14 @@
         class="form-select"
         [class.required-invalid]="isInvalid('district')"
         [disabled]="!form.province || loadingDistricts"
-        [value]="form.district"
-        (change)="onDistrictChange($any($event.target).value)"
+        [ngModel]="form.district"
+        (ngModelChange)="onDistrictChange($event)"
         (blur)="markTouched('district')"
       >
         <option value="">{{ loadingDistricts ? 'Đang tải Quận/Huyện...' : 'Chọn Quận/Huyện' }}</option>
+        <option *ngIf="form.district && !hasDistrictOption(form.district)" [value]="form.district">
+          {{ form.district }}
+        </option>
         <option *ngFor="let item of districtOptions" [value]="item.value">{{ item.label }}</option>
       </select>
     </div>

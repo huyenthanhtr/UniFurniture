@@ -128,6 +128,19 @@ export class CheckoutComponent implements OnInit {
     return Math.round(this.total * 0.1);
   }
 
+  isLoggedIn(): boolean {
+    const token = String(localStorage.getItem('access_token') || '').trim();
+    const rawProfile = String(localStorage.getItem('user_profile') || '').trim();
+    if (token) return true;
+    if (!rawProfile) return false;
+    try {
+      const profile = JSON.parse(rawProfile);
+      return !!String(profile?._id || profile?.id || profile?.phone || '').trim();
+    } catch {
+      return false;
+    }
+  }
+
   ngOnInit(): void {
     this.loadBuyNowState();
     this.ensureDepositPaymentRule();

@@ -9,6 +9,7 @@ const CustomerAddressSchema = new mongoose.Schema(
     ward: {type: String, required: true},
     district: {type: String, required: true},
     province: {type: String, required: true},
+    is_default: { type: Boolean, default: false },
     status: {type: String, required: true, enum: ["active", "inactive"], default: "active"},
   },
   { timestamps: true, collection: "customer_address" }

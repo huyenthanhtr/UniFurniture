@@ -691,11 +691,88 @@ async function getOrders(req, res, next) {
     const customerIds = [...new Set(orders.map((x) => String(x.customer_id || "")).filter(Boolean))];
     const orderIds = orders.map((x) => String(x._id));
 
-    const [customers, profiles, payments] = await Promise.all([
+    const [customers, profiles, payments, orderDetails] = await Promise.all([
       customerIds.length ? Customer.find({ _id: { $in: customerIds } }).lean() : [],
       customerIds.length ? Profile.find({ customer_id: { $in: customerIds } }).lean() : [],
       orderIds.length ? Payment.find({ order_id: { $in: orderIds } }).sort({ createdAt: -1 }).lean() : [],
+      orderIds.length ? OrderDetail.find({ order_id: { $in: orderIds } }).sort({ createdAt: 1, _id: 1 }).lean() : [],
     ]);
+
+    const variantIds = [...new Set(
+      orderDetails
+        .map((item) => String(item.variant_id || ""))
+        .filter((value) => mongoose.Types.ObjectId.isValid(value))
+    )];
+
+    const variants = variantIds.length
+      ? await ProductVariant.find({ _id: { $in: variantIds } }).select({ _id: 1, product_id: 1 }).lean()
+      : [];
+    const variantMap = new Map(variants.map((variant) => [String(variant._id), variant]));
+
+    const productIds = [...new Set(
+      variants
+        .map((variant) => String(variant?.product_id || ""))
+        .filter((value) => mongoose.Types.ObjectId.isValid(value))
+    )];
+
+    const products = productIds.length
+      ? await Product.find({ _id: { $in: productIds } }).select({ _id: 1, thumbnail: 1, thumbnail_url: 1 }).lean()
+      : [];
+    const productThumbMap = new Map();
+    for (const product of products) {
+      const key = String(product?._id || "");
+      if (!key) continue;
+      const thumb = String(product?.thumbnail || "").trim() || String(product?.thumbnail_url || "").trim();
+      productThumbMap.set(key, thumb);
+    }
+
+    const imageDocs = variantIds.length
+      ? await ProductImage.find({ variant_id: { $in: variantIds } })
+        .sort({ is_primary: -1, sort_order: 1, _id: 1 })
+        .lean()
+      : [];
+
+    const imageMap = new Map();
+    for (const imageDoc of imageDocs) {
+      const key = String(imageDoc.variant_id || "");
+      if (!key || imageMap.has(key)) continue;
+      imageMap.set(key, String(imageDoc.image_url || "").trim());
+    }
+
+    const productImageDocs = productIds.length
+      ? await ProductImage.find({ product_id: { $in: productIds } })
+        .sort({ is_primary: -1, sort_order: 1, _id: 1 })
+        .lean()
+      : [];
+    const productImageMap = new Map();
+    for (const imageDoc of productImageDocs) {
+      const key = String(imageDoc.product_id || "");
+      if (!key || productImageMap.has(key)) continue;
+      productImageMap.set(key, String(imageDoc.image_url || "").trim());
+    }
+
+    const orderItemsMap = new Map();
+    for (const detail of orderDetails) {
+      const orderKey = String(detail.order_id || "");
+      if (!orderKey) continue;
+      if (!orderItemsMap.has(orderKey)) orderItemsMap.set(orderKey, []);
+      const variant = variantMap.get(String(detail.variant_id || ""));
+      const productId = String(variant?.product_id || "");
+      const imageUrl =
+        imageMap.get(String(detail.variant_id || "")) ||
+        productThumbMap.get(productId) ||
+        productImageMap.get(productId) ||
+        "";
+      orderItemsMap.get(orderKey).push({
+        _id: detail._id,
+        product_name: String(detail.product_name || "").trim(),
+        variant_name: String(detail.variant_name || "").trim(),
+        quantity: Math.max(1, Number(detail.quantity || 1)),
+        unit_price: Math.max(0, Number(detail.unit_price || 0)),
+        total: Math.max(0, Number(detail.total || 0)),
+        image_url: imageUrl,
+      });
+    }
 
     const customerMap = new Map(customers.map((x) => [String(x._id), x]));
     const profileMap = new Map(profiles.map((x) => [String(x.customer_id), x]));
@@ -718,6 +795,7 @@ async function getOrders(req, res, next) {
         status: normalizeStoredOrderStatus(orderDoc.status),
         display,
         payment_summary: buildPaymentSummary(orderDoc, orderPayments),
+        order_items_preview: orderItemsMap.get(String(orderDoc._id)) || [],
       };
     });
 
@@ -784,9 +862,26 @@ async function getOrderById(req, res, next) {
       )
     );
     const products = productIds.length
-      ? await Product.find({ _id: { $in: productIds } }).select({ _id: 1, slug: 1 }).lean()
+      ? await Product.find({ _id: { $in: productIds } }).select({ _id: 1, slug: 1, thumbnail: 1, thumbnail_url: 1 }).lean()
       : [];
     const productSlugMap = new Map(products.map((product) => [String(product._id), String(product.slug || "").trim()]));
+    const productThumbMap = new Map();
+    for (const product of products) {
+      const key = String(product?._id || "");
+      if (!key) continue;
+      const thumb = String(product?.thumbnail || "").trim() || String(product?.thumbnail_url || "").trim();
+      productThumbMap.set(key, thumb);
+    }
+
+    const productImageDocs = productIds.length
+      ? await ProductImage.find({ product_id: { $in: productIds } }).sort({ is_primary: -1, sort_order: 1, _id: 1 }).lean()
+      : [];
+    const productImageMap = new Map();
+    for (const image of productImageDocs) {
+      const key = String(image.product_id || "");
+      if (!key || productImageMap.has(key)) continue;
+      productImageMap.set(key, String(image.image_url || "").trim());
+    }
 
     let coupon = null;
     if (order.coupon_id && mongoose.Types.ObjectId.isValid(String(order.coupon_id))) {
@@ -797,11 +892,16 @@ async function getOrderById(req, res, next) {
 
     const normalizedItems = items.map((item) => {
       const variant = variantMap.get(String(item.variant_id || ""));
+      const productId = String(variant?.product_id || "");
       return {
         ...item,
         product_id: variant?.product_id || null,
         product_slug: productSlugMap.get(String(variant?.product_id || "")) || "",
-        image_url: imageMap.get(String(item.variant_id || "")) || "",
+        image_url:
+          imageMap.get(String(item.variant_id || "")) ||
+          productThumbMap.get(productId) ||
+          productImageMap.get(productId) ||
+          "",
         variant_name: item.variant_name || variant?.variant_name || variant?.name || "-",
         product_name: item.product_name || "-",
         sku: item.sku || variant?.sku || "-",

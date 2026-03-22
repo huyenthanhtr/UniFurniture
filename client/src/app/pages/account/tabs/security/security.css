@@ -1,0 +1,256 @@
+﻿@import '../profile/profile.css';
+
+.security-tab {
+  max-width: 660px;
+  margin: 0 auto;
+}
+
+.security-card {
+  border: 1px solid #e4d5bf;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fffdfa 0%, #fff 100%);
+  padding: 14px;
+  box-shadow: 0 8px 20px rgba(45, 32, 21, 0.09);
+}
+
+.security-note {
+  margin: 0 0 8px;
+  color: #7f6c58;
+  font-size: 12px;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #2d2015;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.form-input {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid #e2d2ba;
+  border-radius: 9px;
+  font-size: 13px;
+  color: #2d2015;
+  background: #fff;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #c8923a;
+  box-shadow: 0 0 0 3px rgba(200, 146, 58, 0.12);
+}
+
+.required-invalid {
+  border-color: #ef4b2b !important;
+  box-shadow: 0 0 0 0.12rem rgba(239, 75, 43, 0.15) !important;
+}
+
+.required-star {
+  color: #ef4b2b;
+  font-size: 11px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.password-input-wrap {
+  position: relative;
+}
+
+.password-input-wrap .form-input {
+  padding-right: 38px;
+}
+
+.toggle-password-btn {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border: 1px solid #e6d5bd;
+  background: #fff;
+  color: #5a4127;
+  border-radius: 7px;
+  padding: 0;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-password-btn:hover {
+  background: #fbeedc;
+}
+
+.form-actions {
+  margin-top: 12px;
+}
+
+.security-submit-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, #d7a44d 0%, #c8923a 100%);
+  color: #2f1d0d;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(200, 146, 58, 0.28);
+  transition: filter 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+}
+
+.security-submit-btn:hover:not(:disabled) {
+  filter: brightness(0.98);
+  transform: translateY(-1px);
+}
+
+.security-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+.security-submit-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 199, 94, 0.4), 0 8px 18px rgba(200, 146, 58, 0.28);
+}
+
+.security-submit-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  transform: none;
+  filter: grayscale(0.06);
+}
+
+.saving-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+}
+
+.submit-error {
+  margin-top: 6px;
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.security-submit-btn .spinner-sm {
+  border-color: rgba(47, 29, 13, 0.28);
+  border-top-color: #2f1d0d;
+}
+
+.security-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(23, 18, 12, 0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.security-modal {
+  width: min(360px, 100%);
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 16px 14px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+  text-align: center;
+}
+
+.security-modal__icon {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: #eaf8ee;
+  color: #1f9d52;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.security-modal__icon.is-error {
+  background: #f9e9e9;
+  color: #bd2020;
+}
+
+.security-modal__title {
+  margin: 0;
+  color: #2d2d2d;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.security-modal__message {
+  margin: 8px auto 12px;
+  max-width: 300px;
+  color: #6f6f6f;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.security-modal__btn {
+  width: 100%;
+  border: none;
+  border-radius: 9px;
+  padding: 9px 12px;
+  background: #a79b8b;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.security-modal__btn:hover {
+  filter: brightness(0.98);
+}
+
+@media (max-width: 760px) {
+  .security-card {
+    padding: 18px;
+  }
+
+  .security-submit-btn {
+    width: 100%;
+  }
+
+  .security-modal {
+    width: min(340px, 100%);
+    padding: 14px 14px 12px;
+    border-radius: 12px;
+  }
+
+  .security-modal__title {
+    font-size: 17px;
+  }
+
+  .security-modal__message {
+    font-size: 12px;
+    margin-top: 8px;
+  }
+
+  .security-modal__btn {
+    font-size: 13px;
+  }
+}

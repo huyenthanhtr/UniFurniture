@@ -1,0 +1,31 @@
+<div class="tab-section">
+  <h2 class="tab-title">Danh sách yêu thích</h2>
+
+  <div *ngIf="error()" class="alert-error mb-3">{{ error() }}</div>
+  <div *ngIf="loading()" class="text-muted">Đang tải...</div>
+
+  <div *ngIf="!loading() && items().length === 0" class="empty-state">
+    <div class="empty-icon">❤️</div>
+    <p>Bạn chưa có sản phẩm yêu thích nào.<br/>Bấm ❤️ trên sản phẩm để lưu vào đây.</p>
+  </div>
+
+  <div class="wishlist-grid" *ngIf="!loading() && items().length > 0">
+    <div class="wishlist-card" *ngFor="let item of items()">
+      <div class="wishlist-img-wrap" (click)="viewProduct(item)">
+        <img [src]="item.imageUrl || item.image_url || 'assets/images/placeholder.jpg'"
+             [alt]="item.name || item.product_name" class="wishlist-img" />
+      </div>
+      <div class="wishlist-info">
+        <div class="wishlist-name" (click)="viewProduct(item)">
+          {{ item.name || item.product_name }}
+        </div>
+        <div class="wishlist-price" *ngIf="item.price || item.sale_price">
+          {{ formatCurrency(item.price || item.sale_price) }}
+        </div>
+      </div>
+      <button type="button" class="wishlist-remove" (click)="removeFromWishlist(item)" title="Bỏ yêu thích">
+        ✕
+      </button>
+    </div>
+  </div>
+</div>

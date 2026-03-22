@@ -1,8 +1,8 @@
 <div class="order-head card">
   <div class="order-head__top">
     <div>
-      <h2>&#272;&#417;n h&#224;ng {{ order.orderCode }}</h2>
-      <p>Ng&#224;y &#273;&#7863;t: {{ order.orderedAt }}</p>
+      <h2>Đơn hàng {{ order.orderCode }}</h2>
+      <p>Ngày đặt: {{ order.orderedAt }}</p>
     </div>
     <div class="status-pills">
       <div class="status-pill status-pill--order">{{ order.statusLabel }}</div>
@@ -29,40 +29,42 @@
     class="btn-complete"
     (click)="completeOrderClick.emit()"
   >
-    Ho&#224;n t&#7845;t &#273;&#417;n h&#224;ng
+    Hoàn tất đơn hàng
   </button>
 </div>
 
 <div class="detail-grid">
   <div class="card">
-    <h3>Th&#244;ng tin giao h&#224;ng</h3>
-    <p><strong>T&#234;n:</strong> {{ order.customerName }}</p>
-    <p><strong>S&#272;T:</strong> {{ order.phone }}</p>
-    <p><strong>&#272;&#7883;a ch&#7881;:</strong> {{ order.shippingAddress }}</p>
+    <h3>Thông tin giao hàng</h3>
+    <p><strong>Tên:</strong> {{ order.customerName }}</p>
+    <p><strong>SĐT:</strong> {{ order.phone }}</p>
+    <p><strong>Địa chỉ:</strong> {{ order.shippingAddress }}</p>
   </div>
 
   <div class="card">
-    <h3>Thanh to&#225;n</h3>
-    <p><strong>Ph&#432;&#417;ng th&#7913;c:</strong> {{ order.paymentMethod }}</p>
-    <p><strong>T&#7841;m t&#237;nh:</strong> {{ formatCurrency(order.subtotal) }}</p>
+    <h3>Thanh toán</h3>
+    <p><strong>Phương thức:</strong> {{ order.paymentMethod }}</p>
+    <p><strong>Tạm tính:</strong> {{ formatCurrency(order.subtotal) }}</p>
     <p>
-      <strong>Khuy&#7871;n m&#227;i: </strong>
+      <strong>Khuyến mãi: </strong>
       <span *ngIf="order.discountPercent > 0">
-        {{ order.promotionCode || '\u004d\u00e3 gi\u1ea3m gi\u00e1' }} - {{ order.discountPercent }}% ({{ formatCurrency(order.discountAmount) }})
+        {{ order.promotionCode || 'Mã giảm giá' }} - {{ order.discountPercent }}% ({{ formatCurrency(order.discountAmount) }})
       </span>
-      <span *ngIf="order.discountPercent === 0">Kh&#244;ng c&#243;</span>
+      <span *ngIf="order.discountPercent === 0">Không có</span>
     </p>
-    <p><strong>Tr&#7841;ng th&#225;i thanh to&#225;n:</strong> {{ order.paymentStateLabel }}</p>
-    <p><strong>&#272;&#227; thanh to&#225;n:</strong> {{ formatCurrency(order.paidAmount) }}</p>
+    <p><strong>Trạng thái thanh toán:</strong> {{ order.paymentStateLabel }}</p>
+    <p><strong>Đã thanh toán:</strong> {{ formatCurrency(order.paidAmount) }}</p>
+    
     <p class="payment-remaining" *ngIf="order.paymentState === 'deposit_paid' && order.remainingAmount > 0">
-      <strong>C&#242;n ph&#7843;i thanh to&#225;n:</strong> {{ formatCurrency(order.remainingAmount) }}
+      <strong>Còn phải thanh toán:</strong> {{ formatCurrency(order.remainingAmount) }}
     </p>
-    <p class="total"><strong>T&#7893;ng ti&#7873;n (&#273;&#227; g&#7891;m ph&#237; giao):</strong> {{ formatCurrency(order.total) }}</p>
+    
+    <p class="total"><strong>Tổng tiền (đã gồm phí giao):</strong> {{ formatCurrency(order.total) }}</p>
   </div>
 </div>
 
 <div class="card product-card" *ngIf="showProductCard || canRequestCancel || order.cancelForm.open">
-  <h3>Danh s&#225;ch s&#7843;n ph&#7849;m</h3>
+  <h3>Danh sách sản phẩm</h3>
   <div class="product-row" *ngFor="let product of order.products">
     <img [src]="product.imageUrl" [alt]="product.name" />
     <div class="product-info">
@@ -76,15 +78,15 @@
   </div>
 
   <div class="order-action-inline" *ngIf="canRequestCancel || order.cancelForm.open">
-    <p class="order-action-note">Ch&#7881; &#225;p d&#7909;ng h&#7911;y &#273;&#417;n v&#7899;i tr&#7841;ng th&#225;i Ch&#7901; x&#225;c nh&#7853;n ho&#7863;c &#272;&#227; x&#225;c nh&#7853;n trong v&#242;ng 24 gi&#7901;.</p>
+    <p class="order-action-note">Chỉ áp dụng hủy đơn với trạng thái Chờ xác nhận hoặc Đã xác nhận trong vòng 24 giờ.</p>
     <div class="order-action-buttons">
-      <a class="history-btn history-btn--contact" [href]="shopZaloUrl" target="_blank" rel="noopener">Li&#234;n h&#7879; Shop</a>
+      <a class="history-btn history-btn--contact" [href]="shopZaloUrl" target="_blank" rel="noopener">Liên hệ Shop</a>
       <button
         type="button"
         class="history-btn history-btn--cancel"
         (click)="toggleCancelClick.emit()"
       >
-        {{ canRequestCancel ? '\u0059\u00eau c\u1ea7u h\u1ee7y \u0111\u01a1n' : 'Kh\u00f4ng th\u1ec3 h\u1ee7y \u0111\u01a1n' }}
+        {{ canRequestCancel ? 'Yêu cầu hủy đơn' : 'Không thể hủy đơn' }}
       </button>
     </div>
   </div>

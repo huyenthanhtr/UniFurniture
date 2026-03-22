@@ -9,7 +9,7 @@ import { AboutPageComponent } from './pages/about/about';
 import { CommunityPageComponent } from './pages/community/community';
 import { OrderTrackingComponent } from './pages/order-tracking/order-tracking';
 import { CheckoutSuccessComponent } from './pages/checkout-success/checkout-success';
-import { AccountOrdersComponent } from './pages/account-orders/account-orders';
+import { AccountComponent } from './pages/account/account';
 
 export const routes: Routes = [
   { path: 'ar', component: ArViewer },
@@ -23,9 +23,10 @@ export const routes: Routes = [
   { path: 'cong-dong', component: CommunityPageComponent },
   { path: 'cua-hang', redirectTo: 'cong-dong', pathMatch: 'full' },
   { path: 'tra-cuu-van-don', component: OrderTrackingComponent },
+  { path: 'tai-khoan', component: AccountComponent },
+  { path: 'tai-khoan/don-hang', component: AccountComponent, data: { tab: 'orders' } },
   { path: 'checkout', loadComponent: () => import('./pages/checkout/checkout').then(m => m.CheckoutComponent) },
   { path: 'checkout-payment', loadComponent: () => import('./pages/checkout/components/checkout-payment-qr/checkout-payment-qr').then(m => m.CheckoutPaymentQrComponent) },
-  { path: 'checkout-success', component: CheckoutSuccessComponent },
-  { path: 'tai-khoan/don-hang', component: AccountOrdersComponent }
+  { path: 'checkout-success', component: CheckoutSuccessComponent }
 ];
 
