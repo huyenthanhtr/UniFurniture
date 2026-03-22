@@ -294,13 +294,6 @@
           <input type="number" [(ngModel)]="variantDraft.stock_quantity" [ngModelOptions]="{ standalone: true }" />
         </div>
         <div class="field">
-          <label>Trạng thái kho</label>
-          <select [(ngModel)]="variantDraft.status" [ngModelOptions]="{ standalone: true }">
-            <option value="available">Còn hàng</option>
-            <option value="unavailable">Hết hàng</option>
-          </select>
-        </div>
-        <div class="field">
           <label>Trạng thái bán</label>
           <select [(ngModel)]="variantDraft.variant_status" [ngModelOptions]="{ standalone: true }">
             <option value="active">Đang bán</option>

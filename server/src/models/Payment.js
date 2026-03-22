@@ -21,7 +21,7 @@ async function buildPaymentIdentity(orderId, type) {
 
 const PaymentSchema = new mongoose.Schema(
   {
-    payment_code: String,
+    payment_code: { type: String, default: null },
     order_id: { type: mongoose.Schema.Types.ObjectId, ref: "Order", required: true },
     type: {
       type: String,
@@ -99,5 +99,4 @@ PaymentSchema.pre("findOneAndUpdate", async function preFindOneAndUpdate(next) {
     return next(error);
   }
 });
-
 module.exports = mongoose.model("Payment", PaymentSchema, "payment");

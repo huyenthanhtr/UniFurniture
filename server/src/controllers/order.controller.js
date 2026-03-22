@@ -45,6 +45,19 @@ function getExpectedDepositAmount(totalAmount, depositAmount) {
   return total >= 10000000 ? Math.round(total * 0.1) : 0;
 }
 
+function getPaymentTypeCode(type) {
+  const key = String(type || "").trim().toLowerCase();
+  if (key === "deposit") return "DEP";
+  if (key === "remaining") return "REM";
+  return "FULL";
+}
+
+function buildBankTransferTransactionId(orderCode, paymentType) {
+  const normalizedOrderCode = String(orderCode || "").trim();
+  if (!normalizedOrderCode) return null;
+  return `${normalizedOrderCode}-${getPaymentTypeCode(paymentType)}`;
+}
+
 function normalizeStatus(value) {
   const status = String(value || "").trim().toLowerCase();
   return ORDER_STATUSES.includes(status) ? status : null;
@@ -1180,11 +1193,14 @@ async function createCheckoutOrder(req, res, next) {
         variantDoc = await ProductVariant.findById(variantId).lean();
       }
 
+      if (variantDoc && String(variantDoc.variant_status || '').toLowerCase() !== 'active') {
+        variantDoc = null;
+      }
+
       if (!variantDoc && productId && mongoose.Types.ObjectId.isValid(productId)) {
         variantDoc = await ProductVariant.findOne({
           product_id: productId,
           variant_status: 'active',
-          status: 'available',
         })
           .sort({ stock_quantity: -1, sold: 1, _id: 1 })
           .lean();
@@ -1269,12 +1285,14 @@ async function createCheckoutOrder(req, res, next) {
     const paymentStatus = 'pending';
 
     await Payment.create({
-      payment_code: `PAY${Date.now().toString().slice(-8)}`,
       order_id: orderDoc._id,
       type: paymentType,
       method,
       amount: paymentAmount,
       status: paymentStatus,
+      transaction_id: method === "bank_transfer"
+        ? buildBankTransferTransactionId(orderDoc.order_code, paymentType)
+        : null,
       paid_at: paymentStatus === 'paid' ? new Date() : null,
     });
 
@@ -1338,7 +1356,6 @@ async function demoTransferTimeoutComplete(req, res, next) {
       let payment = allPayments.find((item) => String(item.type || '').toLowerCase() === type);
       if (!payment) {
         payment = await Payment.create({
-          payment_code: `PAY${Date.now().toString().slice(-8)}`,
           order_id: orderId,
           type,
           method: 'bank_transfer',

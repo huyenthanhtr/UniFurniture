@@ -6,7 +6,6 @@ import { firstValueFrom, forkJoin } from 'rxjs';
 import { AdminProductsService } from '../../services/admin-products';
 
 type VariantStatus = 'active' | 'inactive';
-type StockStatus = 'available' | 'unavailable';
 
 type DraftImage = {
   _id?: string;
@@ -29,7 +28,6 @@ type DraftVariant = {
   price: number;
   compare_at_price: number;
   stock_quantity: number;
-  status: StockStatus;
   variant_status: VariantStatus;
   sold: number;
 };
@@ -208,7 +206,6 @@ export class AdminProductForm implements OnInit, AfterViewInit {
       price: 0,
       compare_at_price: 0,
       stock_quantity: 0,
-      status: 'available',
       variant_status: 'active',
       sold: 0,
     };
@@ -224,7 +221,6 @@ export class AdminProductForm implements OnInit, AfterViewInit {
       price: Number(variant.price || 0),
       compare_at_price: Number(variant.compare_at_price || 0),
       stock_quantity: Number(variant.stock_quantity || 0),
-      status: String(variant.status || 'available').toLowerCase() === 'unavailable' ? 'unavailable' : 'available',
       variant_status: String(variant.variant_status || 'active').toLowerCase() === 'inactive' ? 'inactive' : 'active',
       sold: Number(variant.sold || 0),
     };
@@ -619,10 +615,6 @@ export class AdminProductForm implements OnInit, AfterViewInit {
     return String(status || '').toLowerCase() === 'inactive' ? 'Ngừng bán' : 'Đang bán';
   }
 
-  stockStatusLabel(status: string): string {
-    return String(status || '').toLowerCase() === 'unavailable' ? 'Hết hàng' : 'Còn hàng';
-  }
-
   back() {
     if (this.isEdit) {
       this.router.navigate(['/admin/products', this.savedProductSlug || this.routeProductKey || this.id], {
@@ -702,7 +694,6 @@ export class AdminProductForm implements OnInit, AfterViewInit {
         price: Number(variant.price || 0),
         compare_at_price: Number(variant.compare_at_price || 0),
         stock_quantity: Number(variant.stock_quantity || 0),
-        status: variant.status,
         variant_status: variant.variant_status,
         sold: Number(variant.sold || 0),
       };

@@ -276,8 +276,7 @@ export class AdminProductDetail implements OnInit {
 
   private isSellableVariant(variant: any): boolean {
     const variantStatus = String(variant?.variant_status || '').toLowerCase();
-    const stockStatus = String(variant?.status || '').toLowerCase();
-    return variantStatus === 'active' && stockStatus === 'available';
+    return variantStatus === 'active';
   }
 
   activeStatusLabel(status: string): string {

@@ -41,7 +41,6 @@ export class AdminVariantDetail implements OnInit {
     price: [0, [Validators.required]],
     compare_at_price: [0],
     stock_quantity: [0],
-    status: ['available'],
     variant_status: ['active'],
     sold: [0],
   });
@@ -103,7 +102,6 @@ export class AdminVariantDetail implements OnInit {
           price: v.price ?? 0,
           compare_at_price: v.compare_at_price ?? 0,
           stock_quantity: v.stock_quantity ?? 0,
-          status: v.status || 'available',
           variant_status: v.variant_status || 'active',
           sold: v.sold ?? 0,
         });
@@ -207,7 +205,6 @@ export class AdminVariantDetail implements OnInit {
       price: Number(raw.price || 0),
       compare_at_price: Number(raw.compare_at_price || 0),
       stock_quantity: Number(raw.stock_quantity || 0),
-      status: raw.status,
       variant_status: raw.variant_status,
       sold: Number(raw.sold || 0),
     };
