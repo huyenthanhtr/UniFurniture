@@ -2,7 +2,7 @@
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
 .page-header .sub { opacity:.72; font-size:13px; margin-top:4px; }
 .page-header h1 { font-size: calc(1.2rem + 1vw); margin: 0; }
-.actions { display:flex; gap:10px; align-items:center; flex-wrap:nowrap; }
+.header-actions { display:flex; gap:10px; align-items:center; flex-wrap:nowrap; }
 .btn-back { white-space:nowrap; flex:0 0 auto; }
 
 .body { display:grid; gap:14px; }
@@ -345,7 +345,7 @@ th { background:#faf7f3; }
     grid-template-columns: 1fr;
   }
 
-  .actions {
+  .header-actions {
     flex-wrap: wrap;
   }
 
@@ -452,11 +452,11 @@ th { background:#faf7f3; }
     color:#6f6255;
   }
 
-  .variants-table td.actions {
+  .variants-table td.actions-cell {
     justify-content:flex-start;
   }
 
-  .variants-table td.actions::before {
+  .variants-table td.actions-cell::before {
     align-self:center;
   }
 

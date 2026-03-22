@@ -45,58 +45,46 @@ const PaymentSchema = new mongoose.Schema(
   { timestamps: true, collection: "payment" }
 );
 
-PaymentSchema.pre("save", async function preSave(next) {
-  try {
-    const identity = await buildPaymentIdentity(this.order_id, this.type);
-    if (!identity) return next();
+PaymentSchema.pre("save", async function preSave() {
+  const identity = await buildPaymentIdentity(this.order_id, this.type);
+  if (!identity) return;
 
-    // Keep payment_code and transaction_id consistent by rule: ORDERCODE-DEP/FULL/REM
-    if (!this.payment_code || this.isModified("order_id") || this.isModified("type")) {
-      this.payment_code = identity;
-    }
+  // Keep payment_code and transaction_id consistent by rule: ORDERCODE-DEP/FULL/REM
+  if (!this.payment_code || this.isModified("order_id") || this.isModified("type")) {
+    this.payment_code = identity;
+  }
 
-    if (!this.transaction_id || this.isModified("order_id") || this.isModified("type")) {
-      this.transaction_id = identity;
-    }
-
-    return next();
-  } catch (error) {
-    return next(error);
+  if (!this.transaction_id || this.isModified("order_id") || this.isModified("type")) {
+    this.transaction_id = identity;
   }
 });
 
-PaymentSchema.pre("findOneAndUpdate", async function preFindOneAndUpdate(next) {
-  try {
-    const update = this.getUpdate() || {};
-    const set = update.$set || {};
+PaymentSchema.pre("findOneAndUpdate", async function preFindOneAndUpdate() {
+  const update = this.getUpdate() || {};
+  const set = update.$set || {};
 
-    const current = await this.model.findOne(this.getQuery()).select("order_id type payment_code transaction_id").lean();
-    if (!current) return next();
+  const current = await this.model.findOne(this.getQuery()).select("order_id type payment_code transaction_id").lean();
+  if (!current) return;
 
-    const nextOrderId = set.order_id || update.order_id || current.order_id;
-    const nextType = set.type || update.type || current.type;
-    const identity = await buildPaymentIdentity(nextOrderId, nextType);
-    if (!identity) return next();
+  const nextOrderId = set.order_id || update.order_id || current.order_id;
+  const nextType = set.type || update.type || current.type;
+  const identity = await buildPaymentIdentity(nextOrderId, nextType);
+  if (!identity) return;
 
-    const hasOrderTypeChange = !!(set.order_id || update.order_id || set.type || update.type);
-    const hasLegacyCode = /^PAY/i.test(String(current.payment_code || ""));
-    const shouldPatchCode = hasOrderTypeChange || !current.payment_code || hasLegacyCode;
-    const shouldPatchTxn = hasOrderTypeChange || !current.transaction_id;
+  const hasOrderTypeChange = !!(set.order_id || update.order_id || set.type || update.type);
+  const hasLegacyCode = /^PAY/i.test(String(current.payment_code || ""));
+  const shouldPatchCode = hasOrderTypeChange || !current.payment_code || hasLegacyCode;
+  const shouldPatchTxn = hasOrderTypeChange || !current.transaction_id;
 
-    if (shouldPatchCode || shouldPatchTxn) {
-      update.$set = update.$set || {};
-      if (shouldPatchCode && !update.$set.payment_code) {
-        update.$set.payment_code = identity;
-      }
-      if (shouldPatchTxn && !update.$set.transaction_id) {
-        update.$set.transaction_id = identity;
-      }
-      this.setUpdate(update);
+  if (shouldPatchCode || shouldPatchTxn) {
+    update.$set = update.$set || {};
+    if (shouldPatchCode && !update.$set.payment_code) {
+      update.$set.payment_code = identity;
     }
-
-    return next();
-  } catch (error) {
-    return next(error);
+    if (shouldPatchTxn && !update.$set.transaction_id) {
+      update.$set.transaction_id = identity;
+    }
+    this.setUpdate(update);
   }
 });
 module.exports = mongoose.model("Payment", PaymentSchema, "payment");
