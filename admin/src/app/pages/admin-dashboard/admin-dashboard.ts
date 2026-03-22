@@ -325,13 +325,12 @@ bindOverviewData(data: DashboardOverviewResponse): void {
     }
 
     const labels = [
-      'Chờ xử lý',
+      'Chờ xác nhận',
       'Đã xác nhận',
-      'Đang chuẩn bị',
+      'Đang xử lý',
       'Đang giao',
       'Đã giao',
-      'Hoàn thành',
-      'Chờ hủy',
+      'Hoàn tất',
       'Đã hủy',
       'Đã đổi hàng'
     ];
@@ -343,7 +342,6 @@ bindOverviewData(data: DashboardOverviewResponse): void {
       stats?.['shipping'] || 0,
       stats?.['delivered'] || 0,
       stats?.['completed'] || 0,
-      stats?.['cancel_pending'] || 0,
       stats?.['cancelled'] || 0,
       stats?.['exchanged'] || 0
     ];
@@ -448,13 +446,12 @@ bindOverviewData(data: DashboardOverviewResponse): void {
 
   getStatusName(status: string): string {
     const map: Record<string, string> = {
-      pending: 'Chờ xử lý',
+      pending: 'Chờ xác nhận',
       confirmed: 'Đã xác nhận',
-      processing: 'Đang chuẩn bị',
+      processing: 'Đang xử lý',
       shipping: 'Đang giao',
       delivered: 'Đã giao',
-      completed: 'Hoàn thành',
-      cancel_pending: 'Chờ hủy',
+      completed: 'Hoàn tất',
       cancelled: 'Đã hủy',
       exchanged: 'Đã đổi hàng'
     };

@@ -1,6 +1,35 @@
 const Collection = require('../models/Collection');
 const slugify = require('slugify');
+const Product = require('../models/Product') // đổi lại đúng tên file model của bạn
+const mongoose = require('mongoose');
 
+exports.getProductsByCollection = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const conditions = [];
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      conditions.push({ collection_id: new mongoose.Types.ObjectId(id) });
+    }
+
+    conditions.push({ collection_id: id });
+
+    const products = await Product.find({
+      $or: conditions
+    }).lean();
+
+    res.json({
+      items: products,
+      total: products.length
+    });
+  } catch (error) {
+    console.error('Lỗi lấy sản phẩm theo collection:', error);
+    res.status(500).json({
+      message: 'Không thể lấy sản phẩm thuộc bộ sưu tập'
+    });
+  }
+};
 // Lấy tất cả bộ sưu tập
 exports.getAllCollections = async (req, res) => {
     try {

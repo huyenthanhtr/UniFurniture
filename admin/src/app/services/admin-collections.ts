@@ -11,6 +11,9 @@ export class CollectionService {
 
   constructor(private http: HttpClient) {}
 
+getProductsByCollection(collectionId: string) {
+  return this.http.get<any>(`${this.apiUrl}/${collectionId}/products`);
+}
   getAllCollections(): Observable<any[]> {
     return this.http.get<any[]>(this.apiUrl);
   }
