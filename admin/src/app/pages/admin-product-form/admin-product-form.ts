@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angu
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { AdminProductsService } from '../../services/admin-products';
+import { normalizeRichMediaHtml } from '../../shared/rich-media.util';
 
 type VariantStatus = 'active' | 'inactive';
 
@@ -241,7 +242,7 @@ export class AdminProductForm implements OnInit, AfterViewInit {
   private syncEditorFromForm(): void {
     const editor = this.descriptionEditor?.nativeElement;
     if (!editor) return;
-    const html = this.form.controls.description.value ?? '';
+    const html = normalizeRichMediaHtml(this.form.controls.description.value ?? '');
     if (editor.innerHTML !== html) editor.innerHTML = html;
   }
 
@@ -788,44 +789,7 @@ export class AdminProductForm implements OnInit, AfterViewInit {
 
   private normalizeDescriptionHtml(html: string): string {
     if (!html) return '';
-
-    const container = document.createElement('div');
-    container.innerHTML = html;
-
-    container.querySelectorAll<HTMLElement>('*').forEach((element) => {
-      element.style.maxWidth = '100%';
-      element.style.boxSizing = 'border-box';
-    });
-
-    container.querySelectorAll('img').forEach((img) => {
-      const rawSrc = img.getAttribute('src') || '';
-      if (rawSrc.startsWith('//')) img.setAttribute('src', `https:${rawSrc}`);
-      if (rawSrc.startsWith('/uploads/')) img.setAttribute('src', `http://localhost:3000${rawSrc}`);
-      img.removeAttribute('width');
-      img.removeAttribute('height');
-      img.style.width = '70%';
-      img.style.maxWidth = '70%';
-      img.style.height = 'auto';
-      img.style.display = 'block';
-      img.style.margin = '14px auto';
-    });
-
-    container.querySelectorAll('video, iframe').forEach((media) => {
-      const element = media as HTMLElement;
-      const rawSrc = element.getAttribute('src') || '';
-      if (rawSrc.startsWith('//')) element.setAttribute('src', `https:${rawSrc}`);
-      if (rawSrc.startsWith('/uploads/')) element.setAttribute('src', `http://localhost:3000${rawSrc}`);
-      element.removeAttribute('width');
-      element.removeAttribute('height');
-      element.style.maxWidth = '70%';
-      element.style.width = '70%';
-      element.style.aspectRatio = '16 / 9';
-      element.style.height = 'auto';
-      element.style.display = 'block';
-      element.style.margin = '14px auto';
-    });
-
-    return container.innerHTML;
+    return normalizeRichMediaHtml(html);
   }
 
   closeConfirm() {

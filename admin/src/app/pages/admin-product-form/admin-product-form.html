@@ -63,7 +63,6 @@
         <label>Loại sản phẩm</label>
         <input type="text" [formControl]="form.controls.product_type" />
       </div>
-
     </div>
 
     <section class="form-section">
@@ -77,56 +76,60 @@
 
       <div class="image-list" *ngIf="images.length > 0; else noImageRows">
         <div class="gallery-grid">
-          <div class="main-image">
-            <img
-              [src]="selectedFormImage?.preview_url || normalizeImageUrl(selectedFormImage?.image_url) || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'"
-              alt=""
-            />
-          </div>
-
-          <div class="thumbs">
-            <button
-              class="thumb"
-              type="button"
-              *ngFor="let image of images"
-              [class.thumb-active]="image.localId === selectedFormImageId"
-              (click)="selectFormImage(image)"
-            >
+          <div class="gallery-main-stage">
+            <div class="main-image">
               <img
-                [src]="image.preview_url || normalizeImageUrl(image.image_url) || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'"
+                [src]="selectedFormImage?.preview_url || normalizeImageUrl(selectedFormImage?.image_url) || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'"
                 alt=""
               />
-            </button>
+            </div>
           </div>
-        </div>
 
-        <div class="image-item" *ngIf="selectedFormImage as image">
-          <div class="image-fields">
-            <div class="field full" *ngIf="!image._id">
-              <label>Chọn file ảnh</label>
-              <input type="file" accept="image/*" (change)="onProductImageSelected($event, image)" />
+          <div class="gallery-side-panel">
+            <div class="thumbs form-thumbs">
+              <button
+                class="thumb"
+                type="button"
+                *ngFor="let image of images"
+                [class.thumb-active]="image.localId === selectedFormImageId"
+                (click)="selectFormImage(image)"
+              >
+                <img
+                  [src]="image.preview_url || normalizeImageUrl(image.image_url) || 'https://cdn.hstatic.net/shared/noDefaultImage6_master.gif'"
+                  alt=""
+                />
+              </button>
             </div>
 
-            <div class="field">
-              <label>Biến thể</label>
-              <select [(ngModel)]="image.variant_id" [ngModelOptions]="{ standalone: true }" (ngModelChange)="form.markAsDirty()">
-                <option [ngValue]="null">Ảnh chung của sản phẩm</option>
-                <option *ngFor="let variant of variants" [ngValue]="variant._id || variant.localId">{{ variant.variant_name }}</option>
-              </select>
-            </div>
+            <div class="image-item" *ngIf="selectedFormImage as image">
+              <div class="image-fields">
+                <div class="field full" *ngIf="!image._id">
+                  <label>Chọn file ảnh</label>
+                  <input type="file" accept="image/*" (change)="onProductImageSelected($event, image)" />
+                </div>
 
-            <div class="field">
-              <label>Thứ tự hiển thị</label>
-              <input type="number" [(ngModel)]="image.sort_order" [ngModelOptions]="{ standalone: true }" (ngModelChange)="form.markAsDirty()" />
-            </div>
+                <div class="field">
+                  <label>Biến thể</label>
+                  <select [(ngModel)]="image.variant_id" [ngModelOptions]="{ standalone: true }" (ngModelChange)="form.markAsDirty()">
+                    <option [ngValue]="null">Ảnh chung của sản phẩm</option>
+                    <option *ngFor="let variant of variants" [ngValue]="variant._id || variant.localId">{{ variant.variant_name }}</option>
+                  </select>
+                </div>
 
-            <label class="check">
-              <input type="checkbox" [(ngModel)]="image.is_primary" [ngModelOptions]="{ standalone: true }" (ngModelChange)="onImagePrimaryChange(image)" />
-              <span>Đặt làm ảnh chính</span>
-            </label>
+                <div class="field">
+                  <label>Thứ tự hiển thị</label>
+                  <input type="number" [(ngModel)]="image.sort_order" [ngModelOptions]="{ standalone: true }" (ngModelChange)="form.markAsDirty()" />
+                </div>
 
-            <div class="image-row-actions">
-              <button class="btn btn-danger" type="button" (click)="removeImageRow(image)">Xóa ảnh</button>
+                <label class="check">
+                  <input type="checkbox" [(ngModel)]="image.is_primary" [ngModelOptions]="{ standalone: true }" (ngModelChange)="onImagePrimaryChange(image)" />
+                  <span>Đặt làm ảnh chính</span>
+                </label>
+
+                <div class="image-row-actions">
+                  <button class="btn btn-danger" type="button" (click)="removeImageRow(image)">Xóa ảnh</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
