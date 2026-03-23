@@ -1,4 +1,4 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -581,8 +581,8 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
         order_detail_id: product.orderDetailId,
         rating: product.review.rating,
         content: String(product.review.comment || '').trim(),
-        images: uploadedImages.images.map((url) => this.trackingData.toMediaUrl(url)),
-        videos: uploadedVideos.videos.map((url) => this.trackingData.toMediaUrl(url)),
+        images: uploadedImages.images,
+        videos: uploadedVideos.videos,
       };
 
       const rawProfile = String(localStorage.getItem('user_profile') || '').trim();
@@ -608,8 +608,8 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       product.submittedReview = {
         rating: payloadReview.rating,
         content: payloadReview.content,
-        images: payloadReview.images,
-        videos: payloadReview.videos,
+        images: payloadReview.images.map((url) => this.trackingData.toMediaUrl(url)),
+        videos: payloadReview.videos.map((url) => this.trackingData.toMediaUrl(url)),
         status: 'pending',
         createdAt: submittedAt,
       };
