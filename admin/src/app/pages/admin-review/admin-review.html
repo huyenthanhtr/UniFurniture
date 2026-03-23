@@ -1,4 +1,4 @@
-﻿<div class="page">
+<div class="page">
   <div class="page-header">
     <div>
       <h1>Quản lý Đánh giá</h1>
@@ -8,7 +8,8 @@
   <div class="filter-bar card mb-4">
     <div class="filter-wrapper d-flex flex-wrap align-items-center gap-3">
       <div class="filter-item">
-        <input type="text" class="search-input" placeholder="Tìm tên SP, mã đơn, tên khách, nội dung..." [(ngModel)]="searchTerm" (input)="applyFilters()">
+        <input type="text" class="search-input" placeholder="Tìm tên SP, mã đơn, tên khách, nội dung..."
+          [(ngModel)]="searchTerm" (input)="applyFilters()">
       </div>
       <div class="filter-item">
         <select class="toolbar-select" [(ngModel)]="statusFilter" (change)="applyFilters(true)">
@@ -24,7 +25,8 @@
           <option *ngFor="let s of [5,4,3,2,1]" [value]="s">{{ s }} Sao</option>
         </select>
       </div>
-      <button class="btn btn-ghost btn-icon d-flex align-items-center justify-content-center" (click)="resetFilters()" title="Đặt lại bộ lọc">
+      <button class="btn btn-ghost btn-icon d-flex align-items-center justify-content-center" (click)="resetFilters()"
+        title="Đặt lại bộ lọc">
         <i class="fas fa-undo"></i>
       </button>
     </div>
@@ -35,12 +37,18 @@
       <thead>
         <tr>
           <th style="width: 70px;" class="text-center">Ảnh</th>
-          <th style="width: 25%;" class="cell-title sortable" (click)="sortBy('product_name')">Sản phẩm <i class="fas" [ngClass]="getSortIcon('product_name')"></i></th>
-          <th style="width: 15%;" class="cell-title sortable" (click)="sortBy('order_code')">Đơn hàng <i class="fas" [ngClass]="getSortIcon('order_code')"></i></th>
-          <th style="width: 15%;" class="cell-title sortable" (click)="sortBy('customer_name')">Khách hàng <i class="fas" [ngClass]="getSortIcon('customer_name')"></i></th>
-          <th style="width: 10%;" class="cell-title sortable text-center" (click)="sortBy('rating')">Đánh giá <i class="fas" [ngClass]="getSortIcon('rating')"></i></th>
-          <th style="width: 20%;" class="cell-title sortable" (click)="sortBy('content')">Nội dung <i class="fas" [ngClass]="getSortIcon('content')"></i></th>
-          <th style="width: 15%;" class="cell-title sortable text-center" (click)="sortBy('status')">Trạng thái <i class="fas" [ngClass]="getSortIcon('status')"></i></th>
+          <th style="width: 25%;" class="cell-title sortable" (click)="sortBy('product_name')">Sản phẩm <i class="fas"
+              [ngClass]="getSortIcon('product_name')"></i></th>
+          <th style="width: 15%;" class="cell-title sortable" (click)="sortBy('order_code')">Đơn hàng <i class="fas"
+              [ngClass]="getSortIcon('order_code')"></i></th>
+          <th style="width: 15%;" class="cell-title sortable" (click)="sortBy('customer_name')">Khách hàng <i
+              class="fas" [ngClass]="getSortIcon('customer_name')"></i></th>
+          <th style="width: 10%;" class="cell-title sortable text-center" (click)="sortBy('rating')">Đánh giá <i
+              class="fas" [ngClass]="getSortIcon('rating')"></i></th>
+          <th style="width: 20%;" class="cell-title sortable" (click)="sortBy('content')">Nội dung <i class="fas"
+              [ngClass]="getSortIcon('content')"></i></th>
+          <th style="width: 15%;" class="cell-title sortable text-center" (click)="sortBy('status')">Trạng thái <i
+              class="fas" [ngClass]="getSortIcon('status')"></i></th>
           <th style="width: 100px;" class="th-actions text-center">Hành động</th>
         </tr>
       </thead>
@@ -50,25 +58,27 @@
         </tr>
         <tr *ngFor="let item of paginatedReviews">
           <td class="text-center">
-            <img 
-              [src]="item.productImageUrl " 
-              alt="Ảnh SP" 
-              style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd2c6;"
-            >
+            <img [src]="item.productImageUrl " alt="Ảnh SP"
+              style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd2c6;">
           </td>
           <td>
-            <div style="font-weight: 600; color: #444; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" [title]="item.order_detail_id?.product_name">
+            <div
+              style="font-weight: 600; color: #444; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+              [title]="item.order_detail_id?.product_name">
               {{ item.order_detail_id?.product_name || 'N/A' }}
             </div>
           </td>
           <td>
-            <span style="background: #f2ede8; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: monospace;">
+            <span
+              style="background: #f2ede8; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: monospace;">
               {{ item.order_detail_id?.order_id?.order_code || 'N/A' }}
             </span>
           </td>
           <td>
-            <div style="font-size: 11px; color: #888; margin-bottom: 2px;">{{ item.customer_id?.customer_code || 'Khách vãng lai' }}</div>
-            <div style="font-weight: 600;">{{ item.order_detail_id?.order_id?.shipping_name || item.customer_id?.full_name || 'Khách hàng' }}</div>
+            <div style="font-size: 11px; color: #888; margin-bottom: 2px;">{{ item.customer_id?.customer_code || 'Khách
+              vãng lai' }}</div>
+            <div style="font-weight: 600;">{{ item.order_detail_id?.order_id?.shipping_name ||
+              item.customer_id?.full_name || 'Khách hàng' }}</div>
             <small style="color: #666;">
               <i class="fas fa-phone-alt" style="font-size: 10px; margin-right: 4px;"></i>
               {{ item.customer_id?.phone || 'Chưa cập nhật' }}
@@ -81,7 +91,8 @@
             <div class="text-truncate" style="max-width: 150px;" [title]="item.content">{{ item.content }}</div>
           </td>
           <td class="text-center">
-            <select [(ngModel)]="item.status" (change)="updateStatus(item)" [className]="'status-dropdown ' + item.status">
+            <select [(ngModel)]="item.status" (change)="updateStatus(item)"
+              [className]="'status-dropdown ' + item.status">
               <option value="pending">Chờ duyệt</option>
               <option value="approved">Đã duyệt</option>
               <option value="rejected">Đã ẩn</option>
@@ -92,7 +103,8 @@
               <button class="btn btn-ghost btn-sm btn-icon-only" (click)="goToOrderDetail(item)" title="Xem đơn hàng">
                 <i class="fas fa-file-invoice text-primary"></i>
               </button>
-              <button class="btn btn-ghost btn-sm btn-icon-only" (click)="openReviewDetail(item)" title="Chi tiết đánh giá">
+              <button class="btn btn-ghost btn-sm btn-icon-only" (click)="openReviewDetail(item)"
+                title="Chi tiết đánh giá">
                 <i class="fas fa-eye text-success"></i>
               </button>
             </div>
@@ -102,16 +114,17 @@
     </table>
   </div>
 
-<div class="pagination" *ngIf="totalPages > 1">
+  <div class="pagination" *ngIf="totalPages > 1">
     <button class="pg pg-arrow" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">&#8249;</button>
-    
+
     <ng-container *ngFor="let p of visiblePages">
       <button class="pg" [class.active]="p === currentPage" (click)="changePage(p)">
         {{ p }}
       </button>
     </ng-container>
 
-    <button class="pg pg-arrow" (click)="changePage(currentPage + 1)" [disabled]="currentPage >= totalPages">&#8250;</button>
+    <button class="pg pg-arrow" (click)="changePage(currentPage + 1)"
+      [disabled]="currentPage >= totalPages">&#8250;</button>
   </div>
 
   <div class="modal-overlay" *ngIf="showReviewModal">
@@ -125,10 +138,12 @@
         <div class="modal-form-grid">
           <div class="form-group full-width review-detail-box">
             <div class="review-detail-head">
-              <strong>Khách hàng: {{ selectedReview?.order_detail_id?.order_id?.shipping_name || selectedReview?.customer_id?.full_name || 'Khách hàng' }}</strong>
+              <strong>Khách hàng: {{ selectedReview?.order_detail_id?.order_id?.shipping_name ||
+                selectedReview?.customer_id?.full_name || 'Khách hàng' }}</strong>
               <span class="badge-rating">{{ selectedReview?.rating }} ⭐</span>
             </div>
-            <div class="review-detail-sub">Mã ĐH: {{ selectedReview?.order_detail_id?.order_id?.order_code }} | Sản phẩm: {{ selectedReview?.order_detail_id?.product_name }}</div>
+            <div class="review-detail-sub">Mã ĐH: {{ selectedReview?.order_detail_id?.order_id?.order_code }} | Sản
+              phẩm: {{ selectedReview?.order_detail_id?.product_name }}</div>
             <p class="review-quote">"{{ selectedReview?.content }}"</p>
 
             <div class="media-section" *ngIf="selectedMedia.length > 0">
@@ -136,19 +151,16 @@
                 <strong>Ảnh/Video đính kèm</strong>
                 <div class="media-nav">
                   <span class="media-page-indicator">Trang {{ currentMediaPage }}/{{ totalMediaPages }} (←/→)</span>
-                  <button class="media-nav-btn media-nav-btn--prev" type="button" (click)="slideMedia(-1)" [disabled]="!canSlideMediaPrev">&#8592; Trước</button>
-                  <button class="media-nav-btn media-nav-btn--next" type="button" (click)="slideMedia(1)" [disabled]="!canSlideMediaNext">Sau &#8594;</button>
+                  <button class="media-nav-btn media-nav-btn--prev" type="button" (click)="slideMedia(-1)"
+                    [disabled]="!canSlideMediaPrev">&#8592; Trước</button>
+                  <button class="media-nav-btn media-nav-btn--next" type="button" (click)="slideMedia(1)"
+                    [disabled]="!canSlideMediaNext">Sau &#8594;</button>
                 </div>
               </div>
 
               <div class="media-tiles">
-                <button
-                  type="button"
-                  class="media-tile"
-                  *ngFor="let media of mediaWindow; let i = index"
-                  [class.active]="isMediaActive(i)"
-                  (click)="openOverflowFromFirstPage(i)"
-                >
+                <button type="button" class="media-tile" *ngFor="let media of mediaWindow; let i = index"
+                  [class.active]="isMediaActive(i)" (click)="openOverflowFromFirstPage(i)">
                   <img *ngIf="media.type === 'image'" [src]="media.url" alt="review image">
                   <video *ngIf="media.type === 'video'" [src]="media.url" muted preload="metadata"></video>
 
@@ -162,9 +174,11 @@
 
               <div class="media-preview" *ngIf="activeMedia as active">
                 <div class="media-preview__toolbar">
-                  <button class="media-nav-btn media-nav-btn--prev" type="button" (click)="previewPrev()" [disabled]="activeMediaAbsoluteIndex === 0">&#8592; Trước</button>
+                  <button class="media-nav-btn media-nav-btn--prev" type="button" (click)="previewPrev()"
+                    [disabled]="activeMediaAbsoluteIndex === 0">&#8592; Trước</button>
                   <span>{{ activeMediaAbsoluteIndex + 1 }} / {{ selectedMedia.length }}</span>
-                  <button class="media-nav-btn media-nav-btn--next" type="button" (click)="previewNext()" [disabled]="activeMediaAbsoluteIndex === selectedMedia.length - 1">Sau &#8594;</button>
+                  <button class="media-nav-btn media-nav-btn--next" type="button" (click)="previewNext()"
+                    [disabled]="activeMediaAbsoluteIndex === selectedMedia.length - 1">Sau &#8594;</button>
                 </div>
 
                 <img *ngIf="active.type === 'image'" [src]="active.url" alt="review preview">
@@ -175,7 +189,8 @@
 
           <div class="form-group full-width mt-3">
             <label class="form-label">Phản hồi từ Cửa hàng:</label>
-            <textarea class="search-input" rows="4" style="height: auto; padding: 10px;" [(ngModel)]="replyContent" placeholder="Nhập lời cảm ơn hoặc giải đáp đến khách hàng..."></textarea>
+            <textarea class="search-input" rows="4" style="height: auto; padding: 10px;" [(ngModel)]="replyContent"
+              placeholder="Nhập lời cảm ơn hoặc giải đáp đến khách hàng..."></textarea>
           </div>
         </div>
       </div>

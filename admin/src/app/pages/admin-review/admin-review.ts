@@ -1,4 +1,4 @@
-﻿import { ChangeDetectorRef, Component, HostListener, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -51,7 +51,7 @@ export class AdminReview implements OnInit {
     private readonly reviewService: AdminReviews,
     private readonly cdr: ChangeDetectorRef,
     private readonly router: Router,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // Đọc trang hiện tại từ sessionStorage nếu có, giúp giữ state khi quay lại
@@ -62,28 +62,28 @@ export class AdminReview implements OnInit {
     this.loadReviews();
   }
 
-loadReviews(): void {
+  loadReviews(): void {
     this.reviewService.getReviews().subscribe((data) => {
       this.reviews = data;
       this.applyFilters(false); // Không reset page khi vừa load dữ liệu
     });
   }
 
-applyFilters(resetPage: boolean = false): void {
+  applyFilters(resetPage: boolean = false): void {
     let filtered = this.reviews.filter((r) => {
       const customerName = r.order_detail_id?.order_id?.shipping_name || r.customer_id?.full_name || '';
       const content = String(r.content || '').toLowerCase();
       // Thêm tên sản phẩm và mã đơn hàng vào logic tìm kiếm
       const productName = r.order_detail_id?.product_name || '';
       const orderCode = r.order_detail_id?.order_id?.order_code || '';
-      
+
       const keyword = this.searchTerm.toLowerCase();
-      const matchSearch = 
-        content.includes(keyword) || 
+      const matchSearch =
+        content.includes(keyword) ||
         customerName.toLowerCase().includes(keyword) ||
         productName.toLowerCase().includes(keyword) ||
         orderCode.toLowerCase().includes(keyword);
-        
+
       const matchStatus = this.statusFilter === 'all' || r.status === this.statusFilter;
       const matchRating = this.ratingFilter === 'all' || String(r.rating) === this.ratingFilter;
       return matchSearch && matchStatus && matchRating;
@@ -129,8 +129,8 @@ applyFilters(resetPage: boolean = false): void {
       });
     }
 
-this.filteredReviews = filtered;
-    
+    this.filteredReviews = filtered;
+
     // Xử lý việc nhớ trang hiện tại
     if (resetPage) {
       this.currentPage = 1;
@@ -169,14 +169,14 @@ this.filteredReviews = filtered;
     this.sortDirection = 'asc';
     this.applyFilters(true);
   }
-get totalPages(): number {
+  get totalPages(): number {
     return Math.ceil(this.filteredReviews.length / this.itemsPerPage);
   }
   get paginatedReviews(): Review[] {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     return this.filteredReviews.slice(startIndex, startIndex + this.itemsPerPage);
   }
-// Hiển thị tối đa 5 nút phân trang để UI không bị quá dài nếu có quá nhiều trang
+  // Hiển thị tối đa 5 nút phân trang để UI không bị quá dài nếu có quá nhiều trang
   get visiblePages(): number[] {
     const total = this.totalPages;
     const current = this.currentPage;
@@ -195,7 +195,7 @@ get totalPages(): number {
     }
     return pages;
   }
-changePage(page: number): void {
+  changePage(page: number): void {
     this.currentPage = page;
     sessionStorage.setItem('adminReviewPage', page.toString()); // Lưu trạng thái
   }

@@ -24,7 +24,6 @@ const reviewSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },
-  // THÊM TRƯỜNG LƯU ẢNH KHÁCH HÀNG UPLOAD
   images: [{ 
     type: String 
   }],
