@@ -92,6 +92,7 @@ export class ProductComponent implements OnInit {
   @ViewChild('filterSectionRef') private filterSectionRef?: ElementRef<HTMLElement>;
   @ViewChild('categorySectionRef') private categorySectionRef?: ElementRef<HTMLElement>;
 
+  readonly allProducts = signal<ProductListItem[]>([]);
   readonly products = signal<ProductListItem[]>([]);
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
@@ -323,7 +324,7 @@ export class ProductComponent implements OnInit {
     return Array.from(result);
   });
 
-  readonly visibleProducts = computed(() => this.applyLocalFilters(this.products()));
+  readonly visibleProducts = computed(() => this.products());
 
   ngOnInit(): void {
     this.destroyRef.onDestroy(() => {
@@ -423,6 +424,10 @@ export class ProductComponent implements OnInit {
   }
 
   onFilterChange(filters: ProductFilterState): void {
+    const previousCollectionIds = this.selectedCollectionIds();
+    const previousCategoryIds = this.selectedCategoryIds();
+    const previousGroupSlug = this.selectedGroupSlug();
+
     this.scrollToCategorySection();
     this.selectedPriceRanges.set(filters.priceRanges || (filters.priceRange ? [filters.priceRange] : []));
     this.selectedColors.set(filters.colors || (filters.color ? [filters.color] : []));
@@ -439,6 +444,12 @@ export class ProductComponent implements OnInit {
     this.selectedCategoryId.set(nextCategoryIds.length === 1 ? nextCategoryIds[0] : '');
     this.selectedGroupSlug.set(hasCollections ? 'bo-suu-tap' : '');
     this.selectedGroupLabel.set(hasCollections ? 'Bộ sưu tập' : '');
+    const nextGroupSlug = hasCollections ? 'bo-suu-tap' : '';
+
+    const hasServerFilterChanged =
+      !this.hasSameIds(previousCollectionIds, nextCollectionIds)
+      || !this.hasSameIds(previousCategoryIds, nextCategoryIds)
+      || previousGroupSlug !== nextGroupSlug;
 
     this.updateRouteQuery({
       group: hasCollections ? 'bo-suu-tap' : null,
@@ -448,6 +459,10 @@ export class ProductComponent implements OnInit {
       categories: hasCategories ? nextCategoryIds.join(',') : null,
       page: 1,
     });
+
+    if (!hasServerFilterChanged) {
+      this.updatePagedProducts(1);
+    }
   }
 
   onSortChange(sortValue: ProductSortValue): void {
@@ -511,7 +526,7 @@ export class ProductComponent implements OnInit {
     }
 
     this.productDataService
-      .getProducts(page, this.pageSize, {
+      .getProducts(1, 500, {
         sortBy: sortConfig.sortBy,
         order: sortConfig.order,
         collectionId: this.selectedCollectionId() || undefined,
@@ -521,6 +536,7 @@ export class ProductComponent implements OnInit {
       .pipe(
         catchError(() => {
           this.errorMessage.set('Không thể tải danh sách sản phẩm.');
+          this.allProducts.set([]);
           this.products.set([]);
           this.totalItems.set(0);
           this.totalPages.set(1);
@@ -533,10 +549,8 @@ export class ProductComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((response) => {
-        this.products.set(response.items);
-        this.currentPage.set(response.page);
-        this.totalItems.set(response.total);
-        this.totalPages.set(response.totalPages);
+        this.allProducts.set(response.items);
+        this.updatePagedProducts(page);
       });
   }
 
@@ -550,6 +564,7 @@ export class ProductComponent implements OnInit {
       .pipe(
         catchError(() => {
           this.errorMessage.set('Không thể tải danh sách sản phẩm.');
+          this.allProducts.set([]);
           this.products.set([]);
           this.totalItems.set(0);
           this.totalPages.set(1);
@@ -581,15 +596,8 @@ export class ProductComponent implements OnInit {
           return matchesCategory;
         });
 
-        const totalItems = filteredItems.length;
-        const totalPages = Math.max(Math.ceil(totalItems / this.pageSize), 1);
-        const currentPage = Math.min(Math.max(page, 1), totalPages);
-        const startIndex = (currentPage - 1) * this.pageSize;
-
-        this.products.set(filteredItems.slice(startIndex, startIndex + this.pageSize));
-        this.currentPage.set(currentPage);
-        this.totalItems.set(totalItems);
-        this.totalPages.set(totalPages);
+        this.allProducts.set(filteredItems);
+        this.updatePagedProducts(page);
       });
   }
 
@@ -603,6 +611,7 @@ export class ProductComponent implements OnInit {
       .pipe(
         catchError(() => {
           this.errorMessage.set('Không thể tải danh sách sản phẩm.');
+          this.allProducts.set([]);
           this.products.set([]);
           this.totalItems.set(0);
           this.totalPages.set(1);
@@ -616,16 +625,22 @@ export class ProductComponent implements OnInit {
       )
       .subscribe((response) => {
         const collectionItems = response.items.filter((item) => Boolean(item.collectionId));
-        const totalItems = collectionItems.length;
-        const totalPages = Math.max(Math.ceil(totalItems / this.pageSize), 1);
-        const currentPage = Math.min(Math.max(page, 1), totalPages);
-        const startIndex = (currentPage - 1) * this.pageSize;
-
-        this.products.set(collectionItems.slice(startIndex, startIndex + this.pageSize));
-        this.currentPage.set(currentPage);
-        this.totalItems.set(totalItems);
-        this.totalPages.set(totalPages);
+        this.allProducts.set(collectionItems);
+        this.updatePagedProducts(page);
       });
+  }
+
+  private updatePagedProducts(page: number): void {
+    const filteredItems = this.applyLocalFilters(this.allProducts());
+    const totalItems = filteredItems.length;
+    const totalPages = Math.max(Math.ceil(totalItems / this.pageSize), 1);
+    const currentPage = Math.min(Math.max(page, 1), totalPages);
+    const startIndex = (currentPage - 1) * this.pageSize;
+
+    this.products.set(filteredItems.slice(startIndex, startIndex + this.pageSize));
+    this.currentPage.set(currentPage);
+    this.totalItems.set(totalItems);
+    this.totalPages.set(totalPages);
   }
 
   private shouldLoadCollectionGroupProducts(): boolean {
@@ -714,9 +729,27 @@ export class ProductComponent implements OnInit {
       return true;
     }
 
-    const colorText = (item.colors || []).map((color) => color.name).join(' ');
-    const searchContent = this.normalizeText(`${item.name} ${item.materialText} ${item.sizeText} ${colorText}`);
-    return keywords.some((keyword) => searchContent.includes(this.normalizeText(keyword)));
+    const selectedColorKeys = Array.from(
+      new Set(
+        keywords
+          .map((keyword) => this.toColorFilterKey(keyword))
+          .filter(Boolean),
+      ),
+    );
+    if (!selectedColorKeys.length) {
+      return true;
+    }
+
+    const itemColorKeys = new Set(
+      (item.colors || [])
+        .map((color) => this.toColorFilterKey(color?.name || ''))
+        .filter(Boolean),
+    );
+    if (!itemColorKeys.size) {
+      return false;
+    }
+
+    return selectedColorKeys.some((key) => itemColorKeys.has(key));
   }
 
   private matchesSizeFilter(item: ProductListItem, sizeKeys: string[]): boolean {
@@ -750,6 +783,26 @@ export class ProductComponent implements OnInit {
       .replace(/Đ/g, 'D')
       .toLowerCase()
       .trim();
+  }
+
+  private toColorFilterKey(value: string): string {
+    const normalized = this.normalizeText(value).replace(/\s+/g, ' ').trim();
+    if (!normalized) {
+      return '';
+    }
+
+    if (normalized.includes('trang')) return 'trang';
+    if (normalized.includes('xam')) return 'xam';
+    if (normalized.includes('nau')) return 'nau';
+    if (normalized.includes('tu nhien')) return 'tu nhien';
+    if (normalized.includes('den')) return 'den';
+    if (normalized.includes('xanh duong')) return 'xanh duong';
+    if (normalized.includes('xanh')) return 'xanh';
+    if (normalized.includes('beige') || normalized === 'be') return 'beige';
+    if (normalized.includes('camel')) return 'camel';
+    if (normalized.includes('olive')) return 'olive';
+    if (normalized.includes('cam')) return 'cam';
+    return normalized;
   }
 
   private normalizeSizeText(value: string): string {
@@ -964,6 +1017,17 @@ export class ProductComponent implements OnInit {
       return true;
     }
     return /^[a-z0-9-]{2,80}$/i.test(nextValue);
+  }
+
+  private hasSameIds(left: string[], right: string[]): boolean {
+    if (left.length !== right.length) {
+      return false;
+    }
+    const leftSet = new Set(left);
+    if (leftSet.size !== right.length) {
+      return false;
+    }
+    return right.every((value) => leftSet.has(value));
   }
 
   private scrollToCategorySection(attempt = 0): void {
