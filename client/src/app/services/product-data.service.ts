@@ -76,6 +76,7 @@ export interface ProductVariantDocument {
   product_id?: string;
   name?: string;
   variant_name?: string;
+  label?: string;
   sku?: string;
   color?: string;
   price?: number;

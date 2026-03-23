@@ -1,4 +1,4 @@
-﻿import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,6 +15,7 @@ export class CartPopup {
     ui = inject(UiStateService);
     private readonly router = inject(Router);
     errorItems = signal<Set<string>>(new Set());
+    confirmDeleteKey = signal<string | null>(null);
 
     closeOnBackdrop(event: MouseEvent) {
         if ((event.target as HTMLElement).classList.contains('cart-overlay')) {
@@ -24,7 +25,7 @@ export class CartPopup {
 
     decreaseQuantity(item: CartItem) {
         if (item.quantity <= 1) {
-            this.removeItem(item);
+            this.confirmDeleteKey.set(item.cartKey);
             return;
         }
         this.clearError(item.cartKey);
@@ -44,8 +45,14 @@ export class CartPopup {
         const input = event.target as HTMLInputElement;
         let value = parseInt(input.value, 10);
 
-        if (isNaN(value) || value < 1) {
+        if (isNaN(value) || value < 0) {
             value = 1;
+        }
+
+        if (value === 0) {
+            input.value = String(item.quantity);
+            this.confirmDeleteKey.set(item.cartKey);
+            return;
         }
 
         const result = this.ui.updateCartItemQuantity(item.cartKey, value);
@@ -59,9 +66,9 @@ export class CartPopup {
         input.value = String(result.quantity);
     }
 
+
     removeItem(item: CartItem) {
-        this.clearError(item.cartKey);
-        this.ui.removeFromCart(item.cartKey);
+        this.confirmDeleteKey.set(item.cartKey);
     }
 
     get isAllSelected(): boolean {
@@ -86,11 +93,26 @@ export class CartPopup {
     }
 
     deleteSelected() {
-        if (confirm('Bạn có chắc chắn muốn xóa các sản phẩm đã chọn khỏi giỏ hàng?')) {
+        this.confirmDeleteKey.set('bulk');
+    }
+
+    confirmDelete() {
+        const key = this.confirmDeleteKey();
+        if (!key) return;
+
+        if (key === 'bulk') {
             const selectedKeys = this.ui.selectedCartKeys();
-            selectedKeys.forEach(key => this.clearError(key));
+            selectedKeys.forEach(k => this.clearError(k));
             this.ui.removeSelectedItems();
+        } else {
+            this.clearError(key);
+            this.ui.removeFromCart(key);
         }
+        this.confirmDeleteKey.set(null);
+    }
+
+    cancelDelete() {
+        this.confirmDeleteKey.set(null);
     }
 
 

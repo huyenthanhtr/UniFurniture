@@ -348,3 +348,60 @@
 .cart-checkout-btn:hover {
     background: #d45520;
 }
+
+/* Custom Inline Confirm */
+.cart-item-confirm {
+    margin-top: 12px;
+    padding: 12px;
+    background: #FFF4F0;
+    border-radius: 6px;
+    border: 1px solid #FFE0D3;
+    animation: fadeIn 0.2s ease;
+}
+
+.cart-bulk-confirm {
+    margin: 10px 24px;
+}
+
+.cart-item-confirm p {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: #434343;
+    font-weight: 500;
+}
+
+.confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.btn-cancel, .btn-confirm {
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+
+.btn-cancel {
+    background: #FFF;
+    border: 1px solid #CCCCCC;
+    color: #434343;
+}
+
+.btn-cancel:hover {
+    background: #F5F5F5;
+}
+
+.btn-confirm {
+    background: #EF683A;
+    color: #FFF;
+}
+
+.btn-confirm:hover {
+    background: #d45520;
+}
