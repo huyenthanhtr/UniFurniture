@@ -7,7 +7,7 @@ const PointTransaction = require("../models/PointTransaction");
 const Customer = require("../models/Customer");
 const Order = require("../models/Order");
 const Review = require("../models/Review");
-const { buildLoyaltySnapshot, normalizePoints } = require("../utils/loyalty");
+const { buildLoyaltySnapshot, getLoyaltyRankByKey, normalizePoints, LOYALTY_RANK_PRIORITY } = require("../utils/loyalty");
 
 async function run() {
   await connectDB();
@@ -16,7 +16,7 @@ async function run() {
   const profileIds = profiles.map((profile) => profile._id);
 
   const totals = await PointTransaction.aggregate([
-    { $match: { profile_id: { $in: profileIds } } },
+    { $match: { profile_id: { $in: profileIds }, type: { $in: ["earn", "review_earn"] } } },
     {
       $group: {
         _id: "$profile_id",
@@ -33,13 +33,29 @@ async function run() {
   for (const profile of profiles) {
     const points = totalsMap.get(String(profile._id)) || 0;
     const snapshot = buildLoyaltySnapshot(points);
+    const currentProfile = await Profile.findById(profile._id)
+      .select({ membership_tier: 1, tier_achieved_at: 1 })
+      .lean();
+    const currentRankKey = String(currentProfile?.membership_tier || "dong");
+    const nextRank = getLoyaltyRankByKey(snapshot.loyalty_rank);
+    const currentRank = getLoyaltyRankByKey(currentRankKey);
+    const shouldUpgradeTier =
+      (LOYALTY_RANK_PRIORITY[nextRank.key] || 1) > (LOYALTY_RANK_PRIORITY[currentRank.key] || 1);
+
+    const patch = {
+      loyalty_points_lifetime: snapshot.loyalty_points,
+    };
+    if (shouldUpgradeTier) {
+      patch.membership_tier = nextRank.key;
+      patch.tier_achieved_at = new Date();
+    } else if (!currentProfile?.tier_achieved_at) {
+      patch.tier_achieved_at = new Date();
+    }
+
     await Profile.updateOne(
       { _id: profile._id },
       {
-        $set: {
-          loyalty_points_lifetime: snapshot.loyalty_points,
-          membership_tier: snapshot.loyalty_rank,
-        },
+        $set: patch,
       }
     );
     updatedProfiles += 1;

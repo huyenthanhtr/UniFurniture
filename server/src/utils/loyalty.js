@@ -5,6 +5,13 @@ const LOYALTY_RANKS = [
   { key: "dong", minPoints: 0, label: "Dong" },
 ];
 
+const LOYALTY_RANK_PRIORITY = {
+  dong: 1,
+  bac: 2,
+  vang: 3,
+  kim_cuong: 4,
+};
+
 function normalizePoints(value) {
   const parsed = Number(value || 0);
   if (!Number.isFinite(parsed) || parsed < 0) return 0;
@@ -14,6 +21,11 @@ function normalizePoints(value) {
 function getLoyaltyRank(points) {
   const normalizedPoints = normalizePoints(points);
   return LOYALTY_RANKS.find((item) => normalizedPoints >= item.minPoints) || LOYALTY_RANKS[LOYALTY_RANKS.length - 1];
+}
+
+function getLoyaltyRankByKey(rankKey) {
+  const normalizedKey = String(rankKey || "").trim().toLowerCase();
+  return LOYALTY_RANKS.find((item) => item.key === normalizedKey) || LOYALTY_RANKS[LOYALTY_RANKS.length - 1];
 }
 
 function buildLoyaltySnapshot(points) {
@@ -28,7 +40,9 @@ function buildLoyaltySnapshot(points) {
 
 module.exports = {
   LOYALTY_RANKS,
+  LOYALTY_RANK_PRIORITY,
   normalizePoints,
   getLoyaltyRank,
+  getLoyaltyRankByKey,
   buildLoyaltySnapshot,
 };
