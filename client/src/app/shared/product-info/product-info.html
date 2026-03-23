@@ -10,14 +10,29 @@
   </div>
 
   <div class="price">
-    <span class="sale">
-      <ng-container *ngIf="(selectedVariant?.price ?? selectedColor?.price ?? product.price) !== null; else contactPrice">
-        {{ (selectedVariant?.price ?? selectedColor?.price ?? product.price) | number }}&#273;
-      </ng-container>
-    </span>
-    <span class="old" *ngIf="(selectedVariant?.compare_at_price ?? selectedColor?.originalPrice ?? product.originalPrice) !== null">
-      {{ (selectedVariant?.compare_at_price ?? selectedColor?.originalPrice ?? product.originalPrice) | number }}&#273;
-    </span>
+    <div class="price-values">
+      <span class="sale">
+        <ng-container *ngIf="(selectedVariant?.price ?? selectedColor?.price ?? product.price) !== null; else contactPrice">
+          {{ (selectedVariant?.price ?? selectedColor?.price ?? product.price) | number }}&#273;
+        </ng-container>
+      </span>
+      <span class="old" *ngIf="(selectedVariant?.compare_at_price ?? selectedColor?.originalPrice ?? product.originalPrice) !== null">
+        {{ (selectedVariant?.compare_at_price ?? selectedColor?.originalPrice ?? product.originalPrice) | number }}&#273;
+      </span>
+    </div>
+
+    <button
+      type="button"
+      class="wishlist-btn"
+      [class.wishlist-btn--active]="isWishlisted()"
+      [attr.aria-pressed]="isWishlisted()"
+      [attr.aria-label]="isWishlisted() ? 'Bỏ yêu thích' : 'Thêm yêu thích'"
+      [title]="isWishlisted() ? 'Bỏ yêu thích' : 'Thêm yêu thích'"
+      (click)="toggleWishlist()"
+    >
+      <span aria-hidden="true">{{ isWishlisted() ? '♥' : '♡' }}</span>
+      <span class="wishlist-label">{{ isWishlisted() ? 'Đã yêu thích' : 'Yêu thích' }}</span>
+    </button>
   </div>
 
   <div class="section">

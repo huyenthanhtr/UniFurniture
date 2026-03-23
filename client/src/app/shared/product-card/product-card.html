@@ -12,13 +12,27 @@
     </h3>
 
     <div class="product-price">
-      <span class="current-price">
-        <ng-container *ngIf="displayPrice() !== null; else contactPrice">{{ displayPrice() | number }}d</ng-container>
-      </span>
+      <div class="product-price-values">
+        <span class="current-price">
+          <ng-container *ngIf="displayPrice() !== null; else contactPrice">{{ displayPrice() | number }}đ</ng-container>
+        </span>
 
-      <span class="original-price" *ngIf="discountedOriginalPrice() !== null">
-        {{ discountedOriginalPrice() | number }}d
-      </span>
+        <span class="original-price" *ngIf="discountedOriginalPrice() !== null">
+          {{ discountedOriginalPrice() | number }}đ
+        </span>
+      </div>
+
+      <button
+        type="button"
+        class="wishlist-btn"
+        [class.wishlist-btn--active]="isWishlisted()"
+        [attr.aria-pressed]="isWishlisted()"
+        [attr.aria-label]="isWishlisted() ? 'Bỏ yêu thích' : 'Thêm yêu thích'"
+        [title]="isWishlisted() ? 'Bỏ yêu thích' : 'Thêm yêu thích'"
+        (click)="toggleWishlist($event)"
+      >
+        <span aria-hidden="true">{{ isWishlisted() ? '♥' : '♡' }}</span>
+      </button>
     </div>
 
     <div class="product-meta">

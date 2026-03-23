@@ -413,7 +413,6 @@
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 10px;
   width: 100%;
   padding: 11px 16px;
   background: none;
@@ -430,13 +429,6 @@
 .dropdown-item:hover {
   background: #f5ede0;
   color: #c8923a;
-}
-
-.dropdown-item-icon {
-  font-size: 16px;
-  width: 22px;
-  text-align: center;
-  flex-shrink: 0;
 }
 
 .dropdown-item--logout {

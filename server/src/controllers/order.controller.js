@@ -765,6 +765,8 @@ async function getOrders(req, res, next) {
         "";
       orderItemsMap.get(orderKey).push({
         _id: detail._id,
+        product_id: variant?.product_id || null,
+        variant_id: detail.variant_id || null,
         product_name: String(detail.product_name || "").trim(),
         variant_name: String(detail.variant_name || "").trim(),
         quantity: Math.max(1, Number(detail.quantity || 1)),

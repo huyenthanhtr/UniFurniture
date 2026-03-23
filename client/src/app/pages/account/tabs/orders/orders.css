@@ -169,6 +169,27 @@
   gap: 10px;
 }
 
+.orders-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.btn-orders-more {
+  border: 1px solid #d4bc99;
+  background: #fff;
+  color: #5a4127;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-orders-more:hover {
+  background: #fcf1e2;
+}
+
 .order-card {
   border: 1px solid #e5d8c6;
   border-radius: 14px;
@@ -376,6 +397,16 @@
 
 .action-pill--track:hover {
   filter: brightness(0.97);
+}
+
+.action-pill--buy-again {
+  border-color: #cfb086;
+  background: #fff8ee;
+  color: #5a3c1f;
+}
+
+.action-pill--buy-again:hover {
+  background: #fdf0dd;
 }
 
 .action-pill--warranty {

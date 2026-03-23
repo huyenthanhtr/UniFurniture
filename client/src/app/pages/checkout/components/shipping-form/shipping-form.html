@@ -12,12 +12,17 @@
 
       <div *ngIf="!loadingSavedAddresses && savedAddresses.length > 0" class="saved-address-actions">
         <select
-          class="form-select"
+          class="form-select saved-address-select"
+          [class.saved-address-select--default]="isDefaultSavedAddressSelected()"
           [ngModel]="selectedSavedAddressId"
           (ngModelChange)="onSavedAddressChange($event)"
         >
           <option value="">Chọn địa chỉ đã lưu</option>
-          <option *ngFor="let item of savedAddresses" [value]="item._id">
+          <option
+            *ngFor="let item of savedAddresses"
+            [value]="item._id"
+            [class.saved-address-option--default]="isDefaultSavedAddress(item)"
+          >
             {{ item.fullName }} - {{ item.phone }} - {{ item.address }}, {{ item.district }}, {{ item.province }}
             {{ item.isDefault ? '(Mặc định)' : '' }}
           </option>

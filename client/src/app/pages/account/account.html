@@ -42,14 +42,12 @@
           [class.active]="activeTab() === tab.key"
           (click)="setTab(tab.key)"
         >
-          <span class="nav-icon">{{ tab.icon }}</span>
           <span class="nav-label">{{ tab.label }}</span>
         </button>
 
         <div class="sidebar-divider"></div>
 
         <button type="button" class="sidebar-nav-item sidebar-nav-item--logout" (click)="requestLogout()">
-          <span class="nav-icon">🚪</span>
           <span class="nav-label">Đăng xuất</span>
         </button>
       </nav>
