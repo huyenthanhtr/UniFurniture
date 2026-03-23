@@ -416,6 +416,8 @@ tbody tr:last-child td {
   justify-content: center;
   align-items: center;
   z-index: 2000;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .confirm-box {
@@ -451,10 +453,13 @@ tbody tr:last-child td {
 .cancel-form-box {
   background: #fff;
   width: min(700px, 94vw);
+  max-height: min(88vh, 920px);
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
 }
 
 .cancel-form-header {
@@ -484,6 +489,7 @@ tbody tr:last-child td {
 
 .cancel-form-body {
   padding: 20px 24px;
+  overflow-y: auto;
 }
 
 .cancel-form-grid {
@@ -676,6 +682,43 @@ tbody tr:last-child td {
   to {
     transform: translateY(0);
     opacity: 1;
+  }
+}
+
+@media (max-width: 900px) {
+  .grid,
+  .payment-summary,
+  .warranty-summary,
+  .cancel-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 12px;
+  }
+
+  .page-header,
+  .section-head,
+  .actions,
+  .confirm-actions,
+  .cancel-form-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .card,
+  .cancel-form-body,
+  .cancel-form-header,
+  .cancel-form-footer {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .cancel-form-box {
+    width: min(96vw, 640px);
+    max-height: 92vh;
   }
 }
 

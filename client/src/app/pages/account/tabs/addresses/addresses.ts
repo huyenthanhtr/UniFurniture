@@ -452,31 +452,15 @@ export class AccountAddressesTab implements OnInit {
 
     const phone = String(this.profile?.phone || '').trim();
     const fullName = String(this.profile?.full_name || this.profile?.fullName || '').trim() || phone || 'Khach hang';
-    let customerId = '';
-
-    if (phone) {
-      try {
-        const found = await firstValueFrom(
-          this.http.get<{ items?: any[] }>(`${API_BASE_URL}/customers`, { params: { phone, limit: '1' } })
-        );
-        const first = Array.isArray(found?.items) ? found.items[0] : null;
-        customerId = String(first?._id || '').trim();
-      } catch {
-        customerId = '';
-      }
-    }
-
-    if (!customerId) {
-      const created = await firstValueFrom(
-        this.http.post<any>(`${API_BASE_URL}/customers`, {
-          full_name: fullName,
-          phone,
-          customer_type: 'member',
-          status: 'active',
-        })
-      );
-      customerId = String(created?._id || '').trim();
-    }
+    const created = await firstValueFrom(
+      this.http.post<any>(`${API_BASE_URL}/customers`, {
+        full_name: fullName,
+        phone,
+        customer_type: 'member',
+        status: 'active',
+      })
+    );
+    const customerId = String(created?._id || '').trim();
 
     if (customerId && this.profileId) {
       try {

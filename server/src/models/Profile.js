@@ -12,7 +12,13 @@ const ProfileSchema = new mongoose.Schema(
     gender: { type: String, enum: ["male", "female", "other"] },
     date_of_birth: { type: Date },
     address: { type: String },
-    customer_id: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", default: null }
+    customer_id: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", default: null },
+    loyalty_points_lifetime: { type: Number, default: 0 },
+    membership_tier: {
+      type: String,
+      enum: ["dong", "bac", "vang", "kim_cuong"],
+      default: "dong",
+    },
   },
   { timestamps: true, collection: "profiles" }
 );

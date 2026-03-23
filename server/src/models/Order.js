@@ -21,6 +21,7 @@ const OrderSchema = new mongoose.Schema(
     },
     ordered_at: Date,
     confirmed_at: { type: Date, default: null },
+    completed_at: { type: Date, default: null },
     inventory_deducted: { type: Boolean, default: false },
     inventory_deducted_at: { type: Date, default: null },
     sold_counted: { type: Boolean, default: false },

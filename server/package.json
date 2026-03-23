@@ -9,6 +9,7 @@
     "dev": "node server.js",
     "rebuild:sold": "node src/scripts/rebuild-sold-counts.js",
     "reconcile:completed-orders": "node src/scripts/reconcile-completed-orders.js",
+    "sync:profile-loyalty": "node src/scripts/sync-profile-loyalty.js",
     "rebuild:payment-ids": "node src/scripts/rebuild-payment-identifiers.js",
     "migrate:customer-address-links": "node src/scripts/migrate-customer-address-links.js"
   },

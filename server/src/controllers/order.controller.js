@@ -221,7 +221,7 @@ function ensureWarrantySummary(orderDoc) {
   const normalizedStatus = String(orderDoc?.status || "").toLowerCase();
   const isWarrantyEligibleStatus = ["completed", "exchanged"].includes(normalizedStatus);
   const activatedRaw = orderDoc?.warranty?.activated_at
-    || (isWarrantyEligibleStatus ? orderDoc?.updatedAt || orderDoc?.createdAt : null);
+    || (isWarrantyEligibleStatus ? orderDoc?.completed_at || orderDoc?.updatedAt || orderDoc?.createdAt : null);
   const activatedAt = activatedRaw ? new Date(activatedRaw) : null;
   const safeActivatedAt = activatedAt && !Number.isNaN(activatedAt.getTime()) ? activatedAt : null;
 
@@ -1098,8 +1098,12 @@ async function patchOrderStatus(req, res, next) {
       doc.confirmed_at = new Date();
     }
 
+    if (nextStatus === "completed" && !doc.completed_at) {
+      doc.completed_at = new Date();
+    }
+
     if (["completed", "exchanged"].includes(nextStatus)) {
-      activateWarrantyIfNeeded(doc, new Date());
+      activateWarrantyIfNeeded(doc, doc.completed_at || new Date());
     }
 
     if (nextStatus === "cancelled") {
