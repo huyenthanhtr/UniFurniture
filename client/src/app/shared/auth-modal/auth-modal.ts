@@ -61,7 +61,8 @@ export class AuthModal {
                 setTimeout(() => {
                     this.ui.closeAuth();
                     if (res.profile && res.profile.role === 'admin') {
-                        window.location.href = 'http://localhost:4201';
+                        const encodedProfile = encodeURIComponent(JSON.stringify(res.profile));
+                        window.location.href = `http://localhost:4201?profile=${encodedProfile}`;
                     } else {
                         window.location.reload(); // Refresh to update navbar
                     }
