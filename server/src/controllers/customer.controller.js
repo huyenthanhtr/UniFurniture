@@ -4,7 +4,7 @@ const Profile = require("../models/Profile");
 const CustomerAddress = require("../models/CustomerAddress");
 const Order = require("../models/Order");
 const Payment = require("../models/Payment");
-const { buildLoyaltySnapshot, getLoyaltyRankByKey } = require("../utils/loyalty");
+const { buildLoyaltySnapshot } = require("../utils/loyalty");
 
 function toBoolean(value) {
   if (typeof value === "boolean") return value;
@@ -79,8 +79,6 @@ function formatCustomerItem(doc) {
   const customerType = String(doc.customer_type || "guest").toLowerCase() === "member" ? "member" : "guest";
   const status = String(doc.status || "active").toLowerCase() === "inactive" ? "inactive" : "active";
   const loyalty = profile ? buildLoyaltySnapshot(profile.loyalty_points_lifetime || 0) : null;
-  const loyaltyRankKey = String(profile?.membership_tier || loyalty?.loyalty_rank || "dong");
-  const loyaltyRank = getLoyaltyRankByKey(loyaltyRankKey);
 
   return {
     _id: doc._id,
@@ -93,8 +91,8 @@ function formatCustomerItem(doc) {
     has_account: !!profile,
     account_status: profile?.account_status || null,
     loyalty_points: loyalty?.loyalty_points ?? null,
-    loyalty_rank: loyaltyRankKey,
-    loyalty_rank_label: loyaltyRank.label,
+    loyalty_rank: loyalty?.loyalty_rank ?? null,
+    loyalty_rank_label: loyalty?.loyalty_rank_label ?? null,
     address_count: Number(doc.address_count || 0),
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
@@ -221,8 +219,6 @@ function mergeCustomerAndProfile(customer, profile) {
   const fullName = profile?.full_name || customer?.full_name || "";
   const phone = profile?.phone || customer?.phone || "";
   const loyalty = profile ? buildLoyaltySnapshot(profile?.loyalty_points_lifetime || 0) : null;
-  const loyaltyRankKey = String(profile?.membership_tier || loyalty?.loyalty_rank || "dong");
-  const loyaltyRank = getLoyaltyRankByKey(loyaltyRankKey);
 
   const base = {
     _id: customer?._id,
@@ -240,8 +236,8 @@ function mergeCustomerAndProfile(customer, profile) {
     date_of_birth: profile?.date_of_birth || null,
     address: profile?.address || null,
     loyalty_points: loyalty?.loyalty_points ?? null,
-    loyalty_rank: loyaltyRankKey,
-    loyalty_rank_label: loyaltyRank.label,
+    loyalty_rank: loyalty?.loyalty_rank ?? null,
+    loyalty_rank_label: loyalty?.loyalty_rank_label ?? null,
     createdAt: customer?.createdAt || null,
     updatedAt: customer?.updatedAt || null,
   };
