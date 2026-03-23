@@ -323,11 +323,15 @@
   padding: 18px 16px 16px;
   border: 1px solid #ece3da;
   overflow: hidden;
-  cursor: pointer;
+  cursor: default;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.voucher-card:hover {
+.voucher-card.is-copyable {
+  cursor: pointer;
+}
+
+.voucher-card.is-copyable:hover {
   transform: translateY(-2px);
   box-shadow: 0 14px 26px rgba(83, 52, 24, 0.12);
 }

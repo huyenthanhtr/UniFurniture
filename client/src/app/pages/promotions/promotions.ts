@@ -36,7 +36,7 @@ interface VoucherDeal {
   details: string[];
   color: string;
   isExpired: boolean;
-  availability: 'active' | 'sold_out' | 'expired';
+  availability: 'active' | 'sold_out' | 'not_started' | 'expired';
 }
 
 interface PromoCollection {
@@ -366,7 +366,8 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
       .map((product) => {
         const salePrice = product.price ?? 0;
         const computedOriginal = Math.round((salePrice * 1.18) / 1000) * 1000;
-        const originalPrice = Math.max(product.originalPrice ?? computedOriginal, salePrice + 1000);
+        const originalPriceFromApi = product.originalPrice > salePrice ? product.originalPrice : 0;
+        const originalPrice = Math.max(originalPriceFromApi, computedOriginal, salePrice + 1000);
         const sold = Math.max(product.soldCount, 0);
         const total = Math.max(sold + 20, 30);
 
@@ -386,25 +387,34 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
 
   private mapVouchers(coupons: CouponApi[]): VoucherDeal[] {
     const now = Date.now();
-
-    return coupons
+    const preparedCoupons = coupons
       .filter((coupon) => Boolean(coupon.code))
       .filter((coupon) => !this.isCouponInactive(coupon))
-      .sort((left, right) => {
-        const leftState = this.getCouponAvailability(left, now);
-        const rightState = this.getCouponAvailability(right, now);
-        if (leftState !== rightState) {
-          const rank: Record<'active' | 'sold_out' | 'expired', number> = {
-            active: 0,
-            sold_out: 1,
-            expired: 2,
-          };
-          return rank[leftState] - rank[rightState];
-        }
-        return (right.discount_value || 0) - (left.discount_value || 0);
-      })
+      .map((coupon) => ({
+        coupon,
+        availability: this.getCouponAvailability(coupon, now),
+      }));
+
+    const sortedCoupons = [...preparedCoupons].sort((left, right) => {
+      if (left.availability !== right.availability) {
+        const rank: Record<'active' | 'sold_out' | 'not_started' | 'expired', number> = {
+          active: 0,
+          sold_out: 1,
+          not_started: 2,
+          expired: 3,
+        };
+        return rank[left.availability] - rank[right.availability];
+      }
+      return (right.coupon.discount_value || 0) - (left.coupon.discount_value || 0);
+    });
+
+    const nonExpiredCoupons = sortedCoupons.filter((item) => item.availability !== 'expired');
+    const expiredCoupons = sortedCoupons.filter((item) => item.availability === 'expired');
+    const displayCoupons = [...nonExpiredCoupons, ...expiredCoupons];
+
+    return displayCoupons
       .slice(0, 9)
-      .map((coupon) => {
+      .map(({ coupon, availability }) => {
         const code = coupon.code?.trim() || 'COUPON';
         const discountValue = coupon.discount_value || 0;
         const minOrder = coupon.min_order_value || 0;
@@ -417,24 +427,29 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
           ? `Giảm ${discountValue}%${maxDiscount > 0 ? ` tối đa ${this.formatPrice(maxDiscount)}` : ''}`
           : `Giảm ${this.formatPrice(discountValue)}`;
 
+        const startDateText = coupon.start_at ? this.formatDate(coupon.start_at) : '';
         const endDateText = coupon.end_at ? this.formatDate(coupon.end_at) : '';
+        const validityText = startDateText && endDateText
+          ? `HSD: Từ ${startDateText} đến ${endDateText}`
+          : (startDateText
+            ? `HSD: Từ ${startDateText}`
+            : (endDateText ? `HSD: Đến ${endDateText}` : ''));
 
         const details = [
           `Đơn tối thiểu ${this.formatPrice(minOrder)}`,
           totalLimit > 0
             ? `Đã dùng ${used}/${totalLimit}`
             : 'Không giới hạn lượt dùng',
-          endDateText ? `HSD: ${endDateText}` : '',
+          validityText,
         ]
           .filter((item): item is string => Boolean(item));
 
-        const availability = this.getCouponAvailability(coupon, now);
         return {
           code,
           label,
           details,
           color: this.getCouponColor(coupon, now),
-          isExpired: availability !== 'active',
+          isExpired: availability === 'expired',
           availability,
         };
       });
@@ -529,22 +544,23 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
     return totalLimit > 0 && used >= totalLimit;
   }
 
-  private isCouponExpiredByDateOrStatus(coupon: CouponApi, now: number): boolean {
+  private getCouponAvailability(coupon: CouponApi, now: number): 'active' | 'sold_out' | 'not_started' | 'expired' {
     const status = String(coupon.status || '').trim().toLowerCase();
-    if (status === 'expired') {
-      return true;
-    }
-    const startAt = coupon.start_at ? new Date(coupon.start_at).getTime() : Number.MIN_SAFE_INTEGER;
-    const endAt = coupon.end_at ? new Date(coupon.end_at).getTime() : Number.MAX_SAFE_INTEGER;
-    return now < startAt || now > endAt;
-  }
-
-  private getCouponAvailability(coupon: CouponApi, now: number): 'active' | 'sold_out' | 'expired' {
-    if (this.isCouponExpiredByDateOrStatus(coupon, now)) {
-      return 'expired';
-    }
     if (this.isCouponOutOfQuota(coupon)) {
       return 'sold_out';
+    }
+
+    if (status === 'expired') {
+      return 'expired';
+    }
+
+    const startAt = coupon.start_at ? new Date(coupon.start_at).getTime() : Number.MIN_SAFE_INTEGER;
+    const endAt = coupon.end_at ? new Date(coupon.end_at).getTime() : Number.MAX_SAFE_INTEGER;
+    if (now < startAt) {
+      return 'not_started';
+    }
+    if (now > endAt) {
+      return 'expired';
     }
     return 'active';
   }
@@ -559,6 +575,9 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
       return '#6b7280';
     }
     const availability = this.getCouponAvailability(coupon, now);
+    if (availability === 'not_started') {
+      return '#4b5563';
+    }
     if (availability === 'expired') {
       return '#9b2c2c';
     }
