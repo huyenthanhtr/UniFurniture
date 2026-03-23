@@ -60,7 +60,11 @@ export class AuthModal {
                 }
                 setTimeout(() => {
                     this.ui.closeAuth();
-                    window.location.reload(); // Refresh to update navbar
+                    if (res.profile && res.profile.role === 'admin') {
+                        window.location.href = 'http://localhost:4201';
+                    } else {
+                        window.location.reload(); // Refresh to update navbar
+                    }
                 }, 1500);
             },
             error: (err) => {
