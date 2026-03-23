@@ -160,8 +160,78 @@ async function login(req, res) {
         return res.status(500).json({ message: "Login failed", error: err.message });
     }
 }
+async function forgotPassword(req, res) {
+    try {
+        let { phone } = req.body;
+        if (!phone) {
+            return res.status(400).json({ message: "Vui lòng cung cấp số điện thoại." });
+        }
+
+        phone = normalizePhone(phone);
+
+        const profile = await Profile.findOne({ phone });
+        if (!profile) {
+            return res.status(404).json({ message: "Số điện thoại chưa được đăng ký." });
+        }
+
+        const otp = generateOTP();
+        const otp_hash = hashValue(otp);
+
+        await Otp.deleteMany({ phone, type: 'reset' });
+        await Otp.create({
+            phone,
+            otp_hash,
+            type: 'reset',
+            expireAt: new Date(Date.now() + 5 * 60 * 1000)
+        });
+
+        const smsSent = await sendOtpSms(phone, otp);
+        if (!smsSent) {
+            console.error("SMS failed to send for phone:", phone);
+        }
+
+        return res.status(200).json({ message: "Mã OTP đã được gửi đến số điện thoại của bạn." });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Lỗi máy chủ", error: err.message });
+    }
+}
+
+async function resetPassword(req, res) {
+    try {
+        let { phone, otp, newPassword } = req.body;
+
+        if (!phone || !otp || !newPassword) {
+            return res.status(400).json({ message: "Vui lòng cung cấp đầy đủ thông tin." });
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({ message: "Mật khẩu phải có ít nhất 8 ký tự." });
+        }
+
+        phone = normalizePhone(phone);
+        const otp_hash = hashValue(otp);
+
+        const otpRecord = await Otp.findOne({ phone, otp_hash, type: 'reset' });
+        if (!otpRecord) {
+            return res.status(400).json({ message: "Mã OTP không hợp lệ hoặc đã hết hạn." });
+        }
+
+        const newPasswordHash = hashValue(newPassword);
+        await Profile.findOneAndUpdate({ phone }, { password_hash: newPasswordHash });
+        await Otp.findByIdAndDelete(otpRecord._id);
+
+        return res.status(200).json({ message: "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay." });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Lỗi máy chủ", error: err.message });
+    }
+}
+
 module.exports = {
     register,
     verifyOtp,
-    login
+    login,
+    forgotPassword,
+    resetPassword
 };

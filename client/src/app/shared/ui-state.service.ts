@@ -30,7 +30,7 @@ export class UiStateService {
 
     // Auth modal
     isAuthOpen = signal(false);
-    authTab = signal<'login' | 'register'>('login');
+    authTab = signal<'login' | 'register' | 'forgot'>('login');
 
     openAuth(tab: 'login' | 'register' = 'login') {
         this.authTab.set(tab);
