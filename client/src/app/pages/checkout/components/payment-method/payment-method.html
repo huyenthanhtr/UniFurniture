@@ -4,7 +4,7 @@
 
     <!-- Notice đơn > 10tr -->
     <div *ngIf="requireDeposit" class="deposit-notice mb-4 p-3 rounded-3 d-flex gap-3 align-items-start">
-      <span class="deposit-icon">⚠️</span>
+      <span class="deposit-icon"><i class="bi bi-exclamation-triangle-fill"></i></span>
       <div>
         <div class="fw-semibold text-warning-emphasis">Đơn hàng trên 10 triệu: bắt buộc đặt cọc 10%</div>
         <div class="small mt-1">
@@ -23,7 +23,7 @@
     >
       <div class="d-flex align-items-center gap-3">
         <div class="radio-dot" [class.active]="form.paymentMethod === 'COD'"></div>
-        <span class="method-icon">💵</span>
+        <span class="method-icon method-icon--cash"><i class="bi bi-cash-coin"></i></span>
         <div>
           <div class="fw-semibold">Thanh toán khi nhận hàng (COD)</div>
           <div class="small text-muted">Thanh toán tiền mặt khi nhận hàng</div>
@@ -42,7 +42,7 @@
     >
       <div class="d-flex align-items-center gap-3">
         <div class="radio-dot" [class.active]="form.paymentMethod === 'CHUYEN_KHOAN'"></div>
-        <span class="method-icon">🏦</span>
+        <span class="method-icon method-icon--bank"><i class="bi bi-bank2"></i></span>
         <div>
           <div class="fw-semibold">Chuyển khoản ngân hàng</div>
           <div class="small text-muted">

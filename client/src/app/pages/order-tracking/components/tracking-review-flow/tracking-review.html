@@ -32,9 +32,15 @@
           *ngFor="let star of stars"
           (click)="setRatingClick.emit({ product, value: star })"
           [class.filled]="star <= product.review.rating"
-        >★</button>
+          [attr.aria-label]="'Chọn ' + star + ' sao'"
+        >
+          <i class="bi" [class.bi-star-fill]="star <= product.review.rating" [class.bi-star]="star > product.review.rating"></i>
+        </button>
       </div>
       <p class="rating-hint" *ngIf="product.review.rating > 0">{{ getRatingLabel(product.review.rating) }}</p>
+      <p class="review-inline-error review-inline-error--top" *ngIf="reviewInlineErrors[reviewKey(product)]">
+        {{ reviewInlineErrors[reviewKey(product)] }}
+      </p>
 
       <textarea
         rows="3"
@@ -55,7 +61,7 @@
                 [disabled]="isImageLimitReached(product)"
                 hidden
               />
-              <span>⬆️ Tải ảnh</span>
+              <span><i class="bi bi-upload"></i>Tải ảnh</span>
             </label>
 
             <button
@@ -64,7 +70,7 @@
               (click)="openCameraImageClick.emit(product)"
               [disabled]="isImageLimitReached(product)"
             >
-              📷 Chụp ảnh
+              <i class="bi bi-camera"></i>Chụp ảnh
             </button>
           </div>
         </label>
@@ -81,7 +87,7 @@
                 [disabled]="isVideoLimitReached(product)"
                 hidden
               />
-              <span>⬆️ Tải video</span>
+              <span><i class="bi bi-cloud-upload"></i>Tải video</span>
             </label>
 
             <button
@@ -90,7 +96,7 @@
               (click)="openCameraVideoClick.emit(product)"
               [disabled]="isVideoLimitReached(product)"
             >
-              🎥 Quay video
+              <i class="bi bi-camera-video"></i>Quay video
             </button>
           </div>
         </label>
@@ -99,18 +105,21 @@
       <div class="preview-list" *ngIf="product.review.imagePreviews.length > 0">
         <div class="preview-item" *ngFor="let preview of product.review.imagePreviews; let imageIndex = index">
           <img [src]="preview" alt="Ảnh đánh giá" />
-          <button type="button" class="preview-remove" (click)="removeImageClick.emit({ product, index: imageIndex })">&times;</button>
+          <button type="button" class="preview-remove" (click)="removeImageClick.emit({ product, index: imageIndex })" aria-label="Xóa ảnh">
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
       </div>
 
       <div class="preview-list video" *ngIf="product.review.videoPreviews.length > 0">
         <div class="preview-item" *ngFor="let preview of product.review.videoPreviews; let videoIndex = index">
           <video [src]="preview" controls></video>
-          <button type="button" class="preview-remove" (click)="removeVideoClick.emit({ product, index: videoIndex })">&times;</button>
+          <button type="button" class="preview-remove" (click)="removeVideoClick.emit({ product, index: videoIndex })" aria-label="Xóa video">
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
       </div>
 
-      <p class="review-inline-error" *ngIf="reviewInlineErrors[reviewKey(product)]">{{ reviewInlineErrors[reviewKey(product)] }}</p>
 </div>
   </ng-container>
 </div>
@@ -118,7 +127,10 @@
 <div class="camera-modal" *ngIf="cameraOpen">
   <div class="camera-modal__backdrop" (click)="closeCameraClick.emit()"></div>
   <div class="card camera-modal__content">
-    <h3>{{ cameraMode === 'image' ? '📷 Chụp ảnh đánh giá' : '🎥 Quay video đánh giá' }}</h3>
+    <h3>
+      <i class="bi" [class.bi-camera]="cameraMode === 'image'" [class.bi-camera-video]="cameraMode === 'video'"></i>
+      {{ cameraMode === 'image' ? 'Chụp ảnh đánh giá' : 'Quay video đánh giá' }}
+    </h3>
 
     <p class="camera-error" *ngIf="cameraError">{{ cameraError }}</p>
 
@@ -183,10 +195,6 @@
           <h4>{{ product.name }}</h4>
           <p>{{ product.classification }}</p>
           <p class="submitted-price">Số lượng: {{ product.quantity }}   - Tổng tiền: {{ formatCurrency(product.unitPrice * product.quantity) }}</p>
-          <p class="submitted-meta">
-            Trạng thái: {{ reviewModerationLabel(submitted.status) }}
-            <span *ngIf="submitted.createdAt"> • {{ submitted.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-          </p>
         </div>
         <div class="history-actions">
           <button type="button" class="history-btn" (click)="viewProductClick.emit({ product, target: 'top' })">Xem lại sản phẩm</button>
@@ -196,7 +204,9 @@
       </div>
 
       <div class="stars stars-readonly">
-        <button type="button" *ngFor="let star of stars" [class.filled]="star <= submitted.rating" disabled>★</button>
+        <button type="button" *ngFor="let star of stars" [class.filled]="star <= submitted.rating" disabled>
+          <i class="bi" [class.bi-star-fill]="star <= submitted.rating" [class.bi-star]="star > submitted.rating"></i>
+        </button>
       </div>
 
       <p class="submitted-content">{{ submitted.content || 'Khách hàng không để lại nhận xét.' }}</p>

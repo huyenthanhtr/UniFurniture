@@ -86,8 +86,8 @@
 <div class="security-modal-backdrop" *ngIf="modalVisible()" (click)="closeModal()">
   <div class="security-modal" (click)="$event.stopPropagation()">
     <div class="security-modal__icon" [class.is-error]="modalType() === 'error'">
-      <span *ngIf="modalType() === 'error'">✕</span>
-      <span *ngIf="modalType() === 'success'">✓</span>
+      <i class="bi bi-x-circle-fill" *ngIf="modalType() === 'error'"></i>
+      <i class="bi bi-check-circle-fill" *ngIf="modalType() === 'success'"></i>
     </div>
     <h3 class="security-modal__title">{{ modalTitle() }}</h3>
     <p class="security-modal__message">{{ modalMessage() }}</p>

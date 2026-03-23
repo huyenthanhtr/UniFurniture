@@ -117,10 +117,9 @@
   </div>
 
   <div *ngIf="!loading() && addresses().length === 0 && !showForm()" class="empty-state">
-    <div class="empty-icon">📍</div>
+    <div class="empty-icon"><i class="bi bi-geo-alt-fill"></i></div>
     <h3>Chưa có địa chỉ nào</h3>
     <p>Bạn chưa lưu địa chỉ giao hàng nào. Hãy thêm ngay để rút ngắn thời gian đặt hàng.</p>
-    <button type="button" class="btn-primary-lux" (click)="openAddForm()">+ Thêm địa chỉ đầu tiên</button>
   </div>
 
   <div class="address-list" *ngIf="!loading() && addresses().length > 0 && !showForm()">
@@ -132,10 +131,10 @@
             <span *ngIf="addr.isDefault" class="default-badge">Mặc định</span>
           </div>
           <div class="phone-row">
-            <span class="icon">📞</span> {{ addr.phone }}
+            <span class="icon"><i class="bi bi-telephone-fill"></i></span> {{ addr.phone }}
           </div>
           <div class="detail-row">
-            <span class="icon">📍</span>
+            <span class="icon"><i class="bi bi-geo-alt-fill"></i></span>
             {{ addr.address }}, {{ addr.district }}, {{ addr.province }}
           </div>
         </div>
@@ -160,8 +159,8 @@
 <div class="address-modal-backdrop" *ngIf="modalVisible()" (click)="closeModal()">
   <div class="address-modal" (click)="$event.stopPropagation()">
     <div class="address-modal__icon" [class.is-error]="modalType() === 'error'">
-      <span *ngIf="modalType() === 'error'">✕</span>
-      <span *ngIf="modalType() === 'success'">✓</span>
+      <i class="bi bi-x-circle-fill" *ngIf="modalType() === 'error'"></i>
+      <i class="bi bi-check-circle-fill" *ngIf="modalType() === 'success'"></i>
     </div>
     <h3 class="address-modal__title">{{ modalTitle() }}</h3>
     <p class="address-modal__message">{{ modalMessage() }}</p>

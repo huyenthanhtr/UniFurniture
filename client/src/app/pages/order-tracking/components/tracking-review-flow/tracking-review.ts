@@ -62,13 +62,6 @@ export class TrackingReviewFlowComponent {
     }
   }
 
-  reviewModerationLabel(status: string): string {
-    const key = String(status || '').toLowerCase();
-    if (key === 'approved') return 'Đã duyệt';
-    if (key === 'rejected') return 'Đã từ chối';
-    return 'Đang chờ duyệt';
-  }
-
   imageCountLabel(product: TrackingProduct): string {
     return `${product.review.imageFiles.length}/5 ảnh`;
   }

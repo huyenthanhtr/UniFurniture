@@ -71,7 +71,7 @@
   </div>
 
   <div *ngIf="!loading() && items().length === 0" class="wishlist-empty">
-    <div class="empty-icon">❤️</div>
+    <div class="empty-icon empty-icon--wish"><i class="bi bi-heart-fill"></i></div>
     <h3>Chưa có sản phẩm yêu thích</h3>
     <p>
       <button type="button" class="wishlist-empty-link" (click)="openAllProducts()">
@@ -81,7 +81,7 @@
   </div>
 
   <div *ngIf="!loading() && items().length > 0 && !hasItemsAfterFilter()" class="wishlist-empty wishlist-empty--small">
-    <div class="empty-icon">🔍</div>
+    <div class="empty-icon empty-icon--search"><i class="bi bi-search"></i></div>
     <h3>Không tìm thấy sản phẩm phù hợp</h3>
     <p>Thử từ khóa khác hoặc đổi kiểu sắp xếp.</p>
   </div>
@@ -95,7 +95,7 @@
         title="Bỏ khỏi yêu thích"
         aria-label="Bỏ khỏi yêu thích"
       >
-        ❤
+        <i class="bi bi-heart-fill"></i>
       </button>
 
       <div class="wishlist-img-wrap" (click)="viewProduct(item)">

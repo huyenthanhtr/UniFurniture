@@ -3,7 +3,7 @@
     <div class="camera-box">
       <div class="camera-header">
         <h3>Chụp ảnh đại diện</h3>
-        <button class="close-btn" (click)="stopCamera()">&times;</button>
+        <button class="close-btn" (click)="stopCamera()"><i class="bi bi-x-lg"></i></button>
       </div>
       <video #videoElement autoplay playsinline></video>
       <canvas #canvasElement style="display: none;"></canvas>
@@ -11,7 +11,7 @@
       <div class="camera-btns">
         <button type="button" class="btn-cancel" (click)="stopCamera()">Hủy bỏ</button>
         <button type="button" class="btn-capture" (click)="capturePhoto()">
-          📸 Chụp ảnh ngay
+          <i class="bi bi-camera"></i> Chụp ảnh ngay
         </button>
       </div>
     </div>
@@ -31,13 +31,13 @@
       <div class="avatar-actions">
         <button type="button" class="btn-upload btn-primary-lux"
                 (click)="galleryInput.click()" [disabled]="uploadingAvatar()">
-          <span *ngIf="!uploadingAvatar()">📤 Tải ảnh lên</span>
+          <span *ngIf="!uploadingAvatar()"><i class="bi bi-upload"></i> Tải ảnh lên</span>
           <span *ngIf="uploadingAvatar()"><span class="spinner-sm"></span> Đang tải...</span>
         </button>
 
         <button type="button" class="btn-upload btn-outline-lux"
                 (click)="openRealCamera()" [disabled]="uploadingAvatar()">
-          📷 Chụp ảnh trực tiếp
+          <i class="bi bi-camera"></i> Chụp ảnh trực tiếp
         </button>
       </div>
     </aside>
@@ -120,8 +120,8 @@
 <div class="profile-modal-backdrop" *ngIf="modalVisible()" (click)="closeModal()">
   <div class="profile-modal" (click)="$event.stopPropagation()">
     <div class="profile-modal__icon" [class.is-error]="modalType() === 'error'">
-      <span *ngIf="modalType() === 'error'">✕</span>
-      <span *ngIf="modalType() === 'success'">✓</span>
+      <i class="bi bi-x-circle-fill" *ngIf="modalType() === 'error'"></i>
+      <i class="bi bi-check-circle-fill" *ngIf="modalType() === 'success'"></i>
     </div>
     <h3 class="profile-modal__title">{{ modalTitle() }}</h3>
     <p class="profile-modal__message">{{ modalMessage() }}</p>
