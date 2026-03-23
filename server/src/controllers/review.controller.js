@@ -2,6 +2,90 @@ const mongoose = require('mongoose');
 const Review = require('../models/Review');
 const Order = require('../models/Order');
 const OrderDetail = require('../models/OrderDetail');
+const Profile = require('../models/Profile');
+const PointTransaction = require('../models/PointTransaction');
+
+const REVIEW_EARN_POINTS = 10;
+const MEMBERSHIP_TIER_RANK = { dong: 1, bac: 2, vang: 3, kim_cuong: 4 };
+
+function getTierByPoints(points) {
+  const safe = Math.max(0, Math.floor(Number(points) || 0));
+  if (safe >= 15000) return { key: 'kim_cuong', label: 'Kim cương' };
+  if (safe >= 5000) return { key: 'vang', label: 'Vàng' };
+  if (safe >= 1000) return { key: 'bac', label: 'Bạc' };
+  return { key: 'dong', label: 'Đồng' };
+}
+
+async function applyReviewReward(profileId, orderId, orderDetailIds) {
+  const normalizedProfileId = String(profileId || '').trim();
+  if (!mongoose.Types.ObjectId.isValid(normalizedProfileId)) {
+    return { rewardedCount: 0, rewardedPoints: 0 };
+  }
+
+  const validDetailIds = (Array.isArray(orderDetailIds) ? orderDetailIds : [])
+    .map((id) => String(id || '').trim())
+    .filter((id) => mongoose.Types.ObjectId.isValid(id));
+
+  if (!validDetailIds.length) {
+    return { rewardedCount: 0, rewardedPoints: 0 };
+  }
+
+  let rewardedCount = 0;
+
+  for (const detailId of validDetailIds) {
+    const existed = await PointTransaction.findOne({
+      profile_id: normalizedProfileId,
+      order_detail_id: detailId,
+      type: 'review_earn',
+    })
+      .select('_id')
+      .lean();
+
+    if (existed) continue;
+
+    try {
+      await PointTransaction.create({
+        profile_id: normalizedProfileId,
+        order_id: orderId,
+        order_detail_id: detailId,
+        points: REVIEW_EARN_POINTS,
+        type: 'review_earn',
+        note: 'Thưởng điểm viết đánh giá sản phẩm',
+      });
+      rewardedCount += 1;
+    } catch (error) {
+      if (!/duplicate key/i.test(String(error?.message || ''))) {
+        throw error;
+      }
+    }
+  }
+
+  const rewardedPoints = rewardedCount * REVIEW_EARN_POINTS;
+  if (!rewardedPoints) {
+    return { rewardedCount, rewardedPoints };
+  }
+
+  const profile = await Profile.findById(normalizedProfileId);
+  if (!profile) {
+    return { rewardedCount, rewardedPoints: 0 };
+  }
+
+  const currentPoints = Math.max(0, Math.floor(Number(profile.loyalty_points_lifetime || 0)));
+  const nextPoints = currentPoints + rewardedPoints;
+  profile.loyalty_points_lifetime = nextPoints;
+
+  const currentTier = String(profile.membership_tier || 'dong');
+  const nextTier = getTierByPoints(nextPoints).key;
+  if ((MEMBERSHIP_TIER_RANK[nextTier] || 1) > (MEMBERSHIP_TIER_RANK[currentTier] || 1)) {
+    profile.membership_tier = nextTier;
+    profile.tier_achieved_at = new Date();
+  } else if (!profile.tier_achieved_at) {
+    profile.tier_achieved_at = new Date();
+  }
+
+  await profile.save();
+  return { rewardedCount, rewardedPoints };
+}
 
 function toPublicAssetUrl(req, value) {
   const raw = String(value || '').trim();
@@ -45,7 +129,7 @@ exports.uploadReviewMedia = async (req, res) => {
 
 exports.createOrderReviews = async (req, res) => {
   try {
-    const { orderId, reviews } = req.body || {};
+    const { orderId, reviews, reviewer_account_id } = req.body || {};
 
     if (!mongoose.Types.ObjectId.isValid(String(orderId || ''))) {
       return res.status(400).json({ message: 'orderId is invalid' });
@@ -87,6 +171,7 @@ exports.createOrderReviews = async (req, res) => {
     }
 
     const created = [];
+    const createdDetailIds = [];
 
     for (const item of reviews) {
       const detailId = String(item?.order_detail_id || '');
@@ -124,12 +209,26 @@ exports.createOrderReviews = async (req, res) => {
 
       const doc = await Review.create(payload);
       created.push(doc._id);
+      createdDetailIds.push(detailId);
+    }
+
+    const normalizedReviewerAccountId = String(reviewer_account_id || '').trim();
+    const orderAccountId = String(order.account_id || '').trim();
+    const isReviewerLoggedIn = mongoose.Types.ObjectId.isValid(normalizedReviewerAccountId);
+    const isOrderHasAccount = mongoose.Types.ObjectId.isValid(orderAccountId);
+    const isOwnerReview = isReviewerLoggedIn && isOrderHasAccount && normalizedReviewerAccountId === orderAccountId;
+
+    let reward = { rewardedCount: 0, rewardedPoints: 0 };
+    if (createdDetailIds.length && isOwnerReview) {
+      reward = await applyReviewReward(order.account_id, order._id, createdDetailIds);
     }
 
     return res.status(201).json({
       message: 'Reviews submitted',
       createdCount: created.length,
       createdIds: created,
+      rewardedReviewCount: reward.rewardedCount,
+      rewardedPoints: reward.rewardedPoints,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });

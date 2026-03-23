@@ -11,6 +11,8 @@ const ProductImage = require("../models/ProductImage");
 const Coupon = require("../models/Coupon");
 const Review = require("../models/Review");
 const WarrantyRecord = require("../models/WarrantyRecord");
+const PointTransaction = require("../models/PointTransaction");
+const { getTierByPoints } = require("./loyalty.controller");
 const { recalculateProductAggregates } = require("../utils/product-aggregate");
 const { generateCustomerCode, generateUniqueOrderCode } = require("../utils/code-generator");
 
@@ -37,6 +39,7 @@ const NORMAL_STATUS_DESC_WEIGHT = {
 const CANCELLATION_GRACE_HOURS = 24;
 const WARRANTY_YEARS = 5;
 const SOLD_COUNT_STATUSES = new Set(["completed"]);
+const MEMBERSHIP_TIER_RANK = { dong: 1, bac: 2, vang: 3, kim_cuong: 4 };
 
 function getExpectedDepositAmount(totalAmount, depositAmount) {
   const total = Math.max(Number(totalAmount || 0), 0);
@@ -56,6 +59,58 @@ function buildBankTransferTransactionId(orderCode, paymentType) {
   const normalizedOrderCode = String(orderCode || "").trim();
   if (!normalizedOrderCode) return null;
   return `${normalizedOrderCode}-${getPaymentTypeCode(paymentType)}`;
+}
+
+function calculateEarnPointsFromOrderTotal(totalAmount) {
+  const safeTotal = Math.max(0, Number(totalAmount || 0));
+  return Math.max(0, Math.floor(safeTotal / 10000));
+}
+
+async function applyLoyaltyPointsForCompletedOrder(orderDoc) {
+  const accountId = String(orderDoc?.account_id || "").trim();
+  if (!mongoose.Types.ObjectId.isValid(accountId)) return;
+
+  const points = calculateEarnPointsFromOrderTotal(orderDoc?.total_amount);
+  if (points <= 0) return;
+
+  const existed = await PointTransaction.findOne({
+    profile_id: orderDoc.account_id,
+    order_id: orderDoc._id,
+    type: "earn",
+  })
+    .select("_id")
+    .lean();
+
+  if (existed) return;
+
+  await PointTransaction.create({
+    profile_id: orderDoc.account_id,
+    order_id: orderDoc._id,
+    points,
+    type: "earn",
+    note: "Tích điểm từ đơn hoàn tất",
+  });
+
+  const profile = await Profile.findById(orderDoc.account_id);
+  if (!profile) return;
+
+  const currentPoints = Math.max(0, Math.floor(Number(profile.loyalty_points_lifetime || 0)));
+  const nextPoints = currentPoints + points;
+  profile.loyalty_points_lifetime = nextPoints;
+
+  const currentTier = String(profile.membership_tier || "dong");
+  const nextTier = getTierByPoints(nextPoints).key;
+  const currentRank = MEMBERSHIP_TIER_RANK[currentTier] || 1;
+  const nextRank = MEMBERSHIP_TIER_RANK[nextTier] || 1;
+
+  if (nextRank > currentRank) {
+    profile.membership_tier = nextTier;
+    profile.tier_achieved_at = new Date();
+  } else if (!profile.tier_achieved_at && currentTier === "dong") {
+    profile.tier_achieved_at = new Date();
+  }
+
+  await profile.save();
 }
 
 function normalizeStatus(value) {
@@ -1137,6 +1192,17 @@ async function patchOrderStatus(req, res, next) {
     }
 
     await doc.save();
+
+    if (nextStatus === "completed") {
+      try {
+        await applyLoyaltyPointsForCompletedOrder(doc);
+      } catch (loyaltyErr) {
+        if (!/duplicate key/i.test(String(loyaltyErr?.message || ""))) {
+          console.error("Apply loyalty points failed:", loyaltyErr);
+        }
+      }
+    }
+
     res.json(doc.toObject());
   } catch (err) {
     if (err instanceof Error) {

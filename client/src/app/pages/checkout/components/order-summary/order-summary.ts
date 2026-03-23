@@ -17,6 +17,8 @@ export class OrderSummaryComponent {
   @Input() totalDiscount = 0;
   @Input() couponAmount = 0;
   @Input() total = 0;
+  @Input() isLoggedIn = false;
+  @Input() estimatedPoints = 0;
   @Input() requireDeposit = false;
   @Input() depositAmount = 0;
   @Input() isSubmitting = false;

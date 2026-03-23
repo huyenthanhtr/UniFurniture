@@ -216,6 +216,51 @@
   font-weight: 700;
 }
 
+.tier-label {
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.tier-label--dong {
+  color: #b8702e;
+  text-shadow: 0 1px 0 rgba(255, 235, 209, 0.7);
+}
+
+.tier-label--bac {
+  color: #617488;
+  text-shadow: 0 1px 0 rgba(237, 242, 248, 0.9);
+}
+
+.tier-label--vang {
+  color: #ba8a00;
+  text-shadow: 0 1px 0 rgba(255, 244, 200, 0.8);
+}
+
+.tier-label--kim-cuong {
+  color: #0d8bb0;
+  text-shadow: 0 1px 0 rgba(211, 247, 255, 0.9);
+}
+
+.tier-badge--dong {
+  background: #f8eee2;
+  color: #8d5723;
+}
+
+.tier-badge--bac {
+  background: #edf2f8;
+  color: #4f6071;
+}
+
+.tier-badge--vang {
+  background: #fff4d4;
+  color: #9e7400;
+}
+
+.tier-badge--kim-cuong {
+  background: #dcf5ff;
+  color: #007799;
+}
+
 /* ===== CAMERA MODAL OVERLAY ===== */
 .camera-overlay {
   position: fixed;

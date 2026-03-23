@@ -11,6 +11,7 @@ import { TrackingOrder, TrackingProduct } from '../models/order-tracking.models'
   styleUrl: '../../order-tracking.css',
 })
 export class TrackingReviewFlowComponent {
+  readonly reviewRewardPoints = 10;
   @Input({ required: true }) order!: TrackingOrder;
   @Input() reviewSubmittingProductKey: string | null = null;
   @Input() reviewInlineErrors: Record<string, string> = {};

@@ -81,6 +81,11 @@
       <span class="text-primary fs-6">{{ formatCurrency(total) }}</span>
     </div>
 
+    <div *ngIf="isLoggedIn" class="summary-row d-flex justify-content-between small mt-2">
+      <span class="text-muted">Điểm tích lũy dự kiến</span>
+      <span class="text-success fw-semibold">+{{ estimatedPoints }} điểm</span>
+    </div>
+
     <div *ngIf="requireDeposit" class="deposit-row mt-2 p-2 rounded small text-center">
       Cần cọc ngay: <strong class="text-danger">{{ formatCurrency(depositAmount) }}</strong>
     </div>
