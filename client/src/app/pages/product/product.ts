@@ -361,6 +361,7 @@ export class ProductComponent implements OnInit {
         collectionIds: nextCollectionIds,
         categoryIds: nextCategoryIds,
         navScroll: nextNavScrollToken,
+        searchQuery: nextSearchQuery,
       });
       if (nextCategoryScrollSignature !== this.lastCategoryScrollSignature) {
         this.lastCategoryScrollSignature = nextCategoryScrollSignature;

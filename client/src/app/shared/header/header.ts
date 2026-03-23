@@ -1,4 +1,4 @@
-﻿import { Component, HostListener, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { UiStateService } from '../ui-state.service';
@@ -103,7 +103,7 @@ export class Header implements OnInit {
     localStorage.removeItem('refresh_token');
     this.userProfile = null;
     window.dispatchEvent(new CustomEvent('user-profile-updated', { detail: null }));
-    this.ui.clearCart();
+    this.ui.clearLocalCart();
     void this.router.navigate(['/']);
   }
 

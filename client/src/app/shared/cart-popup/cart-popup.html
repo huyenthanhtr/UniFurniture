@@ -1,4 +1,4 @@
-﻿@if (ui.isCartOpen()) {
+@if (ui.isCartOpen()) {
 <div class="cart-overlay" (click)="closeOnBackdrop($event)">
     <div class="cart-drawer">
 
@@ -27,10 +27,19 @@
             <div class="cart-bulk-actions">
                 <label class="cart-checkbox-label">
                     <input type="checkbox" class="cart-checkbox" [checked]="isAllSelected" (change)="toggleSelectAll($event)">
-                    <span>Chọn tất cả ({{ ui.cartItems().length }})</span>
+                    <span>Chọn tất cả ({{ ui.selectedCartKeys().size }}/{{ ui.cartItems().length }})</span>
                 </label>
                 <button type="button" class="cart-delete-selected" [disabled]="!hasSelectedItems" (click)="deleteSelected()">Xóa mục đã chọn</button>
             </div>
+            @if (confirmDeleteKey() === 'bulk') {
+            <div class="cart-bulk-confirm cart-item-confirm">
+                <p>Bạn có chắc chắn muốn xóa các sản phẩm đã chọn khỏi giỏ hàng?</p>
+                <div class="confirm-actions">
+                    <button type="button" class="btn-cancel" (click)="cancelDelete()">Hủy</button>
+                    <button type="button" class="btn-confirm" (click)="confirmDelete()">Xóa</button>
+                </div>
+            </div>
+            }
             <div class="cart-items">
                 @for (item of ui.cartItems(); track item.cartKey) {
                 <div class="cart-item">
@@ -54,7 +63,7 @@
                             <div class="qty-controls">
                                 <button type="button" class="qty-mini-btn" (click)="decreaseQuantity(item)">-</button>
                                 <input type="number" class="qty-mini-input" [value]="item.quantity"
-                                    [max]="item.maxStock || 9999" (change)="onQuantityInput($event, item)"
+                                    [max]="item.maxStock || 99" (change)="onQuantityInput($event, item)"
                                     (keyup.enter)="onQuantityInput($event, item)" />
                                 <button type="button" class="qty-mini-btn" (click)="increaseQuantity(item)">+</button>
                             </div>
@@ -62,6 +71,15 @@
                         </div>
                         @if (errorItems().has(item.cartKey)) {
                         <div class="cart-item-error">Đã vượt quá số lượng tồn kho</div>
+                        }
+                        @if (confirmDeleteKey() === item.cartKey) {
+                        <div class="cart-item-confirm">
+                            <p>Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?</p>
+                            <div class="confirm-actions">
+                                <button type="button" class="btn-cancel" (click)="cancelDelete()">Hủy</button>
+                                <button type="button" class="btn-confirm" (click)="confirmDelete()">Có, xóa</button>
+                            </div>
+                        </div>
                         }
                     </div>
                 </div>

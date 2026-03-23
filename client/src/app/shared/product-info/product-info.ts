@@ -457,6 +457,13 @@ export class ProductInfoComponent implements OnChanges {
       return this.selectedVariant;
     }
 
+    const allVariants = this.product.variants || [];
+    const defaultVariant = allVariants.find(v => this.isDefaultVariant(v));
+
+    if (this.sizeVariants.length === 0 && defaultVariant) {
+      return defaultVariant;
+    }
+
     return this.sizeVariants.length === 1 ? this.sizeVariants[0] : null;
   }
 
@@ -515,10 +522,21 @@ export class ProductInfoComponent implements OnChanges {
     this.quantityInput = String(this.quantity);
   }
 
+  private isDefaultVariant(variant: ProductVariantDocument): boolean {
+    const productSku = String(this.product.sku || this.product.id).trim().toLowerCase();
+    const variantSku = String(variant.sku || '').trim().toLowerCase();
+    return productSku !== '' && variantSku === productSku;
+  }
+
   private toSizeVariants(variants: ProductVariantDocument[], colorName = ''): ProductVariantDocument[] {
     const seenLabels = new Set<string>();
 
     return variants.filter((variant) => {
+      // Hide default variants that match the product SKU
+      if (this.isDefaultVariant(variant)) {
+        return false;
+      }
+
       const label = this.extractVariantSizeLabel(variant, colorName);
       if (!label) {
         return false;
@@ -535,7 +553,7 @@ export class ProductInfoComponent implements OnChanges {
   }
 
   private extractVariantSizeLabel(variant: ProductVariantDocument, colorName = ''): string {
-    const rawLabel = variant.variant_name?.trim() || variant.name?.trim() || '';
+    const rawLabel = variant.label?.trim() || variant.variant_name?.trim() || variant.name?.trim() || '';
     if (!rawLabel) {
       return '';
     }

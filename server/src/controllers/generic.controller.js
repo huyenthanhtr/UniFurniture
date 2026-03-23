@@ -125,10 +125,28 @@ function buildPatchHandler(Model) {
   };
 }
 
+function buildDeleteHandler(Model) {
+  return async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const doc = await Model.findByIdAndDelete(id);
+      if (!doc) return res.status(404).json({ message: "Not found" });
+      return res.json({ success: true, deleted: doc });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Delete failed" });
+    }
+  };
+}
+
 module.exports = {
   buildListHandler,
   buildGetByIdHandler,
   buildCreateHandler,
   buildUpdateHandler,
   buildPatchHandler,
+  buildDeleteHandler,
 };
