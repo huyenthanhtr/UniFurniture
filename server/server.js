@@ -25,6 +25,7 @@ const authRoutes = require("./src/routes/auth.routes");
 const productModels3dRoutes = require("./src/routes/product-model-3d.routes");
 const reviewRoutes = require('./src/routes/review.routes');
 const wishlistRoutes = require("./src/routes/wishlist.routes");
+const loyaltyRoutes = require("./src/routes/loyalty.routes");
 const { normalizeSystemCodes } = require("./src/utils/normalize-system-codes");
 const app = express();
 app.use(cors());
@@ -56,6 +57,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/product-models-3d", productModels3dRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/loyalty", loyaltyRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 connectDB().then(async () => {
   await normalizeSystemCodes();

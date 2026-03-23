@@ -2,6 +2,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { LoyaltyService } from '../../shared/loyalty.service';
 import { UiStateService } from '../../shared/ui-state.service';
 import { CouponPickerComponent } from './components/coupon-picker/coupon-picker';
 import { OrderSummaryComponent } from './components/order-summary/order-summary';
@@ -59,8 +60,10 @@ export class CheckoutComponent implements OnInit {
   private readonly ui = inject(UiStateService);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly loyaltyService = inject(LoyaltyService);
 
   private buyNowItem: CheckoutCartItem | null = null;
+  estimatedPointsFromApi = 0;
 
   form: CheckoutForm = {
     fullName: '',
@@ -120,6 +123,11 @@ export class CheckoutComponent implements OnInit {
     return Math.max(0, this.subtotal - this.couponAmount);
   }
 
+  get estimatedLoyaltyPoints(): number {
+    if (!this.isLoggedIn()) return 0;
+    return Math.max(0, this.estimatedPointsFromApi);
+  }
+
   get requireDeposit(): boolean {
     return this.total >= 10000000;
   }
@@ -144,6 +152,7 @@ export class CheckoutComponent implements OnInit {
   ngOnInit(): void {
     this.loadBuyNowState();
     this.ensureDepositPaymentRule();
+    void this.refreshEstimatedPoints();
   }
 
   onFormChange(patch: Partial<CheckoutForm>): void {
@@ -155,6 +164,7 @@ export class CheckoutComponent implements OnInit {
     this.form = { ...this.form, couponCode: payload.code, couponDiscount: payload.discount };
     // Sau khi áp coupon, re-check ngu?ng deposit
     this.ensureDepositPaymentRule();
+    void this.refreshEstimatedPoints();
   }
 
   onQuantityChange(payload: { cartKey: string; quantity: number }): void {
@@ -165,10 +175,12 @@ export class CheckoutComponent implements OnInit {
         : Number.POSITIVE_INFINITY;
       this.buyNowItem = { ...this.buyNowItem, quantity: Math.max(1, Math.min(rawQty, maxQty)) };
       this.ensureDepositPaymentRule();
+      void this.refreshEstimatedPoints();
       return;
     }
     this.ui.updateCartItemQuantity(payload.cartKey, payload.quantity);
     this.ensureDepositPaymentRule();
+    void this.refreshEstimatedPoints();
   }
 
 
@@ -325,6 +337,14 @@ export class CheckoutComponent implements OnInit {
       salePrice,
       maxStock: typeof candidate.maxStock === 'number' ? candidate.maxStock : undefined,
     };
+  }
+
+  private async refreshEstimatedPoints(): Promise<void> {
+    if (!this.isLoggedIn()) {
+      this.estimatedPointsFromApi = 0;
+      return;
+    }
+    this.estimatedPointsFromApi = await this.loyaltyService.estimatePoints(this.total);
   }
 }
 

@@ -48,6 +48,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   toastMessage = '';
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
   reviewThanksOpen = false;
+  reviewThanksTitle = '';
   reviewThanksMessage = '';
   orders: TrackingOrder[] = [];
   reviewSubmittingProductKey: string | null = null;
@@ -146,13 +147,18 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   }
 
 
-  private showReviewThanks(productName: string): void {
-    this.reviewThanksMessage = `Cảm ơn bạn đã gửi đánh giá cho sản phẩm ${productName}.`;
+  private showReviewThanks(productName: string, rewardedPoints = 0): void {
+    this.reviewThanksTitle = 'Đã được tích điểm đánh giá';
+    this.reviewThanksMessage =
+      rewardedPoints > 0
+        ? `Bạn đã gửi đánh giá cho ${productName} và nhận +${rewardedPoints} điểm.`
+        : `Bạn đã gửi đánh giá cho ${productName} thành công.`;
     this.reviewThanksOpen = true;
   }
 
   closeReviewThanks(): void {
     this.reviewThanksOpen = false;
+    this.reviewThanksTitle = '';
     this.reviewThanksMessage = '';
   }
 
@@ -442,7 +448,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     const remaining = MAX_REVIEW_IMAGES - product.review.imageFiles.length;
 
     if (remaining <= 0) {
-      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_IMAGES} ?nh.`;
+      this.infoMessage = `Mỗi sản phẩm chỉ tối đa ${MAX_REVIEW_IMAGES} ảnh.`;
       input.value = '';
       return;
     }
@@ -454,7 +460,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     });
 
     if (acceptedFiles.length < files.length) {
-      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_IMAGES} ?nh.`;
+      this.infoMessage = `Mỗi sản phẩm chỉ tối đa ${MAX_REVIEW_IMAGES} ảnh.`;
     }
 
     input.value = '';
@@ -466,7 +472,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     const remaining = MAX_REVIEW_VIDEOS - product.review.videoFiles.length;
 
     if (remaining <= 0) {
-      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_VIDEOS} video.`;
+      this.infoMessage = `Mỗi sản phẩm chỉ tối đa ${MAX_REVIEW_VIDEOS} video.`;
       input.value = '';
       return;
     }
@@ -478,7 +484,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     });
 
     if (acceptedFiles.length < files.length) {
-      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_VIDEOS} video.`;
+      this.infoMessage = `Mỗi sản phẩm chỉ tối đa ${MAX_REVIEW_VIDEOS} video.`;
     }
 
     input.value = '';
@@ -513,7 +519,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   }
 
   imageCountLabel(product: TrackingProduct): string {
-    return `${product.review.imageFiles.length}/${MAX_REVIEW_IMAGES} ?nh`;
+    return `${product.review.imageFiles.length}/${MAX_REVIEW_IMAGES} ảnh`;
   }
 
   videoCountLabel(product: TrackingProduct): string {
@@ -547,13 +553,13 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     this.reviewInlineErrors[key] = '';
 
     if (!this.hasAnyInteraction(product)) {
-      this.reviewInlineErrors[key] = 'Vui lòng ch?n s? sao tru?c khi g?i dánh giá.';
+      this.reviewInlineErrors[key] = 'Vui lòng chọn sao trước khi đánh giá.';
       this.cdr.detectChanges();
       return;
     }
 
     if (product.review.rating < 1) {
-      this.reviewInlineErrors[key] = 'Vui lòng ch?n s? sao cho s?n ph?m này tru?c khi g?i dánh giá.';
+      this.reviewInlineErrors[key] = 'Vui lòng chọn sao cho sản phẩm trước khi gửi đánh giá';
       this.cdr.detectChanges();
       return;
     }
@@ -579,10 +585,22 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
         videos: uploadedVideos.videos.map((url) => this.trackingData.toMediaUrl(url)),
       };
 
-      await firstValueFrom(
-        this.http.post(`${API_BASE_URL}/reviews`, {
+      const rawProfile = String(localStorage.getItem('user_profile') || '').trim();
+      let reviewerAccountId = '';
+      if (rawProfile) {
+        try {
+          const profile = JSON.parse(rawProfile);
+          reviewerAccountId = String(profile?._id || profile?.id || '').trim();
+        } catch {
+          reviewerAccountId = '';
+        }
+      }
+
+      const reviewSubmitRes = await firstValueFrom(
+        this.http.post<{ rewardedPoints?: number }>(`${API_BASE_URL}/reviews`, {
           orderId: order.id,
           reviews: [payloadReview],
+          reviewer_account_id: reviewerAccountId,
         }),
       );
 
@@ -599,8 +617,10 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       const reviewableProducts = order.products.filter((item) => !!item.orderDetailId);
       order.reviewSubmitted = reviewableProducts.length > 0 && reviewableProducts.every((item) => !!item.submittedReview);
       this.reviewInlineErrors[key] = '';
-      this.showToast(`Đã gửi đánh giá cho sản phẩm ${product.name}.`);
-      this.showReviewThanks(product.name);
+      const rewardedPoints = Math.max(0, Number(reviewSubmitRes?.rewardedPoints || 0));
+      const rewardText = rewardedPoints > 0 ? ` Bạn nhận +${rewardedPoints} điểm.` : '';
+      this.showToast(`Đã gửi đánh giá cho sản phẩm ${product.name}.${rewardText}`);
+      this.showReviewThanks(product.name, rewardedPoints);
       this.cdr.detectChanges();
 
       if (order.reviewSubmitted) {
@@ -613,11 +633,11 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
         await this.trackingData.applyExistingReviews(order);
         const reviewableProducts = order.products.filter((item) => !!item.orderDetailId);
         order.reviewSubmitted = reviewableProducts.length > 0 && reviewableProducts.every((item) => !!item.submittedReview);
-        this.reviewInlineErrors[key] = error?.error?.message || 'S?n ph?m này dã du?c dánh giá tru?c dó, không th? ch?nh s?a.';
+        this.reviewInlineErrors[key] = error?.error?.message || 'Sản phẩm này đã được đánh giá trước đó, không thể chỉnh sửa.';
         this.showToast(this.reviewInlineErrors[key]);
         this.cdr.detectChanges();
       } else {
-        this.reviewInlineErrors[key] = 'Không th? g?i dánh giá lúc này. Vui lòng th? l?i sau.';
+        this.reviewInlineErrors[key] = 'Không thể gửi đánh giá lúc này. Vui lòng gửi lại sau';
         this.showToast(this.reviewInlineErrors[key]);
         this.cdr.detectChanges();
       }
@@ -666,7 +686,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     }
 
     if (this.isImageLimitReached(this.cameraProduct)) {
-      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_IMAGES} ?nh.`;
+      this.infoMessage = `Mỗi sản phẩm chỉ tối đa ${MAX_REVIEW_IMAGES} ảnh.`;
       return;
     }
 
@@ -680,7 +700,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
     const context = canvas.getContext('2d');
     if (!context) {
-      this.cameraError = 'Không th? ch?p ?nh t? camera.';
+      this.cameraError = 'Không thể chụp ảnh từ camera.';
       return;
     }
 
@@ -688,7 +708,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
     if (!blob) {
-      this.cameraError = 'Không th? t?o ?nh t? camera.';
+      this.cameraError = 'Không thể tạo ảnh từ camera.';
       return;
     }
 
@@ -708,12 +728,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     }
 
     if (this.isVideoLimitReached(this.cameraProduct)) {
-      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_VIDEOS} video.`;
+      this.infoMessage = `Mỗi sản phẩm chỉ tối đa ${MAX_REVIEW_VIDEOS} video.`;
       return;
     }
 
     if (typeof MediaRecorder === 'undefined') {
-      this.cameraError = 'Trình duy?t không h? tr? quay video tr?c ti?p.';
+      this.cameraError = 'Trình duyệt không hỗ trợ quay video trực tiếp.';
       return;
     }
 
@@ -787,12 +807,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   private async openCamera(product: TrackingProduct, mode: 'image' | 'video'): Promise<void> {
     if (mode === 'image' && this.isImageLimitReached(product)) {
-      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_IMAGES} ?nh.`;
+      this.infoMessage = `Mỗi sản phẩm chỉ tối đa ${MAX_REVIEW_IMAGES} ảnh.`;
       return;
     }
 
     if (mode === 'video' && this.isVideoLimitReached(product)) {
-      this.infoMessage = `M?i s?n ph?m ch? t?i t?i da ${MAX_REVIEW_VIDEOS} video.`;
+      this.infoMessage = `Mỗi sản phẩm chỉ tối đa ${MAX_REVIEW_VIDEOS} video.`;
       return;
     }
 
@@ -807,7 +827,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   private async startCamera(): Promise<void> {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      this.cameraError = 'Thi?t b? không h? tr? camera trên trình duy?t này.';
+      this.cameraError = 'Thiết bị không hỗ trợ camera trên trình duyệt này.';
       return;
     }
 
@@ -823,7 +843,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       await this.bindCameraStream();
       await this.loadCameraDevices();
     } catch {
-      this.cameraError = 'Không th? m? camera. Vui lòng c?p quy?n truy c?p camera.';
+      this.cameraError = 'Không thể mở camera. Vui lòng cấp quyền truy cập camera';
     }
   }
 
@@ -976,7 +996,6 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // N?u state cu b? thi?u total/deposit thì l?y theo d? li?u don v?a tra c?u
     const normalizedSource: PendingQrState = {
       ...this.pendingQrSource,
       total: Number(this.pendingQrSource.total || matchedOrder.total || 0),
@@ -1010,7 +1029,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     try {
       await firstValueFrom(this.http.post(`${API_BASE_URL}/orders/${orderId}/demo-transfer-timeout`, {}));
     } catch {
-      // Demo mode: kh?ng ch?n lu?ng UI n?u ??ng b? backend l?i
+
     }
   }
 

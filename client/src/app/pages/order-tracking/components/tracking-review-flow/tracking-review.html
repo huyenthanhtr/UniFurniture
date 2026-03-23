@@ -1,6 +1,9 @@
 ﻿<div class="card review-card" *ngIf="showReviewSection()">
   <h3>Đánh giá sản phẩm</h3>
-  <p class="review-note">Đánh giá từng sản phẩm riêng lẻ (1-5 sao), thêm nhận xét, ảnh và video thực tế.</p>
+  <p class="review-note">
+    Đánh giá từng sản phẩm riêng lẻ (1-5 sao) để nhận
+    <span class="review-reward-inline">+{{ reviewRewardPoints }} điểm tích lũy</span>.
+  </p>
 
   <ng-container *ngFor="let product of order.products; let idx = index">
     <div class="review-item" [class.review-item--alt]="idx % 2 === 1" *ngIf="!product.submittedReview">

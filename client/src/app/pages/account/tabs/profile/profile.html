@@ -52,6 +52,37 @@
         </div>
       </div>
 
+      <div class="form-group" *ngIf="loyalty() as loyaltyInfo">
+        <label>Hạng thành viên</label>
+        <div class="form-control-readonly">
+          <span
+            class="tier-label"
+            [ngClass]="{
+              'tier-label--dong': loyaltyInfo.membership_tier === 'dong',
+              'tier-label--bac': loyaltyInfo.membership_tier === 'bac',
+              'tier-label--vang': loyaltyInfo.membership_tier === 'vang',
+              'tier-label--kim-cuong': loyaltyInfo.membership_tier === 'kim_cuong'
+            }"
+          >
+            {{ loyaltyInfo.membership_tier_label }}
+          </span>
+          <span
+            class="readonly-badge"
+            [ngClass]="{
+              'tier-badge--dong': loyaltyInfo.membership_tier === 'dong',
+              'tier-badge--bac': loyaltyInfo.membership_tier === 'bac',
+              'tier-badge--vang': loyaltyInfo.membership_tier === 'vang',
+              'tier-badge--kim-cuong': loyaltyInfo.membership_tier === 'kim_cuong'
+            }"
+          >
+            {{ loyaltyInfo.loyalty_points_lifetime }} điểm
+          </span>
+        </div>
+        <small class="text-muted" *ngIf="loyaltyInfo.next_tier_label">
+          Cần thêm {{ loyaltyInfo.points_to_next_tier }} điểm để lên hạng {{ loyaltyInfo.next_tier_label }}.
+        </small>
+      </div>
+
       <div class="form-group">
         <label for="fullName">Tên tài khoản</label>
         <input
