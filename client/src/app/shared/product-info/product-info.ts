@@ -8,6 +8,7 @@ import {
   ProductVariantDocument,
 } from '../../services/product-data.service';
 import { UiStateService } from '../ui-state.service';
+import { WishlistService } from '../wishlist.service';
 
 @Component({
   selector: 'app-product-info',
@@ -40,9 +41,35 @@ export class ProductInfoComponent implements OnChanges {
 
   constructor(
     private readonly ui: UiStateService,
+    private readonly wishlist: WishlistService,
     private readonly productDataService: ProductDataService,
     private readonly router: Router,
   ) {}
+
+  isWishlisted(): boolean {
+    return this.wishlist.isInWishlist(String(this.product?.id || ''));
+  }
+
+  async toggleWishlist(): Promise<void> {
+    if (!this.wishlist.isLoggedIn()) {
+      this.ui.openAuth('login');
+      return;
+    }
+
+    const salePrice = this.selectedVariant?.price ?? this.selectedColor?.price ?? this.product?.price ?? 0;
+    const originalPrice =
+      this.selectedVariant?.compare_at_price ?? this.selectedColor?.originalPrice ?? this.product?.originalPrice ?? salePrice;
+    const selectedImage = this.selectedColor?.imageUrl ?? this.product?.images?.[0]?.url ?? '';
+
+    await this.wishlist.toggle({
+      product_id: String(this.product?.id || '').trim(),
+      product_slug: String(this.product?.slug || '').trim(),
+      name: String(this.product?.name || '').trim() || 'Sản phẩm',
+      image_url: String(selectedImage || '').trim(),
+      sale_price: Math.max(0, Number(salePrice || 0)),
+      price: Math.max(0, Number(originalPrice || salePrice || 0)),
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!changes['product']) {

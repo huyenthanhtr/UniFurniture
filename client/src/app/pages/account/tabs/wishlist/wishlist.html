@@ -1,31 +1,117 @@
-<div class="tab-section">
-  <h2 class="tab-title">Danh sách yêu thích</h2>
-
-  <div *ngIf="error()" class="alert-error mb-3">{{ error() }}</div>
-  <div *ngIf="loading()" class="text-muted">Đang tải...</div>
-
-  <div *ngIf="!loading() && items().length === 0" class="empty-state">
-    <div class="empty-icon">❤️</div>
-    <p>Bạn chưa có sản phẩm yêu thích nào.<br/>Bấm ❤️ trên sản phẩm để lưu vào đây.</p>
+﻿<div class="tab-section wishlist-tab">
+  <div class="wishlist-header">
+    <div>
+      <h2 class="tab-title">Danh sách yêu thích</h2>
+      <p class="tab-subtitle">Quản lý các sản phẩm bạn đã lưu để mua nhanh hơn.</p>
+    </div>
+    <div class="wishlist-count" *ngIf="!loading()">{{ items().length }} sản phẩm</div>
   </div>
 
-  <div class="wishlist-grid" *ngIf="!loading() && items().length > 0">
-    <div class="wishlist-card" *ngFor="let item of items()">
+  <div *ngIf="error()" class="alert-error mb-3">{{ error() }}</div>
+
+  <div class="wishlist-toolbar" *ngIf="!loading() && items().length > 0">
+    <div class="toolbar-field toolbar-field--search">
+      <label>Tìm kiếm</label>
+      <input
+        type="text"
+        class="toolbar-input"
+        placeholder="Tên sản phẩm..."
+        [ngModel]="searchKeyword()"
+        (ngModelChange)="setSearchKeyword($event)"
+      />
+    </div>
+
+    <div class="toolbar-field">
+      <label>Sắp xếp</label>
+      <select class="toolbar-input" [ngModel]="sortMode()" (ngModelChange)="setSortMode($event)">
+        <option value="newest">Mới lưu gần đây</option>
+        <option value="name_az">Tên A - Z</option>
+        <option value="name_za">Tên Z - A</option>
+        <option value="price_low">Giá thấp đến cao</option>
+        <option value="price_high">Giá cao đến thấp</option>
+      </select>
+    </div>
+
+    <button type="button" class="btn-filter-reset" (click)="toggleAdvancedFilters()">
+      {{ showAdvancedFilters() ? 'Ẩn lọc nâng cao' : 'Lọc nâng cao' }}
+    </button>
+  </div>
+
+  <div class="advanced-filters" *ngIf="!loading() && items().length > 0 && showAdvancedFilters()">
+    <div class="toolbar-field">
+      <label>Giá từ</label>
+      <input
+        type="text"
+        inputmode="numeric"
+        class="toolbar-input"
+        placeholder="Ví dụ: 1000000"
+        [ngModel]="minPriceInput()"
+        (ngModelChange)="setMinPriceInput($event)"
+      />
+    </div>
+
+    <div class="toolbar-field">
+      <label>Giá đến</label>
+      <input
+        type="text"
+        inputmode="numeric"
+        class="toolbar-input"
+        placeholder="Ví dụ: 20000000"
+        [ngModel]="maxPriceInput()"
+        (ngModelChange)="setMaxPriceInput($event)"
+      />
+    </div>
+
+    <button type="button" class="btn-filter-clear" (click)="clearFilters()">Đặt lại bộ lọc</button>
+  </div>
+
+  <div *ngIf="loading()" class="wishlist-loading">
+    <div class="spinner-sm"></div>
+    <span>Đang tải danh sách yêu thích...</span>
+  </div>
+
+  <div *ngIf="!loading() && items().length === 0" class="wishlist-empty">
+    <div class="empty-icon">❤️</div>
+    <h3>Chưa có sản phẩm yêu thích</h3>
+    <p>
+      <button type="button" class="wishlist-empty-link" (click)="openAllProducts()">
+        Bấm tim ở trang sản phẩm để lưu nhanh vào danh sách này.
+      </button>
+    </p>
+  </div>
+
+  <div *ngIf="!loading() && items().length > 0 && !hasItemsAfterFilter()" class="wishlist-empty wishlist-empty--small">
+    <div class="empty-icon">🔍</div>
+    <h3>Không tìm thấy sản phẩm phù hợp</h3>
+    <p>Thử từ khóa khác hoặc đổi kiểu sắp xếp.</p>
+  </div>
+
+  <div class="wishlist-grid" *ngIf="!loading() && hasItemsAfterFilter()">
+    <article class="wishlist-card" *ngFor="let item of visibleItems(); trackBy: trackByProduct">
+      <button
+        type="button"
+        class="wishlist-remove"
+        (click)="removeFromWishlist(item)"
+        title="Bỏ khỏi yêu thích"
+        aria-label="Bỏ khỏi yêu thích"
+      >
+        ❤
+      </button>
+
       <div class="wishlist-img-wrap" (click)="viewProduct(item)">
-        <img [src]="item.imageUrl || item.image_url || 'assets/images/placeholder.jpg'"
-             [alt]="item.name || item.product_name" class="wishlist-img" />
+        <img [src]="productImage(item)" [alt]="productName(item)" class="wishlist-img" />
       </div>
+
       <div class="wishlist-info">
         <div class="wishlist-name" (click)="viewProduct(item)">
-          {{ item.name || item.product_name }}
+          {{ productName(item) }}
         </div>
-        <div class="wishlist-price" *ngIf="item.price || item.sale_price">
-          {{ formatCurrency(item.price || item.sale_price) }}
+
+        <div class="wishlist-bottom">
+          <div class="wishlist-price">{{ formatCurrency(effectivePrice(item)) }}</div>
+          <button type="button" class="wishlist-view-btn" (click)="viewProduct(item)">Xem chi tiết</button>
         </div>
       </div>
-      <button type="button" class="wishlist-remove" (click)="removeFromWishlist(item)" title="Bỏ yêu thích">
-        ✕
-      </button>
-    </div>
+    </article>
   </div>
 </div>

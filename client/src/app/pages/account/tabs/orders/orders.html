@@ -26,6 +26,14 @@
     <button
       type="button"
       class="order-tab-btn"
+      [class.active]="activeTab() === 'exchanged'"
+      (click)="setActiveTab('exchanged')"
+    >
+      Đã đổi hàng ({{ tabCount('exchanged') }})
+    </button>
+    <button
+      type="button"
+      class="order-tab-btn"
       [class.active]="activeTab() === 'cancelled'"
       (click)="setActiveTab('cancelled')"
     >
@@ -88,7 +96,7 @@
   <div class="order-list" *ngIf="!loading() && displayOrders().length > 0">
     <article
       class="order-card"
-      *ngFor="let order of displayOrders(); let i = index"
+      *ngFor="let order of visibleOrders(); let i = index"
       [class.order-card--odd]="i % 2 === 0"
       [class.order-card--even]="i % 2 === 1"
     >
@@ -138,6 +146,14 @@
             Xem chi tiết & Tra cứu
           </button>
           <button
+            *ngIf="canBuyAgain(order)"
+            type="button"
+            class="action-pill action-pill--buy-again"
+            (click)="buyAgain(order)"
+          >
+            Mua lại
+          </button>
+          <button
           *ngIf="canShowWarranty(order)"
           type="button"
           class="action-pill action-pill--warranty"
@@ -181,5 +197,11 @@
         </ng-container>
       </div>
     </article>
+
+    <div class="orders-more" *ngIf="hasMoreOrders()">
+      <button type="button" class="btn-orders-more" (click)="showMoreOrders()">
+        Xem thêm {{ hiddenOrdersCount() }} đơn cũ hơn
+      </button>
+    </div>
   </div>
 </div>

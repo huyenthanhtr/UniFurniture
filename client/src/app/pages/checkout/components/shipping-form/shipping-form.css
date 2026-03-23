@@ -25,6 +25,19 @@
   gap: 8px;
 }
 
+.saved-address-select--default {
+  border-color: #d58b1d;
+  background: #fff4de;
+  color: #5a3b16;
+  box-shadow: 0 0 0 0.16rem rgba(213, 139, 29, 0.2);
+}
+
+.saved-address-option--default {
+  font-weight: 700;
+  background: #fff2d9;
+  color: #5a3b16;
+}
+
 .saved-address-tools {
   display: flex;
   gap: 8px;

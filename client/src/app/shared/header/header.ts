@@ -19,11 +19,11 @@ export class Header implements OnInit {
   showLogoutConfirm = false;
 
   readonly accountMenuItems = [
-    { label: 'Hồ sơ cá nhân',     icon: '👤', tab: 'profile' },
-    { label: 'Sổ địa chỉ',         icon: '📍', tab: 'addresses' },
-    { label: 'Đơn hàng của tôi',  icon: '📦', tab: 'orders' },
-    { label: 'Danh sách yêu thích', icon: '❤️', tab: 'wishlist' },
-    { label: 'Đổi mật khẩu',      icon: '🔑', tab: 'security' },
+    { label: 'Hồ sơ cá nhân', tab: 'profile' },
+    { label: 'Sổ địa chỉ', tab: 'addresses' },
+    { label: 'Đơn hàng của tôi', tab: 'orders' },
+    { label: 'Danh sách yêu thích', tab: 'wishlist' },
+    { label: 'Đổi mật khẩu', tab: 'security' },
   ];
 
   ngOnInit(): void {
@@ -102,6 +102,7 @@ export class Header implements OnInit {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     this.userProfile = null;
+    window.dispatchEvent(new CustomEvent('user-profile-updated', { detail: null }));
     this.ui.clearCart();
     void this.router.navigate(['/']);
   }

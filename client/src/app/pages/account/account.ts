@@ -36,12 +36,12 @@ export class AccountComponent implements OnInit {
   avatarLoadFailed = signal(false);
   showLogoutConfirm = signal(false);
 
-  readonly tabs: { key: AccountTab; label: string; icon: string }[] = [
-    { key: 'profile', label: 'Hồ sơ cá nhân', icon: '👤' },
-    { key: 'addresses', label: 'Sổ địa chỉ', icon: '📍' },
-    { key: 'orders', label: 'Đơn hàng của tôi', icon: '📦' },
-    { key: 'wishlist', label: 'Danh sách yêu thích', icon: '❤️' },
-    { key: 'security', label: 'Đổi mật khẩu', icon: '🔐' },
+  readonly tabs: { key: AccountTab; label: string }[] = [
+    { key: 'profile', label: 'Hồ sơ cá nhân'},
+    { key: 'addresses', label: 'Sổ địa chỉ'},
+    { key: 'orders', label: 'Đơn hàng của tôi'},
+    { key: 'wishlist', label: 'Danh sách yêu thích'},
+    { key: 'security', label: 'Đổi mật khẩu'},
   ];
 
   ngOnInit(): void {
@@ -89,6 +89,7 @@ export class AccountComponent implements OnInit {
     localStorage.removeItem('user_profile');
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    window.dispatchEvent(new CustomEvent('user-profile-updated', { detail: null }));
     this.ui.clearCart();
     void this.router.navigate(['/']);
   }

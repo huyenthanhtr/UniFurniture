@@ -4,10 +4,11 @@ import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { UiStateService } from '../../../../shared/ui-state.service';
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
-type OrderTab = 'in_progress' | 'completed' | 'cancelled';
+type OrderTab = 'in_progress' | 'completed' | 'exchanged' | 'cancelled';
 
 interface OrderPreviewItem {
   _id?: string;
@@ -31,6 +32,7 @@ export class AccountOrdersTab implements OnInit {
 
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly ui = inject(UiStateService);
 
   orders = signal<any[]>([]);
   displayOrders = signal<any[]>([]);
@@ -48,6 +50,10 @@ export class AccountOrdersTab implements OnInit {
   orderDetailsMap = signal<Record<string, any>>({});
   orderDetailsLoadingMap = signal<Record<string, boolean>>({});
   orderDetailsErrorMap = signal<Record<string, string>>({});
+  visibleOrderCount = signal(3);
+
+  private readonly initialVisibleOrders = 3;
+  private readonly showMoreStep = 5;
 
   private expandedOrderIds = new Set<string>();
   private openedWarrantyOrderIds = new Set<string>();
@@ -123,8 +129,61 @@ export class AccountOrdersTab implements OnInit {
     this.applyFilters();
   }
 
+  visibleOrders(): any[] {
+    return this.displayOrders().slice(0, this.visibleOrderCount());
+  }
+
+  hasMoreOrders(): boolean {
+    return this.displayOrders().length > this.visibleOrderCount();
+  }
+
+  hiddenOrdersCount(): number {
+    return Math.max(this.displayOrders().length - this.visibleOrderCount(), 0);
+  }
+
+  showMoreOrders(): void {
+    const current = this.visibleOrderCount();
+    this.visibleOrderCount.set(current + this.showMoreStep);
+  }
+
   viewTracking(orderCode: string): void {
     void this.router.navigate(['/tra-cuu-van-don'], { queryParams: { code: orderCode } });
+  }
+
+  canBuyAgain(order: any): boolean {
+    return String(order?.status || '').toLowerCase() === 'completed' && this.orderItems(order).length > 0;
+  }
+
+  buyAgain(order: any): void {
+    if (!this.canBuyAgain(order)) return;
+    const items = this.orderItems(order);
+    if (!items.length) {
+      return;
+    }
+
+    items.forEach((item) => {
+      const productId = String((item as any)?.product_id || '').trim();
+      if (!productId) return;
+
+      const variantId = String((item as any)?.variant_id || '').trim();
+      const unitPrice = Number((item as any)?.unit_price || 0);
+      const price = unitPrice > 0 ? unitPrice : 0;
+
+      this.ui.addToCart(
+        {
+          cartKey: variantId ? `${productId}::${variantId}` : productId,
+          productId,
+          variantId: variantId || undefined,
+          variantLabel: String((item as any)?.variant_name || '').trim() || undefined,
+          name: String((item as any)?.product_name || 'Sản phẩm').trim(),
+          imageUrl: this.productImageUrl(item),
+          price,
+        },
+        1
+      );
+    });
+
+    this.ui.openCart();
   }
 
   async toggleWarrantySection(order: any): Promise<void> {
@@ -295,6 +354,7 @@ export class AccountOrdersTab implements OnInit {
     });
 
     this.displayOrders.set(filtered);
+    this.visibleOrderCount.set(this.initialVisibleOrders);
   }
 
   private belongsToTab(order: any, tab: OrderTab): boolean {
@@ -305,7 +365,11 @@ export class AccountOrdersTab implements OnInit {
     }
 
     if (tab === 'completed') {
-      return ['completed', 'exchanged'].includes(status);
+      return ['completed'].includes(status);
+    }
+
+    if (tab === 'exchanged') {
+      return ['exchanged'].includes(status);
     }
 
     return ['cancelled', 'refunded'].includes(status);

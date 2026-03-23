@@ -1,7 +1,9 @@
-import { Component, Input, computed, signal } from '@angular/core';
+import { Component, Input, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProductListItem, ColorSwatch } from '../../services/product-data.service';
+import { UiStateService } from '../ui-state.service';
+import { WishlistService } from '../wishlist.service';
 
 @Component({
   selector: 'app-product-card',
@@ -11,6 +13,9 @@ import { ProductListItem, ColorSwatch } from '../../services/product-data.servic
   styleUrl: './product-card.css',
 })
 export class ProductCardComponent {
+  private readonly ui = inject(UiStateService);
+  private readonly wishlist = inject(WishlistService);
+
   @Input({ required: true }) product!: ProductListItem;
   readonly starValues = [1, 2, 3, 4, 5];
 
@@ -78,6 +83,33 @@ export class ProductCardComponent {
 
   onColorLeave(): void {
     this.hoveredColor.set(null);
+  }
+
+  isWishlisted(): boolean {
+    return this.wishlist.isInWishlist(String(this.product?.id || ''));
+  }
+
+  async toggleWishlist(event: Event): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this.wishlist.isLoggedIn()) {
+      this.ui.openAuth('login');
+      return;
+    }
+
+    const salePrice = this.displayPrice();
+    const originalPrice = this.discountedOriginalPrice();
+    const image = this.displayImageUrl();
+
+    await this.wishlist.toggle({
+      product_id: String(this.product?.id || '').trim(),
+      product_slug: String(this.product?.slug || '').trim(),
+      name: String(this.product?.name || '').trim(),
+      image_url: String(image || '').trim(),
+      sale_price: typeof salePrice === 'number' ? salePrice : 0,
+      price: typeof originalPrice === 'number' ? originalPrice : (typeof salePrice === 'number' ? salePrice : 0),
+    });
   }
 
   private toNumberOrNull(value: unknown): number | null {

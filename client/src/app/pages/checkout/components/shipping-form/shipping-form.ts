@@ -243,6 +243,16 @@ export class ShippingFormComponent implements OnInit, OnChanges {
     return this.districtOptions.some((item) => String(item.value || '').trim() === target);
   }
 
+  isDefaultSavedAddress(item: SavedAddress): boolean {
+    return Boolean(item?.isDefault);
+  }
+
+  isDefaultSavedAddressSelected(): boolean {
+    if (!this.selectedSavedAddressId) return false;
+    const selected = this.savedAddresses.find((item) => item._id === this.selectedSavedAddressId);
+    return Boolean(selected?.isDefault);
+  }
+
   private isRequiredFilled(field: 'fullName' | 'phone' | 'province' | 'district' | 'address'): boolean {
     const value = String(this.form?.[field] || '').trim();
     return value.length > 0;

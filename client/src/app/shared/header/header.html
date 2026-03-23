@@ -75,14 +75,12 @@
             class="dropdown-item"
             (click)="navigateToTab(item.tab)"
           >
-            <span class="dropdown-item-icon">{{ item.icon }}</span>
             <span>{{ item.label }}</span>
           </button>
 
           <div class="dropdown-divider"></div>
 
           <button type="button" class="dropdown-item dropdown-item--logout" (click)="requestLogout($event)">
-            <span class="dropdown-item-icon">🚪</span>
             <span>Đăng xuất</span>
           </button>
 

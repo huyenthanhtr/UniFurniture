@@ -67,7 +67,15 @@
 .product-card .product-info .product-price {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.product-card .product-info .product-price .product-price-values {
+    display: flex;
+    align-items: baseline;
     gap: 8px;
+    min-width: 0;
 }
 
 .product-card .product-info .product-price .current-price {
@@ -81,6 +89,35 @@
     color: #9ca3af;
     text-decoration: line-through;
     text-decoration-thickness: 1.5px;
+}
+
+.product-card .product-info .product-price .wishlist-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: 1px solid #e6d7c2;
+    background: #fff;
+    color: #9b8f80;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.18s ease;
+}
+
+.product-card .product-info .product-price .wishlist-btn:hover {
+    border-color: #f1a9b9;
+    color: #e11d48;
+    transform: translateY(-1px);
+}
+
+.product-card .product-info .product-price .wishlist-btn.wishlist-btn--active {
+    border-color: #f6b9c5;
+    background: #fff0f4;
+    color: #e11d48;
 }
 
 .product-card .product-meta {

@@ -41,7 +41,17 @@
 }
 
 .price {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     margin-bottom: 20px;
+}
+
+.price-values {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
 }
 
 .sale {
@@ -53,7 +63,42 @@
 .old {
     text-decoration: line-through;
     color: #888;
-    margin-left: 10px;
+}
+
+.wishlist-btn {
+    border: 1px solid #e5d2b9;
+    background: #fffaf2;
+    color: #6b4f2f;
+    border-radius: 999px;
+    height: 40px;
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.wishlist-btn:hover {
+    border-color: #ef9bad;
+    color: #c81e47;
+}
+
+.wishlist-btn--active {
+    border-color: #f4b7c4;
+    background: #fff0f4;
+    color: #d21d4d;
+}
+
+.wishlist-btn span[aria-hidden='true'] {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.wishlist-label {
+    white-space: nowrap;
 }
 
 .section {
