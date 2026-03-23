@@ -15,6 +15,7 @@ import {
 
 type SortDirection = 'asc' | 'desc';
 type PaymentStateKey = 'unpaid' | 'pending' | 'deposit_paid' | 'settled' | 'refunded';
+const PAYMENT_STATE_FLOW: PaymentStateKey[] = ['unpaid', 'pending', 'deposit_paid', 'settled', 'refunded'];
 
 function getExpectedDepositAmount(totalAmount: any, depositAmount: any): number {
   const total = Math.max(Number(totalAmount || 0), 0);
@@ -77,7 +78,7 @@ export class AdminOrders implements OnInit, OnDestroy {
     paymentId: string;
     nextStatus: string;
   } | null = null;
-  readonly paymentStates: PaymentStateKey[] = ['pending', 'deposit_paid', 'settled', 'refunded'];
+  readonly paymentStates: PaymentStateKey[] = [...PAYMENT_STATE_FLOW];
   readonly statuses = [...ADMIN_ORDER_STATUSES];
 
   private searchDebounceId: ReturnType<typeof setTimeout> | null = null;
@@ -210,16 +211,24 @@ export class AdminOrders implements OnInit, OnDestroy {
   }
 
   askPaymentChange(order: any, nextStatus: string): void {
-    const oldStatus = String(order?._selectedPaymentStatus || this.getPaymentStateKey(order)).toLowerCase();
+    const oldStatus = String(order?._selectedPaymentStatus || this.getPaymentStateKey(order)).toLowerCase() as PaymentStateKey;
+    const normalizedNextStatus = String(nextStatus || '').toLowerCase() as PaymentStateKey;
 
-    if (!order?._id || !nextStatus || nextStatus === oldStatus) {
+    if (!order?._id || !normalizedNextStatus || normalizedNextStatus === oldStatus) {
       order._selectedPaymentStatus = oldStatus;
       return;
     }
 
-    order._selectedPaymentStatus = nextStatus;
-    this.pendingPaymentChange = { order, newStatus: nextStatus, oldStatus };
-    this.confirmMessage = `Đổi trạng thái thanh toán sang ${this.getPaymentStateText(nextStatus)}?`;
+    const restrictionMessage = this.getPaymentStateRestrictionMessage(order, oldStatus, normalizedNextStatus);
+    if (restrictionMessage) {
+      order._selectedPaymentStatus = oldStatus;
+      this.showResult('Không hợp lệ', restrictionMessage, 'error');
+      return;
+    }
+
+    order._selectedPaymentStatus = normalizedNextStatus;
+    this.pendingPaymentChange = { order, newStatus: normalizedNextStatus, oldStatus };
+    this.confirmMessage = `Đổi trạng thái thanh toán sang ${this.getPaymentStateText(normalizedNextStatus)}?`;
     this.confirmKind = 'payment';
     this.showConfirmPopup = true;
   }
@@ -435,8 +444,9 @@ export class AdminOrders implements OnInit, OnDestroy {
     this.isLoading = true;
 
     const payload: any = { status: nextStatus };
-    if (nextStatus === 'paid' || nextStatus === 'refunded') payload.paid_at = payment?.paid_at || new Date().toISOString();
-    else payload.paid_at = null;
+    if ((nextStatus === 'paid' || nextStatus === 'refunded') && !payment?.paid_at) {
+      payload.paid_at = new Date().toISOString();
+    }
 
     this.api.patchPayment(String(payment._id), payload).subscribe({
       next: () => {
@@ -594,10 +604,12 @@ export class AdminOrders implements OnInit, OnDestroy {
     const setAllPayments = async (status: 'pending' | 'refunded') => {
       await Promise.all(
         payments.map((payment) =>
-          patchPayment(payment, {
-            status,
-            paid_at: status === 'refunded' ? payment?.paid_at || new Date().toISOString() : null,
-          })
+          patchPayment(
+            payment,
+            status === 'refunded' && !payment?.paid_at
+              ? { status, paid_at: new Date().toISOString() }
+              : { status }
+          )
         )
       );
     };
@@ -614,7 +626,9 @@ export class AdminOrders implements OnInit, OnDestroy {
         method,
         amount,
         status,
-        paid_at: status === 'paid' || status === 'refunded' ? new Date().toISOString() : null,
+        ...((status === 'paid' || status === 'refunded') && !existing?.paid_at
+          ? { paid_at: new Date().toISOString() }
+          : {}),
       };
 
       if (existing?._id) {
@@ -756,18 +770,34 @@ export class AdminOrders implements OnInit, OnDestroy {
   }
 
   getPaymentStateOptions(order: any): PaymentStateKey[] {
-    const options: PaymentStateKey[] = ['pending'];
+    const currentState = this.getPaymentStateKey(order);
     const depositAmount = getExpectedDepositAmount(
       order?.payment_summary?.total_amount || order?.total_amount || 0,
       order?.payment_summary?.deposit_amount || order?.deposit_amount || 0
     );
-    if (depositAmount > 0) options.push('deposit_paid');
-    options.push('settled', 'refunded');
-    return options;
+    const allowedFlow = PAYMENT_STATE_FLOW.filter((state) => state !== 'deposit_paid' || depositAmount > 0);
+    const currentIndex = Math.max(allowedFlow.indexOf(currentState), 0);
+    return allowedFlow.slice(currentIndex);
   }
 
   private isOrderPaymentSettled(order: any): boolean {
     return this.getPaymentStateKey(order) === 'settled';
+  }
+
+  private getPaymentStateRestrictionMessage(order: any, currentState: PaymentStateKey, nextState: PaymentStateKey): string {
+    const depositAmount = getExpectedDepositAmount(
+      order?.payment_summary?.total_amount || order?.total_amount || 0,
+      order?.payment_summary?.deposit_amount || order?.deposit_amount || 0
+    );
+    const allowedFlow = PAYMENT_STATE_FLOW.filter((state) => state !== 'deposit_paid' || depositAmount > 0);
+    const currentIndex = allowedFlow.indexOf(currentState);
+    const nextIndex = allowedFlow.indexOf(nextState);
+
+    if (currentIndex >= 0 && nextIndex >= 0 && nextIndex < currentIndex) {
+      return 'Trạng thái thanh toán chỉ được cập nhật theo chiều tăng dần từ trên xuống, không thể chuyển ngược lên trạng thái trước đó.';
+    }
+
+    return '';
   }
 
   orderStatusLabel(status: string): string {

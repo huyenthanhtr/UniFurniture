@@ -52,25 +52,44 @@
     <section class="card" *ngIf="merged.has_account">
       <h3>Th&#244;ng tin h&#7891; s&#417; t&#224;i kho&#7843;n</h3>
 
-      <div class="grid">
-        <div class="field readonly">
-          <label>Gi&#7899;i t&#237;nh</label>
-          <div>{{ genderLabel(merged.gender) }}</div>
-        </div>
+      <div class="profile-layout">
+        <aside class="profile-aside">
+          <div class="profile-avatar-frame">
+            <img *ngIf="profileAvatarUrl; else avatarFallback" [src]="profileAvatarUrl" [alt]="merged.full_name || 'Ảnh hồ sơ'" />
+            <ng-template #avatarFallback>
+              <div class="profile-avatar-fallback">{{ profileInitials }}</div>
+            </ng-template>
+          </div>
 
-        <div class="field readonly">
-          <label>Ng&#224;y sinh</label>
-          <div>{{ merged.date_of_birth ? (merged.date_of_birth | date:'dd/MM/yyyy') : '-' }}</div>
-        </div>
+          <div class="badge profile-rank-badge" [ngClass]="customerRankClass(merged.loyalty_rank)">
+            Hạng {{ customerRankLabel(merged.loyalty_rank) }}
+          </div>
 
-        <div class="field readonly">
-          <label>Vai tr&#242;</label>
-          <div>{{ merged.role || '-' }}</div>
-        </div>
+          <div class="profile-points-value">{{ merged.loyalty_points ?? 0 }}</div>
+        </aside>
 
-        <div class="field readonly full">
-          <label>&#272;&#7883;a ch&#7881; trong h&#7891; s&#417;</label>
-          <div>{{ merged.address || '-' }}</div>
+        <div class="profile-main">
+          <div class="grid profile-grid">
+            <div class="field readonly">
+              <label>Gi&#7899;i t&#237;nh</label>
+              <div>{{ genderLabel(merged.gender) }}</div>
+            </div>
+
+            <div class="field readonly compact-field">
+              <label>Ng&#224;y sinh</label>
+              <div>{{ merged.date_of_birth ? (merged.date_of_birth | date:'dd/MM/yyyy') : '-' }}</div>
+            </div>
+
+            <div class="field readonly">
+              <label>Vai tr&#242;</label>
+              <div>{{ merged.role || '-' }}</div>
+            </div>
+
+            <div class="field readonly full">
+              <label>&#272;&#7883;a ch&#7881; trong h&#7891; s&#417;</label>
+              <div>{{ merged.address || '-' }}</div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

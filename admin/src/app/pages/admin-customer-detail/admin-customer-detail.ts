@@ -164,4 +164,31 @@ export class AdminCustomerDetail implements OnInit {
   addressStatusLabel(): string {
     return '\u0110ang s\u1eed d\u1ee5ng';
   }
+
+  customerRankLabel(rank: any): string {
+    const key = String(rank || '').toLowerCase();
+    if (key === 'kim_cuong') return 'Kim cương';
+    if (key === 'vang') return 'Vàng';
+    if (key === 'bac') return 'Bạc';
+    return 'Đồng';
+  }
+
+  customerRankClass(rank: any): string {
+    const key = String(rank || '').toLowerCase();
+    if (key === 'kim_cuong') return 'rank-diamond';
+    if (key === 'vang') return 'rank-gold';
+    if (key === 'bac') return 'rank-silver';
+    return 'rank-bronze';
+  }
+
+  get profileAvatarUrl(): string {
+    return String(this.merged?.avatar_url || this.profile?.avatar_url || '').trim();
+  }
+
+  get profileInitials(): string {
+    const source = String(this.merged?.full_name || this.profile?.full_name || this.customer?.full_name || '').trim();
+    if (!source) return 'KH';
+    const parts = source.split(/\s+/).filter(Boolean);
+    return parts.slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('') || 'KH';
+  }
 }

@@ -36,6 +36,11 @@
         </div>
 
         <div class="field readonly">
+          <label>Ngày hoàn tất</label>
+          <div>{{ order.completed_at ? (order.completed_at | date:'dd/MM/yyyy HH:mm') : '-' }}</div>
+        </div>
+
+        <div class="field readonly">
           <label>Tổng tiền</label>
           <div>{{ order.total_amount | number }}</div>
         </div>
