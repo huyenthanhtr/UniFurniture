@@ -289,6 +289,11 @@
   color: #5f4d3d;
 }
 
+.review-reward-inline {
+  font-weight: 800;
+  color: #c45c00;
+}
+
 .review-item {
   margin-top: 14px;
   padding: 14px;
@@ -1013,32 +1018,53 @@
 
 .review-thanks-modal__content {
   position: relative;
-  width: min(420px, 92vw);
-  background: #fff;
-  border: 1px solid #e6dfd4;
-  border-radius: 14px;
-  padding: 18px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
+  width: min(300px, 86vw);
+  background: #fffef9;
+  border: 1px solid #f2d7a3;
+  border-radius: 12px;
+  padding: 12px 10px 10px;
+  box-shadow: 0 16px 30px rgba(52, 31, 3, 0.2);
+  text-align: center;
+}
+
+.review-thanks-modal__icon {
+  width: 38px;
+  height: 38px;
+  margin: 0 auto 6px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 800;
+  color: #a96800;
+  background: radial-gradient(circle at 30% 25%, #ffe8b8, #ffd37a);
+  border: 1px solid #f2c36e;
 }
 
 .review-thanks-modal__content h4 {
-  margin: 0 0 8px;
-  font-size: 22px;
+  margin: 0 0 4px;
+  font-size: 16px;
+  line-height: 1.25;
+  color: #8d5900;
 }
 
 .review-thanks-modal__content p {
-  margin: 0 0 14px;
-  color: #3d332b;
+  margin: 0 0 8px;
+  color: #5f4824;
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .review-thanks-modal__content button {
   border: 0;
-  border-radius: 10px;
-  background: #245fa5;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffc04a 0%, #ee9f1a 100%);
   color: #fff;
-  padding: 9px 16px;
-  font-weight: 600;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
+  min-width: 88px;
 }
 
 .cancel-modal__content--success {

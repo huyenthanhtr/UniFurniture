@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, Input, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { LoyaltyService, LoyaltySummary } from '../../../../shared/loyalty.service';
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -19,6 +20,7 @@ export class AccountProfileTab implements OnInit {
   @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
 
   private readonly http = inject(HttpClient);
+  private readonly loyaltyService = inject(LoyaltyService);
 
   saving = signal(false);
   uploadingAvatar = signal(false);
@@ -27,6 +29,7 @@ export class AccountProfileTab implements OnInit {
   modalTitle = signal('');
   modalMessage = signal('');
   modalType = signal<'success' | 'error'>('success');
+  loyalty = signal<LoyaltySummary | null>(null);
 
   form = { fullName: '', email: '', avatarUrl: '' };
   stream: MediaStream | null = null;
@@ -37,6 +40,7 @@ export class AccountProfileTab implements OnInit {
       email: this.profile?.email || '',
       avatarUrl: this.profile?.avatar_url || this.profile?.avatarUrl || '',
     };
+    void this.loadLoyaltySummary();
   }
 
   get accountId(): string {
@@ -51,7 +55,6 @@ export class AccountProfileTab implements OnInit {
     this.uploadingAvatar.set(true);
     try {
       const dataUrl = await this.fileToDataUrl(file);
-      // Use compressed data URL directly to avoid backend upload endpoint mismatch.
       this.form.avatarUrl = await this.optimizeImageDataUrl(dataUrl, 900, 0.82);
     } catch (err: any) {
       this.showModal('Không thể tải ảnh lên', err?.message || 'Vui lòng thử lại.', 'error');
@@ -117,7 +120,6 @@ export class AccountProfileTab implements OnInit {
       try {
         res = await firstValueFrom(this.http.patch(`${API_BASE_URL}/profiles/${this.accountId}`, payload));
       } catch {
-        // Backward compatibility for environments still exposing /accounts/:id
         res = await firstValueFrom(this.http.patch(`${API_BASE_URL}/accounts/${this.accountId}`, payload));
       }
       const updated: any = (res as any)?.item || (res as any)?.account || (res as any)?.profile || res;
@@ -135,6 +137,7 @@ export class AccountProfileTab implements OnInit {
         Object.assign(this.profile, updated);
       }
 
+      void this.loadLoyaltySummary();
       this.showModal('Cập nhật thành công', 'Thông tin hồ sơ của bạn đã được lưu.', 'success');
     } catch (err: any) {
       this.showModal(
@@ -160,11 +163,20 @@ export class AccountProfileTab implements OnInit {
     this.modalVisible.set(false);
   }
 
+  private async loadLoyaltySummary(): Promise<void> {
+    if (!this.accountId) {
+      this.loyalty.set(null);
+      return;
+    }
+    const summary = await this.loyaltyService.getProfileLoyalty(this.accountId);
+    this.loyalty.set(summary);
+  }
+
   private fileToDataUrl(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = () => reject(new Error('Doc file anh that bai.'));
+      reader.onerror = () => reject(new Error('Đọc file ảnh thất bại.'));
       reader.readAsDataURL(file);
     });
   }
@@ -200,3 +212,4 @@ export class AccountProfileTab implements OnInit {
     this.modalVisible.set(true);
   }
 }
+

@@ -19,6 +19,7 @@ const ProfileSchema = new mongoose.Schema(
       enum: ["dong", "bac", "vang", "kim_cuong"],
       default: "dong",
     },
+    tier_achieved_at: { type: Date, default: null },
   },
   { timestamps: true, collection: "profiles" }
 );

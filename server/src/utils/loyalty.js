@@ -1,8 +1,8 @@
 const LOYALTY_RANKS = [
-  { key: "kim_cuong", minPoints: 1000, label: "Kim cương" },
-  { key: "vang", minPoints: 500, label: "Vàng" },
-  { key: "bac", minPoints: 200, label: "Bạc" },
-  { key: "dong", minPoints: 0, label: "Đồng" },
+  { key: "kim_cuong", minPoints: 15000, label: "Kim cuong" },
+  { key: "vang", minPoints: 5000, label: "Vang" },
+  { key: "bac", minPoints: 1000, label: "Bac" },
+  { key: "dong", minPoints: 0, label: "Dong" },
 ];
 
 function normalizePoints(value) {

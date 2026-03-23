@@ -184,7 +184,8 @@
 <div class="review-thanks-modal" *ngIf="reviewThanksOpen">
   <div class="review-thanks-modal__backdrop" (click)="closeReviewThanks()"></div>
   <div class="review-thanks-modal__content">
-    <h4>Đánh giá đã được ghi nhận</h4>
+    <div class="review-thanks-modal__icon">★</div>
+    <h4>{{ reviewThanksTitle }}</h4>
     <p>{{ reviewThanksMessage }}</p>
     <button type="button" (click)="closeReviewThanks()">Đóng</button>
   </div>

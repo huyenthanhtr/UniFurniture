@@ -1,0 +1,146 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="utf-8">
+<style>
+  table { border-collapse: collapse; width: 100%; font-family: 'Times New Roman', Times, serif; font-size: 13pt; margin-bottom: 30px; }
+  th, td { border: 1px solid black; padding: 10px; text-align: left; vertical-align: top; }
+  th { background-color: #f2f2f2; font-weight: bold; width: 25%; }
+  td { width: 75%; }
+  h3 { font-family: 'Times New Roman', Times, serif; font-size: 16pt; margin-bottom: 15px; }
+</style>
+</head>
+<body>
+
+<h3>1. Đăng ký bằng OTP SMS và đăng nhập (Khải)</h3>
+<table>
+  <tr><th>Use Case Name</th><td>Đăng ký bằng OTP SMS và đăng nhập</td></tr>
+  <tr><th>Description</th><td>Cho phép khách hàng mới tạo tài khoản bảo mật thông qua số điện thoại sử dụng mã xác thực OTP SMS, và khách hàng đã có tài khoản có thể đăng nhập vào hệ thống.</td></tr>
+  <tr><th>Actor</th><td>Khách hàng (chưa đăng nhập)</td></tr>
+  <tr><th>Precondition</th><td>- Khách hàng có số điện thoại di động hợp lệ có thể nhận tin nhắn SMS.</td></tr>
+  <tr><th>Trigger</th><td>Khách hàng bấm vào nút "Đăng nhập / Đăng ký" trên giao diện trang chủ hoặc khi hệ thống yêu cầu xác thực.</td></tr>
+  <tr><th>Basic Flow</th><td>
+    <b>1. Đăng ký tài khoản bằng OTP SMS</b><br>
+    a. Khách hàng chọn mục Đăng ký và nhập số điện thoại chưa từng đăng ký vào form.<br>
+    b. Hệ thống kiểm tra số điện thoại, nếu hợp lệ sẽ gửi mã OTP qua tin nhắn SMS tới số điện thoại vừa nhập.<br>
+    c. Khách hàng nhập mã OTP để xác thực.<br>
+    d. Hệ thống kiểm tra tính hợp lệ và thời hạn của mã OTP. Nếu đúng, yêu cầu khách hàng điền thêm các thông tin cá nhân cần thiết (Họ tên, Mật khẩu...).<br>
+    e. Khách hàng điền thông tin và xác nhận.<br>
+    f. Hệ thống lưu trữ, tạo mới tài khoản và tự động đăng nhập cho khách hàng.<br><br>
+    <b>2. Đăng nhập vào hệ thống</b><br>
+    a. Khách hàng vào mục Đăng nhập.<br>
+    b. Nhập số điện thoại (hoặc email) và mật khẩu đã tạo.<br>
+    c. Khách hàng chọn nút "Đăng nhập".<br>
+    d. Hệ thống kiểm tra và xác thực thông tin tài khoản.<br>
+    e. Nếu đúng, hệ thống đăng nhập thành công và chuyển hướng khách hàng về lại trang trước đó hoặc trang chủ.
+  </td></tr>
+  <tr><th>Alternative Flow</th><td>
+    <b>1. Đăng ký - Nhập sai mã / OTP hết hạn:</b><br>
+    - Nếu khách hàng nhập sai mã, hệ thống thông báo lỗi và yêu cầu nhập lại.<br>
+    - Nếu mã OTP hết hạn (thường là sau 2-5 phút), hệ thống thông báo vô hiệu lực. Khách hàng có thể nhấn "Gửi lại mã OTP" để nhận mã mới.<br><br>
+    <b>2. Đăng nhập - Sai thông tin cơ bản:</b><br>
+    - Nếu khách hàng nhập sai mật khẩu hoặc số điện thoại không tồn tại, hệ thống báo lỗi "Thông tin đăng nhập không chính xác" và yêu cầu nhập lại.<br><br>
+    <b>3. Đăng nhập - Quên mật khẩu:</b><br>
+    - Khách hàng chọn "Quên mật khẩu", hệ thống yêu cầu nhập số điện thoại để nhận mã OTP xác thực và sau đó cho phép đặt lại mật khẩu mới.
+  </td></tr>
+</table>
+
+<h3>2. Xem và tìm kiếm sản phẩm (Khải)</h3>
+<table>
+  <tr><th>Use Case Name</th><td>Xem và tìm kiếm sản phẩm</td></tr>
+  <tr><th>Description</th><td>Khách hàng có thể tìm kiếm sản phẩm nội thất theo từ khóa tự do, lọc xem danh sách sản phẩm theo danh mục và xem chi tiết thông số của một sản phẩm.</td></tr>
+  <tr><th>Actor</th><td>Khách hàng</td></tr>
+  <tr><th>Precondition</th><td>- Hệ thống đang hoạt động ổn định và cơ sở dữ liệu có chứa danh sách các sản phẩm.</td></tr>
+  <tr><th>Trigger</th><td>Khách hàng truy cập vào trang chủ, đi tới một trang danh mục sản phẩm, hoặc nhấp vào thanh tìm kiếm.</td></tr>
+  <tr><th>Basic Flow</th><td>
+    <b>1. Tìm kiếm và lọc sản phẩm</b><br>
+    a. Khách hàng nhập từ khóa vào thanh tìm kiếm và nhấn tìm kiếm.<br>
+    b. Hệ thống truy xuất và hiển thị danh sách các sản phẩm phù hợp.<br>
+    c. Khách hàng có thể sử dụng thêm bộ lọc (khoảng giá, màu sắc...) hoặc thay đổi thứ tự sắp xếp.<br>
+    d. Hệ thống trả về danh sách sản phẩm đã được lọc lại ngay lập tức.<br><br>
+    <b>2. Xem sản phẩm theo danh mục</b><br>
+    a. Khách hàng chọn một danh mục cụ thể trên thanh menu.<br>
+    b. Hệ thống hiển thị tất cả các sản phẩm thuộc danh mục đó.<br><br>
+    <b>3. Xem chi tiết sản phẩm</b><br>
+    a. Khách hàng nhấn chọn một sản phẩm bất kỳ.<br>
+    b. Hệ thống chuyển sang trang Chi tiết sản phẩm.
+  </td></tr>
+  <tr><th>Alternative Flow</th><td>
+    <b>1. Tìm kiếm không có kết quả:</b><br>
+    - Nếu từ khóa khách hàng nhập không khớp với sản phẩm nào trên hệ thống, hệ thống hiển thị thông báo "Không tìm thấy sản phẩm nào phù hợp".<br>
+    - Hệ thống tự động gợi ý các từ khóa liên quan, hoặc hiển thị danh sách "Các sản phẩm nổi bật/bán chạy" để khách hàng tham khảo thêm.<br><br>
+    <b>2. Chặn bộ lọc không hợp lệ:</b><br>
+    - Nếu khách hàng chọn kết hợp các bộ lọc dẫn đến kết quả bằng 0 (ví dụ: Sofa + Giá dưới 100k), hệ thống báo rỗng và gợi ý xóa bớt điều kiện lọc.<br><br>
+    <b>3. Xem chi tiết - Sản phẩm hết hàng:</b><br>
+    - Tại trang chi tiết, nếu sản phẩm hết hàng, trạng thái trên màn hình đổi thành "Tạm hết hàng".<br>
+    - Nút "Thêm vào giỏ hàng" bị vô hiệu hóa hoặc chuyển thành trạng thái "Nhận thông báo khi có hàng".
+  </td></tr>
+</table>
+
+<h3>3. Trải nghiệm AR Overlay (Khải)</h3>
+<table>
+  <tr><th>Use Case Name</th><td>Trải nghiệm AR Overlay</td></tr>
+  <tr><th>Description</th><td>Khách hàng sử dụng tính năng Thực tế tăng cường (AR) trên thiết bị di động để chiếu trực tiếp và xem mô hình 3D của sản phẩm nội thất ở kích thước thực vào không gian phòng.</td></tr>
+  <tr><th>Actor</th><td>Khách hàng (sử dụng thiết bị di động có hỗ trợ AR và camera)</td></tr>
+  <tr><th>Precondition</th><td>
+    - Sản phẩm khách hàng đang xem đã có sẵn mô hình 3D/AR.<br>
+    - Thiết bị của khách hàng hỗ trợ AR và được cấp quyền sử dụng camera.
+  </td></tr>
+  <tr><th>Trigger</th><td>Khách hàng chọn nút "Xem AR" (Xem trong phòng của bạn) trên trang chi tiết sản phẩm.</td></tr>
+  <tr><th>Basic Flow</th><td>
+    <b>1. Kích hoạt tính năng và quét không gian</b><br>
+    a. Khách hàng nhấn nút "Xem AR" tại màn hình chi tiết sản phẩm.<br>
+    b. Hệ thống mở giao diện camera để kết nối với không gian thực.<br>
+    c. Hệ thống hướng dẫn khách hàng di chuyển chậm thiết bị di động xung quanh phòng để quét nhận diện mặt sàn thực tế.<br><br>
+    <b>2. Đặt mô hình sản phẩm</b><br>
+    a. Sau khi nhận diện được mặt phẳng sàn thành công, hệ thống hiển thị lưới định vị.<br>
+    b. Khách hàng chạm vào màn hình tại vị trí mong muốn.<br>
+    c. Hệ thống render và hiển thị mô hình 3D của sản phẩm với kích thước thực tế (tỉ lệ 1:1) vào vị trí đó.<br><br>
+    <b>3. Tương tác với tính năng AR</b><br>
+    a. Khách hàng kéo để di chuyển sản phẩm, hoặc xoay hai ngón tay để đổi hướng.<br>
+    b. Khách hàng bước lại gần, quanh sản phẩm để xem chi tiết vật liệu bề mặt.<br>
+    c. Khách hàng sử dụng nút Chụp ảnh để lưu lại hình ảnh AR, hoặc nhấn (X) để thoát về trang chi tiết.
+  </td></tr>
+  <tr><th>Alternative Flow</th><td>
+    <b>1. Thiết bị không hỗ trợ hoặc từ chối Camera:</b><br>
+    - Nếu trình duyệt/thiết bị không hỗ trợ ARKit/ARCore, hệ thống thông báo lỗi và tự động hiển thị chế độ "Xem mô hình 3D 360 độ" truyền thống thay vì WebAR không gian thực.<br>
+    - Nếu khách hàng từ chối cấp quyền Camera, hệ thống hiển thị thông báo "Cần quyền camera để trải nghiệm AR" kèm nút hướng dẫn vào Cài đặt.<br><br>
+    <b>2. Không nhận diện được mặt phẳng (Sàn nhà):</b><br>
+    - Nếu môi trường làm mờ (ánh sáng quá tối) hoặc sàn nhà quá nhẵn, thiếu điểm ảnh chi tiết (texture) khiến hệ thống không tìm được mặt phẳng mặt đất.<br>
+    - Hệ thống hiển thị thông báo bật hướng dẫn: "Vui lòng di chuyển thiết bị sang khu vực có ánh sáng tốt hơn và quét rõ mặt sàn".
+  </td></tr>
+</table>
+
+<h3>4. Trải nghiệm Room Planner (Khải)</h3>
+<table>
+  <tr><th>Use Case Name</th><td>Trải nghiệm Room Planner (Thiết kế phòng 3D)</td></tr>
+  <tr><th>Description</th><td>Khách hàng có thể tự vẽ sơ đồ mặt bằng, thay đổi không gian và sắp xếp phối hợp hàng loạt các sản phẩm nội thất trong thư viện vào cùng một trong bản vẽ phòng 2D/3D.</td></tr>
+  <tr><th>Actor</th><td>Khách hàng</td></tr>
+  <tr><th>Precondition</th><td>- Hệ thống cung cấp công cụ Room Planner và thư viện mô hình nội thất 2D/3D đã tải thành công.</td></tr>
+  <tr><th>Trigger</th><td>Khách hàng nhấp vào công cụ "Room Planner" (hoặc "Tự thiết kế không gian") từ thanh menu.</td></tr>
+  <tr><th>Basic Flow</th><td>
+    <b>1. Thiết lập không gian mặt bằng</b><br>
+    a. Khách hàng truy cập vào Room Planner.<br>
+    b. Khách hàng vẽ hình dáng phòng theo form mẫu hoặc kích thước thực tế nhà mình.<br>
+    c. Khách hàng bổ sung vị trí cửa chính, cửa sổ và tường.<br><br>
+    <b>2. Sắp xếp đồ nội thất vào không gian</b><br>
+    a. Khách hàng mở mục "Thêm nội thất".<br>
+    b. Kéo và thả các sản phẩm (Sofa, thảm, bàn...) từ danh mục vào bản vẽ không gian.<br>
+    c. Khách hàng thực hiện xoay, dời vị trí đồ nội thất theo thiết kế trải nghiệm mong muốn.<br><br>
+    <b>3. Xem phối cảnh, lưu và trích xuất giỏ hàng</b><br>
+    a. Khách hàng chuyển đổi góc nhìn giữa 2D (mặt bằng) và 3D (không gian thực tế ảo).<br>
+    b. Khách hàng nhấn lưu bản vẽ (Save Project).<br>
+    c. Khách hàng nhấn nút "Thêm vào giỏ hàng" để tự động đẩy toàn bộ sản phẩm xuất hiện trong sơ đồ vào Giỏ hàng nhằm tiến hành thanh toán đồng loạt.
+  </td></tr>
+  <tr><th>Alternative Flow</th><td>
+    <b>1. Lưu thiết kế khi chưa đăng nhập:</b><br>
+    - Khi khách hàng nhấn "Lưu thiết kế" nhưng đang ở trạng thái khách lưu trú (Guest), hệ thống sẽ bật popup yêu cầu Đăng nhập hoặc Tạo tài khoản.<br>
+    - Sau khi khách hàng hoàn tất đăng nhập/đăng ký thành công, dự án thiết kế sẽ được lưu liền mạch vào tài khoản mà không bị mất dữ liệu hiện tại.<br><br>
+    <b>2. Cảnh báo sản phẩm hết hàng khi Thêm vào giỏ:</b><br>
+    - Tại bước trích xuất (Add to cart), hệ thống kiểm tra số lượng tồn kho theo thời gian thực.<br>
+    - Nếu bất kỳ món đồ nào trong bản thiết kế đã hết hàng hoặc ngưng kinh doanh, hệ thống sẽ hiện popup danh sách cảnh báo những món đó.<br>
+    - Khách hàng có thể bỏ chọn món đồ đó khỏi đợt mua, hoặc tìm sản phẩm khác tương đương thay thế ngay trên công cụ.
+  </td></tr>
+</table>
+
+</body>
+</html>

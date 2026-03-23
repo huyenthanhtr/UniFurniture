@@ -26,7 +26,7 @@ div.n8n-chat {
   /* Base Layout */
   --chat--spacing: 1rem !important;
   --chat--border-radius: 12px !important;
-  --chat--font-family: 'Montserrat', sans-serif !important;
+  --chat--font-family: 'Montserrat', sans-serif;
 
   /* Header Styles */
   --chat--header-height: auto !important;
@@ -76,7 +76,38 @@ div.n8n-chat {
   pointer-events: auto !important;
 }
 
-/* Ensure contact float is always accessible */
 .contact-float-wrap {
   z-index: 3000 !important;
+}
+
+.chat-close-button {
+  position: relative !important;
+  color: transparent !important; 
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.chat-close-button svg, 
+.chat-close-button * {
+  display: none !important; /* Hide any broken internal svg/elements */
+}
+
+.chat-close-button::after {
+  content: '\2715' !important; /* Clean Unicode X (Cross) */
+  color: #ffffff !important; /* White color to match header */
+  font-size: 18px !important;
+  font-weight: bold !important;
+  font-family: Arial, sans-serif !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  pointer-events: none !important;
+}
+
+.chat-close-button:hover::after {
+  color: #eeeeee !important;
 }
