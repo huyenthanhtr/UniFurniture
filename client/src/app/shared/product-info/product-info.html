@@ -115,20 +115,37 @@
     >+</button>
   </div>
 
-  <p class="add-message" [class.add-message--error]="isDisplayMessageError" *ngIf="displayMessage">{{ displayMessage }}</p>
-  <ng-container *ngIf="!isOutOfStock; else soldOutAction">
-    <button type="button" class="btn-add" (click)="addToCart()">THÊM VÀO GIỎ</button>
-    <button
-      type="button"
-      class="btn-buy"
-      [class.btn-buy--disabled]="isBuyNowDisabled"
-      [disabled]="isBuyNowDisabled"
-      (click)="buyNow()"
-    >MUA NGAY</button>
-  </ng-container>
-  <ng-template #soldOutAction>
-    <button type="button" class="btn-soldout" disabled>HẾT HÀNG</button>
-  </ng-template>
+  <div class="purchase-actions">
+    <p class="add-message" [class.add-message--error]="isDisplayMessageError" *ngIf="displayMessage">{{ displayMessage }}</p>
+    <ng-container *ngIf="!isOutOfStock; else soldOutAction">
+      <button type="button" class="btn-add" (click)="addToCart()">THÊM VÀO GIỎ</button>
+      <button
+        type="button"
+        class="btn-buy"
+        [class.btn-buy--disabled]="isBuyNowDisabled"
+        [disabled]="isBuyNowDisabled"
+        (click)="buyNow()"
+      >MUA NGAY</button>
+    </ng-container>
+    <ng-template #soldOutAction>
+      <button type="button" class="btn-soldout" disabled>HẾT HÀNG</button>
+    </ng-template>
+  </div>
 </div>
 
 <ng-template #contactPrice>Liên hệ</ng-template>
+
+<div class="cart-success-overlay" *ngIf="isAddSuccessPopupOpen" (click)="closeAddSuccessPopup()">
+  <div
+    class="cart-success-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cart-success-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="cart-success-icon" aria-hidden="true">&#10003;</div>
+    <h3 id="cart-success-title">Thêm vào giỏ hàng thành công</h3>
+    <p>Sản phẩm đã được thêm vào giỏ hàng của bạn.</p>
+    <button type="button" class="cart-success-close" (click)="closeAddSuccessPopup()">Đóng</button>
+  </div>
+</div>

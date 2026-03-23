@@ -1,13 +1,19 @@
+.info-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
 .info-wrapper h1 {
-    font-size: 24px;
-    margin-bottom: 10px;
+    font-size: clamp(20px, 1.7vw, 24px);
+    line-height: 1.25;
+    margin-bottom: 8px;
 }
 
 .rating {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     color: #f5a623;
 }
 
@@ -45,7 +51,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 14px;
 }
 
 .price-values {
@@ -56,7 +62,7 @@
 
 .sale {
     color: #e84b2c;
-    font-size: 22px;
+    font-size: clamp(20px, 1.7vw, 22px);
     font-weight: bold;
 }
 
@@ -102,12 +108,13 @@
 }
 
 .section {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .label {
     font-weight: 600;
-    margin-bottom: 6px;
+    font-size: 14px;
+    margin-bottom: 4px;
 }
 
 .color-swatches-row {
@@ -142,12 +149,12 @@
 .size-options {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
 
 .size-option-btn {
     min-width: 82px;
-    padding: 10px 14px;
+    padding: 8px 12px;
     border: 1px solid #d9d9d9;
     border-radius: 10px;
     background: #fff;
@@ -175,15 +182,15 @@
 }
 
 .size-description {
-    margin-top: 12px;
+    margin-top: 8px;
     color: #313131;
-    font-size: 15px;
-    line-height: 1.55;
+    font-size: 14px;
+    line-height: 1.45;
     white-space: pre-line;
 }
 
 .selection-hint {
-    margin-top: 8px;
+    margin-top: 6px;
     font-size: 13px;
     color: #7a7a7a;
 }
@@ -191,13 +198,13 @@
 .quantity {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin: 18px 0 20px;
+    gap: 10px;
+    margin: 12px 0 12px;
 }
 
 .qty-btn {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border: 1px solid #d9d9d9;
     border-radius: 10px;
     background: #fff;
@@ -228,7 +235,7 @@
 
 .qty-input {
     width: 72px;
-    height: 40px;
+    height: 36px;
     border: 1px solid #d9d9d9;
     border-radius: 10px;
     text-align: center;
@@ -260,8 +267,8 @@
 
 .btn-add {
     width: 100%;
-    padding: 14px;
-    background: #1f5b7a;
+    padding: 11px 12px;
+    background: linear-gradient(135deg, #1f5b7a 0%, #2b7aa2 100%);
     color: white;
     border: none;
     margin-bottom: 10px;
@@ -269,25 +276,31 @@
     font-weight: 600;
     letter-spacing: 0.2px;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 7px 16px rgba(31, 91, 122, 0.26);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
 }
 
 .btn-buy {
     width: 100%;
-    padding: 14px;
-    background: #ea6b38;
+    padding: 11px 12px;
+    background: linear-gradient(135deg, #ea6b38 0%, #ff8d4a 100%);
     color: white;
     border: none;
     border-radius: 10px;
     font-weight: 600;
     letter-spacing: 0.2px;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 18px rgba(234, 107, 56, 0.34);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
 }
 
 .btn-soldout {
     width: 100%;
-    padding: 14px;
+    padding: 11px 12px;
     background: #b9b9b9;
     color: #f7f7f7;
     border: none;
@@ -298,10 +311,39 @@
     box-shadow: none;
 }
 
-.btn-add:hover,
-.btn-buy:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+.btn-add::after,
+.btn-buy::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -30%;
+    width: 28%;
+    height: 100%;
+    background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0));
+    transform: skewX(-22deg) translateX(-180%);
+    transition: transform 0.55s ease;
+}
+
+.btn-add:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 14px 26px rgba(31, 91, 122, 0.36);
+    filter: brightness(1.05) saturate(1.08);
+}
+
+.btn-buy:hover:not(:disabled):not(.btn-buy--disabled) {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 16px 28px rgba(234, 107, 56, 0.42);
+    filter: brightness(1.07) saturate(1.1);
+}
+
+.btn-add:hover::after,
+.btn-buy:hover::after {
+    transform: skewX(-22deg) translateX(520%);
+}
+
+.btn-add:active,
+.btn-buy:active:not(:disabled):not(.btn-buy--disabled) {
+    transform: translateY(0) scale(0.995);
 }
 
 .btn-buy:disabled,
@@ -314,7 +356,7 @@
 }
 
 .add-message {
-    margin: 0 0 10px;
+    margin: 0 0 8px;
     color: #1f7a45;
     font-size: 14px;
     font-weight: 500;
@@ -322,5 +364,103 @@
 
 .add-message--error {
     color: #c2410c;
+}
+
+.purchase-actions {
+    margin-top: 2px;
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.72), #fff 30%);
+    padding-top: 8px;
+}
+
+.cart-success-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    background: rgba(20, 20, 20, 0.28);
+    display: grid;
+    place-items: center;
+    padding: 16px;
+}
+
+.cart-success-dialog {
+    width: min(350px, 100%);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.2);
+    padding: 16px 16px 14px;
+    text-align: center;
+}
+
+.cart-success-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    background: #e5f2e9;
+    color: #1e9a54;
+    font-size: 40px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cart-success-dialog h3 {
+    margin: 0;
+    font-size: clamp(20px, 2vw, 24px);
+    font-weight: 600;
+    color: #303030;
+    line-height: 1.2;
+}
+
+.cart-success-dialog p {
+    margin: 8px 0 12px;
+    font-size: clamp(14px, 1.2vw, 18px);
+    color: #727272;
+    line-height: 1.35;
+}
+
+.cart-success-close {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    background: #aca193;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+}
+
+.cart-success-close:hover {
+    filter: brightness(0.95);
+}
+
+@media (max-width: 992px) {
+    .purchase-actions {
+        position: static;
+        background: transparent;
+        padding-top: 0;
+    }
+
+    .cart-success-dialog {
+        width: min(360px, 100%);
+        border-radius: 12px;
+        padding: 14px 12px 12px;
+    }
+
+    .cart-success-icon {
+        width: 64px;
+        height: 64px;
+        font-size: 34px;
+    }
+
+    .cart-success-close {
+        font-size: 16px;
+    }
 }
 

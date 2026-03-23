@@ -1,13 +1,20 @@
 .detail-page {
-    max-width: 1200px;
+    max-width: 1180px;
     margin: auto;
-    padding: 40px 20px;
+    padding: 20px 16px 28px;
 }
 
 .detail-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.detail-container > app-product-gallery,
+.detail-container > app-product-info {
+    display: block;
+    min-width: 0;
 }
 
 .gallery img {
@@ -60,7 +67,7 @@
 }
 
 .tabs {
-    margin-top: 50px;
+    margin-top: 32px;
 }
 
 .tab-header {
@@ -374,9 +381,17 @@
 
 /* Responsive */
 @media (max-width: 992px) {
+    .detail-page {
+        padding: 24px 14px;
+    }
+
     .detail-container {
         grid-template-columns: 1fr;
         gap: 24px;
+    }
+
+    .tabs {
+        margin-top: 24px;
     }
 }
 

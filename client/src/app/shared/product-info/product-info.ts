@@ -21,7 +21,6 @@ export class ProductInfoComponent implements OnChanges {
   private readonly reachedStockLimitMessage = 'Đạt giới hạn số lượng sản phẩm còn hàng';
   private readonly stockLimitMessage = 'Đã vượt quá số lượng tồn kho';
   private readonly outOfStockMessage = 'Sản phẩm đã hết hàng';
-  private readonly addSuccessMessage = 'Đã thêm vào giỏ hàng.';
   private latestStockRequestKey = '';
   private stockFromApi?: number;
 
@@ -35,6 +34,7 @@ export class ProductInfoComponent implements OnChanges {
   quantityInput = '1';
   addMessage = '';
   addMessageTone: 'success' | 'error' = 'success';
+  isAddSuccessPopupOpen = false;
   selectedColor: ColorSwatch | null = null;
   selectedVariant: ProductVariantDocument | null = null;
   readonly starValues = [1, 2, 3, 4, 5];
@@ -81,6 +81,7 @@ export class ProductInfoComponent implements OnChanges {
     this.stockFromApi = undefined;
     this.addMessage = '';
     this.addMessageTone = 'success';
+    this.isAddSuccessPopupOpen = false;
     this.syncQuantityWithRemainingStock();
     this.refreshStockFromApi(true);
 
@@ -271,6 +272,10 @@ export class ProductInfoComponent implements OnChanges {
     return Math.round(this.averageRating);
   }
 
+  closeAddSuccessPopup(): void {
+    this.isAddSuccessPopupOpen = false;
+  }
+
   get isQuantityOverStock(): boolean {
     const remainingStock = this.remainingStock;
     if (remainingStock === undefined || this.quantity <= 0) {
@@ -320,7 +325,8 @@ export class ProductInfoComponent implements OnChanges {
 
       this.resetQuantityAfterCartAction();
       this.addMessageTone = 'success';
-      this.addMessage = this.addSuccessMessage;
+      this.addMessage = '';
+      this.isAddSuccessPopupOpen = true;
     });
   }
 
