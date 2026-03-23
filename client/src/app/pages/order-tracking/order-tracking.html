@@ -28,7 +28,7 @@
 
       <!-- Header -->
       <div class="pending-qr-header">
-        <span class="pending-qr-icon">🏦</span>
+        <span class="pending-qr-icon"><i class="bi bi-bank2"></i></span>
         <div>
           <div class="fw-bold">Đơn hàng đang chờ thanh toán</div>
           <div class="small text-muted">Mã đơn: <strong>{{ pendingQr.orderCode }}</strong></div>
@@ -85,7 +85,8 @@
               <span class="fw-semibold me-2">{{ bankInfo.accountNumber }}</span>
               <button class="btn-copy" type="button"
                 (click)="copyPendingQrValue(bankInfo.accountNumber, 'account')">
-                {{ pendingQrCopied === 'account' ? '✓ Đã copy' : 'Copy' }}
+                <i class="bi" [ngClass]="pendingQrCopied === 'account' ? 'bi-check2' : 'bi-copy'"></i>
+                {{ pendingQrCopied === 'account' ? 'Đã copy' : 'Copy' }}
               </button>
             </td>
           </tr>
@@ -99,7 +100,8 @@
               <span class="text-danger fw-semibold me-2">CK {{ pendingQr.orderCode }}</span>
               <button class="btn-copy" type="button"
                 (click)="copyPendingQrValue('CK ' + pendingQr.orderCode, 'content')">
-                {{ pendingQrCopied === 'content' ? '✓ Đã copy' : 'Copy' }}
+                <i class="bi" [ngClass]="pendingQrCopied === 'content' ? 'bi-check2' : 'bi-copy'"></i>
+                {{ pendingQrCopied === 'content' ? 'Đã copy' : 'Copy' }}
               </button>
             </td>
           </tr>
@@ -184,9 +186,9 @@
 <div class="review-thanks-modal" *ngIf="reviewThanksOpen">
   <div class="review-thanks-modal__backdrop" (click)="closeReviewThanks()"></div>
   <div class="review-thanks-modal__content">
-    <div class="review-thanks-modal__icon">★</div>
+    <div class="review-thanks-modal__icon"><i class="bi bi-award-fill"></i></div>
     <h4>{{ reviewThanksTitle }}</h4>
     <p>{{ reviewThanksMessage }}</p>
-    <button type="button" (click)="closeReviewThanks()">Đóng</button>
+    <button type="button" (click)="closeReviewThanks()"><i class="bi bi-check2-circle"></i>Đóng</button>
   </div>
 </div>

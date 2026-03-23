@@ -9,7 +9,13 @@
 }
 
 .deposit-notice .deposit-icon {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #b45309;
+  margin-top: 2px;
 }
 
 .payment-option {
@@ -47,7 +53,27 @@
 }
 
 .method-icon {
-  font-size: 1.3rem;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  background: #f8f3ea;
+  border: 1px solid #eadbc5;
+}
+
+.method-icon--cash {
+  color: #15803d;
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+}
+
+.method-icon--bank {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
 }
 
 .bank-table td {

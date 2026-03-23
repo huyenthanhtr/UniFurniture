@@ -103,7 +103,13 @@
         <div class="voucher-head">
           <p class="voucher-code" [style.color]="voucher.color">{{ voucher.code }}</p>
           <span class="voucher-copy-state" [class.active]="copiedCode === voucher.code" [class.expired]="voucher.isExpired">
-            {{ voucher.isExpired ? 'Đã hết' : (copiedCode === voucher.code ? 'Đã copy' : 'Copy mã') }}
+            {{
+              voucher.availability === 'expired'
+                ? 'Hết hạn'
+                : (voucher.availability === 'sold_out'
+                  ? 'Đã hết'
+                  : (copiedCode === voucher.code ? 'Đã copy' : 'Copy mã'))
+            }}
           </span>
         </div>
         <h3>{{ voucher.label }}</h3>

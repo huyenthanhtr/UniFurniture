@@ -36,6 +36,7 @@ interface VoucherDeal {
   details: string[];
   color: string;
   isExpired: boolean;
+  availability: 'active' | 'sold_out' | 'expired';
 }
 
 interface PromoCollection {
@@ -205,7 +206,7 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
   }
 
   copyVoucherCode(voucher: VoucherDeal): void {
-    if (!voucher || voucher.isExpired || !voucher.code) {
+    if (!voucher || voucher.availability !== 'active' || !voucher.code) {
       return;
     }
 
@@ -388,11 +389,17 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
 
     return coupons
       .filter((coupon) => Boolean(coupon.code))
+      .filter((coupon) => !this.isCouponInactive(coupon))
       .sort((left, right) => {
-        const leftActive = this.isCouponActive(left, now);
-        const rightActive = this.isCouponActive(right, now);
-        if (leftActive !== rightActive) {
-          return leftActive ? -1 : 1;
+        const leftState = this.getCouponAvailability(left, now);
+        const rightState = this.getCouponAvailability(right, now);
+        if (leftState !== rightState) {
+          const rank: Record<'active' | 'sold_out' | 'expired', number> = {
+            active: 0,
+            sold_out: 1,
+            expired: 2,
+          };
+          return rank[leftState] - rank[rightState];
         }
         return (right.discount_value || 0) - (left.discount_value || 0);
       })
@@ -421,13 +428,14 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
         ]
           .filter((item): item is string => Boolean(item));
 
-        const isActive = this.isCouponActive(coupon, now);
+        const availability = this.getCouponAvailability(coupon, now);
         return {
           code,
           label,
           details,
           color: this.getCouponColor(coupon, now),
-          isExpired: !isActive,
+          isExpired: availability !== 'active',
+          availability,
         };
       });
   }
@@ -511,16 +519,38 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
       .replace(/\u0111/g, 'd');
   }
 
-  private isCouponActive(coupon: CouponApi, now: number): boolean {
-    const status = (coupon.status || '').toLowerCase();
-    if (status === 'inactive' || status === 'expired') {
-      return false;
-    }
+  private isCouponInactive(coupon: CouponApi): boolean {
+    return String(coupon.status || '').trim().toLowerCase() === 'inactive';
+  }
 
+  private isCouponOutOfQuota(coupon: CouponApi): boolean {
+    const totalLimit = this.toNumber(coupon.total_limit);
+    const used = this.toNumber(coupon.used);
+    return totalLimit > 0 && used >= totalLimit;
+  }
+
+  private isCouponExpiredByDateOrStatus(coupon: CouponApi, now: number): boolean {
+    const status = String(coupon.status || '').trim().toLowerCase();
+    if (status === 'expired') {
+      return true;
+    }
     const startAt = coupon.start_at ? new Date(coupon.start_at).getTime() : Number.MIN_SAFE_INTEGER;
     const endAt = coupon.end_at ? new Date(coupon.end_at).getTime() : Number.MAX_SAFE_INTEGER;
+    return now < startAt || now > endAt;
+  }
 
-    return now >= startAt && now <= endAt;
+  private getCouponAvailability(coupon: CouponApi, now: number): 'active' | 'sold_out' | 'expired' {
+    if (this.isCouponExpiredByDateOrStatus(coupon, now)) {
+      return 'expired';
+    }
+    if (this.isCouponOutOfQuota(coupon)) {
+      return 'sold_out';
+    }
+    return 'active';
+  }
+
+  private isCouponActive(coupon: CouponApi, now: number): boolean {
+    return this.getCouponAvailability(coupon, now) === 'active';
   }
 
   private getCouponColor(coupon: CouponApi, now: number): string {
@@ -528,8 +558,12 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
     if (status === 'inactive') {
       return '#6b7280';
     }
-    if (status === 'expired' || !this.isCouponActive(coupon, now)) {
+    const availability = this.getCouponAvailability(coupon, now);
+    if (availability === 'expired') {
       return '#9b2c2c';
+    }
+    if (availability === 'sold_out') {
+      return '#b45309';
     }
     if (coupon.discount_type === 'percent') {
       return '#2f855a';

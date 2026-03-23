@@ -141,6 +141,18 @@
 .wishlist-empty .empty-icon {
   font-size: 38px;
   margin-bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wishlist-empty .empty-icon--wish {
+  color: #e11d48;
+  text-shadow: 0 6px 14px rgba(225, 29, 72, 0.2);
+}
+
+.wishlist-empty .empty-icon--search {
+  color: #c8923a;
 }
 
 .wishlist-empty h3 {
@@ -211,6 +223,11 @@
   align-items: center;
   justify-content: center;
   z-index: 2;
+}
+
+.wishlist-remove i {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .wishlist-remove:hover {

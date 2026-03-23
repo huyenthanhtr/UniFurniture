@@ -423,6 +423,14 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   setRating(product: TrackingProduct, value: number): void {
     product.review.rating = value;
+    if (value > 0) {
+      const detailId = product.orderDetailId || product.id;
+      Object.keys(this.reviewInlineErrors).forEach((key) => {
+        if (key.endsWith(`:${detailId}`)) {
+          this.reviewInlineErrors[key] = '';
+        }
+      });
+    }
   }
 
   getRatingLabel(rating: number): string {
