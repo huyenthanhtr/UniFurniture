@@ -1,4 +1,4 @@
-﻿/* ===== BIẾN HỆ THỐNG & FONT ===== */
+/* ===== BIẾN HỆ THỐNG & FONT ===== */
 :root {
   --primary: #c8923a;
   --primary-dark: #a8742e;
@@ -85,7 +85,7 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid var(--white);
+  border: 4px solid #c8923a; /* Match the premium border style */
   background: var(--primary);
   color: var(--white);
   font-size: 40px;
@@ -93,6 +93,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
+  box-shadow: 0 4px 12px rgba(200, 146, 58, 0.2);
 }
 
 .avatar-actions {
@@ -322,11 +323,15 @@
 }
 
 .camera-box video {
-  width: 100%;
-  height: auto;
+  width: calc(100% - 32px);
+  max-width: 600px;
+  margin: 10px auto 4px;
   display: block;
   background: #000;
-  filter: brightness(1.14) contrast(1.05);
+  filter: brightness(1.1) contrast(1.05);
+  border: 6px solid #c8923a;
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(200, 146, 58, 0.25);
 }
 
 .camera-btns {

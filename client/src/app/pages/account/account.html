@@ -1,4 +1,4 @@
-﻿<div class="account-page">
+<div class="account-page">
   <div class="account-login-prompt" *ngIf="needsLogin()">
     <div class="login-prompt-card">
       <div class="login-prompt-badge">👤</div>
@@ -34,7 +34,12 @@
         </div>
       </div>
 
-      <nav class="sidebar-nav">
+      <div class="mobile-nav-trigger" (click)="toggleMobileNav()">
+        <span class="current-tab-label">{{ getActiveTabLabel() }}</span>
+        <i class="bi" [class.bi-chevron-down]="!mobileNavOpen()" [class.bi-chevron-up]="mobileNavOpen()"></i>
+      </div>
+
+      <nav class="sidebar-nav" [class.mobile-open]="mobileNavOpen()">
         <button
           *ngFor="let tab of tabs"
           type="button"

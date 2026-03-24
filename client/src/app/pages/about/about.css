@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --uh-brown-900: #251d17;
   --uh-brown-700: #4c3526;
   --uh-brown-500: #7b5639;
@@ -186,12 +186,22 @@ section {
   line-height: 1.7;
 }
 
-.intro-grid,
-.values-grid,
+.intro-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
 .store-grid {
   display: grid;
   gap: 20px;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.values-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .intro-card,
@@ -240,7 +250,7 @@ section {
 .split-section {
   display: grid;
   gap: 20px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   background: linear-gradient(135deg, #fff4ea 0%, #ffeede 100%);
   border-radius: 28px;
   border: 1px solid rgba(201, 111, 45, 0.28);
@@ -283,7 +293,7 @@ section {
 .team-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(5, minmax(180px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
 }
 
 .team-card {
@@ -519,12 +529,33 @@ section {
     width: auto;
     margin: 0 auto;
   }
+
+  .values-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .intro-grid,
+  .split-section {
+    grid-template-columns: 1fr;
+  }
+
+  .team-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1200px) {
   .team-grid {
-    grid-template-columns: repeat(5, 200px);
-    overflow-x: auto;
-    padding-bottom: 10px;
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .team-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .values-grid {
+    grid-template-columns: 1fr;
   }
 }
