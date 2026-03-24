@@ -1,4 +1,4 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { UiStateService } from '../../shared/ui-state.service';
@@ -35,6 +35,7 @@ export class AccountComponent implements OnInit {
   needsLogin = signal(false);
   avatarLoadFailed = signal(false);
   showLogoutConfirm = signal(false);
+  mobileNavOpen = signal(false);
 
   readonly tabs: { key: AccountTab; label: string }[] = [
     { key: 'profile', label: 'Hồ sơ cá nhân'},
@@ -73,7 +74,21 @@ export class AccountComponent implements OnInit {
 
   setTab(tab: AccountTab): void {
     this.activeTab.set(tab);
+    this.mobileNavOpen.set(false);
     this.router.navigate(['/tai-khoan'], { queryParams: { tab }, replaceUrl: true });
+  }
+
+  toggleMobileNav(): void {
+    this.mobileNavOpen.set(!this.mobileNavOpen());
+  }
+
+  closeMobileNav(): void {
+    this.mobileNavOpen.set(false);
+  }
+
+  getActiveTabLabel(): string {
+    const tab = this.tabs.find(t => t.key === this.activeTab());
+    return tab ? tab.label : '';
   }
 
   requestLogout(): void {

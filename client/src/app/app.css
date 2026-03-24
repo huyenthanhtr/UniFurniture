@@ -24,14 +24,19 @@
 }
 
 .n8n-chat-window {
-  width: 360px;
-  height: 520px;
+  width: 320px;
+  height: 500px;
+  max-width: 90vw;
+  max-height: 80vh;
+  max-width: 90vw;
+  max-height: 85vh;
   background: white;
   border-radius: 16px;
   position: relative;
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  margin-bottom: 80px; /* Space for the orange button */
+  margin-bottom: 80px;
+  /* Space for the orange button */
   border: 1px solid #eee;
 }
 
@@ -65,6 +70,6 @@
 }
 
 /* Ensure the chat interface fills its container */
-::ng-deep #n8n-chat-container > div {
+::ng-deep #n8n-chat-container>div {
   height: 100% !important;
 }

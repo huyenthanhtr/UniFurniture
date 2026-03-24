@@ -23,7 +23,7 @@ export class App implements AfterViewInit {
   ui = inject(UiStateService);
   protected readonly title = signal('client');
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) { }
 
   ngAfterViewInit(): void {
     createChat({
@@ -37,9 +37,9 @@ export class App implements AfterViewInit {
       ],
       i18n: {
         en: {
-          title: 'UniFurniture AI Assistant',
+          title: 'Uni AI',
           inputPlaceholder: 'Nhập tin nhắn của bạn...',
-          subtitle: 'Chúng tôi giúp bạn tìm kiếm nội thất phù hợp 24/7.',
+          subtitle: ' ',
           footer: 'Powered by UniFurniture AR',
           getStarted: 'Bắt đầu ngay',
           closeButtonTooltip: 'Đóng cửa sổ Chat',

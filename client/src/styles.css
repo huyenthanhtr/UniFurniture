@@ -1,19 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
-/* You can add global styles to this file, and also import other style files */
-
 html,
 body {
   font-family: 'Montserrat', sans-serif;
 }
 
-div.n8n-chat {
+:root {
   /* n8n Chat Theme - UniFurniture Style */
-  --chat--color--primary: #f05244 !important; /* UniFurniture Orange */
+  --chat--color--primary: #f05244 !important;
+  /* UniFurniture Orange */
   --chat--color--primary-shade-50: #d94639 !important;
   --chat--color--primary--shade-100: #c23b2f !important;
-  --chat--color--secondary: #2c3e50 !important; /* UniFurniture Dark Blue */
+  --chat--color--secondary: #2c3e50 !important;
+  /* UniFurniture Dark Blue */
   --chat--color-white: #ffffff !important;
   --chat--color-light: #f8f9fa !important;
   --chat--color-light-shade-50: #e9ecef !important;
@@ -29,39 +29,25 @@ div.n8n-chat {
   --chat--font-family: 'Montserrat', sans-serif;
 
   /* Header Styles */
-  --chat--header-height: auto !important;
-  --chat--header--padding: 1.25rem !important;
+  --chat--header-height: 42px !important;
+  --chat--header--padding: 0 15px !important;
   --chat--header--background: #f05244 !important;
   --chat--header--color: #ffffff !important;
-  --chat--heading--font-size: 1.25rem !important;
-  --chat--subtitle--font-size: 0.875rem !important;
+  --chat--heading--font-size: 1rem !important;
+  --chat--subtitle--font-size: 0 !important;
 
-  /* Message Styles */
-  --chat--message--font-size: 0.9375rem !important;
-  --chat--message--padding: 0.75rem 1rem !important;
-  --chat--message--border-radius: 12px !important;
-  --chat--message--bot--background: #ffffff !important;
-  --chat--message--bot--color: #2c3e50 !important;
-  --chat--message--bot--border: 1px solid #e9ecef !important;
-  --chat--message--user--background: #f05244 !important;
-  --chat--message--user--color: #ffffff !important;
-
-  /* Input Area */
-  --chat--input--background: #ffffff !important;
-  --chat--input--text-color: #2c3e50 !important;
-  --chat--input--border: 1px solid #e9ecef !important;
-  --chat--input--placeholder--font-size: 0.875rem !important;
-  
-  /* Fix blocking issue: ensure n8n global container doesn't block clicks */
-  pointer-events: none !important;
-}
-
-/* Force UniFurniture Orange on the n8n Chat Header */
-#n8n-chat-container .chat-header {
-  background: #f05244 !important;
+  /* Window Dimensions */
+  --chat--window--width: 320px !important;
+  --chat--window--height: 520px !important;
 }
 
 /* Hide default n8n chat button and launcher */
+.n8n-chat-button,
+.n8n-chat-launcher {
+  display: none !important;
+  visibility: hidden !important;
+}
+
 .n8n-chat-button,
 .n8n-chat-launcher {
   display: none !important;
@@ -82,22 +68,25 @@ div.n8n-chat {
 
 .chat-close-button {
   position: relative !important;
-  color: transparent !important; 
-  width: 24px !important;
-  height: 24px !important;
+  color: transparent !important;
+  width: 15px !important;
+  height: 10px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
 }
 
-.chat-close-button svg, 
+.chat-close-button svg,
 .chat-close-button * {
-  display: none !important; /* Hide any broken internal svg/elements */
+  display: none !important;
+  /* Hide any broken internal svg/elements */
 }
 
 .chat-close-button::after {
-  content: '\2715' !important; /* Clean Unicode X (Cross) */
-  color: #ffffff !important; /* White color to match header */
+  content: '\2715' !important;
+  /* Clean Unicode X (Cross) */
+  color: #ffffff !important;
+  /* White color to match header */
   font-size: 18px !important;
   font-weight: bold !important;
   font-family: Arial, sans-serif !important;
@@ -110,4 +99,66 @@ div.n8n-chat {
 
 .chat-close-button:hover::after {
   color: #eeeeee !important;
+}
+
+/* ENFORCED CHAT UI REFINEMENTS */
+#n8n-chat-container .chat-header {
+  background: #f05244 !important;
+  min-height: 42px !important;
+  height: 42px !important;
+  padding: 0 15px !important;
+  display: flex !important;
+  align-items: center !important;
+  position: relative !important;
+}
+
+#n8n-chat-container .chat-header p {
+  display: none !important;
+  /* Hide subtitle p tag */
+}
+
+#n8n-chat-container .chat-header h1 {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  white-space: nowrap !important;
+}
+
+#n8n-chat-container .chat-header h1::before {
+  content: "" !important;
+  display: inline-block !important;
+  width: 20px !important;
+  height: 20px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM13 11a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM3 11a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm8.5-5a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2a.5.5 0 0 1 .5-.5ZM4.5 6a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2a.5.5 0 0 1 .5-.5ZM8 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm1.5 1.5v.5h-3v-.5a.4.4 0 0 1 .4-.4h2.2a.4.4 0 0 1 .4.4ZM11 5v3c0 .828-.672 1.5-1.5 1.5s-1.5-.672-1.5-1.5V5h3Zm-4.5 0v3c0 .828-.672 1.5-1.5 1.5s-1.5-.672-1.5-1.5V5h3Z'/%3E%3C/svg%3E") !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+}
+
+#n8n-chat-container .n8n-chat-close-top {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 50% !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: absolute !important;
+  top: 0px !important;
+  right: 15px !important;
+  margin: 0 !important;
+  transition: background 0.2s ease !important;
+}
+
+#n8n-chat-container .n8n-chat-close-top:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+#n8n-chat-container .n8n-chat-close-button {
+  display: none !important;
+  /* Hide the alternative selector to avoid conflicts */
 }
