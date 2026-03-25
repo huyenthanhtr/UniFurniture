@@ -3,7 +3,7 @@ import { getStockConstrainedQuantity, normalizeCartQuantity } from './cart-stock
 import { CartApiService, ServerCartItem } from './cart-api.service';
 
 export interface CartItem {
-    _id?: string; // Server item ID
+    _id?: string;
     cartKey: string;
     productId: string;
     variantId?: string;
@@ -28,7 +28,6 @@ export class UiStateService {
     private readonly cartApi = inject(CartApiService);
     private readonly cartStorageKey = 'unifurniture_cart_items';
 
-    // Auth modal
     isAuthOpen = signal(false);
     authTab = signal<'login' | 'register' | 'forgot'>('login');
 
@@ -38,12 +37,10 @@ export class UiStateService {
     }
     closeAuth() { this.isAuthOpen.set(false); }
     
-    // AI Chat modal/container
     isAiChatOpen = signal(false);
     toggleAiChat() { this.isAiChatOpen.update(v => !v); }
     closeAiChat() { this.isAiChatOpen.set(false); }
 
-    // Cart popup
     isCartOpen = signal(false);
     cartItems = signal<CartItem[]>(this.loadCartFromStorage());
     selectedCartKeys = signal<Set<string>>(this.loadSelectedKeysFromStorage());
@@ -431,12 +428,10 @@ export class UiStateService {
         }
     }
 
-    // Contact float
     isContactOpen = signal(false);
     toggleContact() { this.isContactOpen.update(v => !v); }
     closeContact() { this.isContactOpen.set(false); }
 
-    // Mobile menu
     isMobileMenuOpen = signal(false);
     toggleMobileMenu() { this.isMobileMenuOpen.update(v => !v); }
     closeMobileMenu() { this.isMobileMenuOpen.set(false); }

@@ -1115,10 +1115,6 @@
   margin: 10px 0 2px;
 }
 
-/* ═══════════════════════════════════════════
-   THÊM VÀO order-tracking.css
-   Pending QR block — hiện khi khách tra cứu đơn đang chờ CK
-═══════════════════════════════════════════ */
 
 .pending-qr-card {
   background: #fff;

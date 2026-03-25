@@ -79,7 +79,6 @@
     </div>
   </section>
 
-  <!-- Đánh giá thực tế section -->
   <section class="reviews-section" *ngIf="!loading && !error && featuredReviews.length > 0">
     <div class="section-header">
       <h2 class="section-title">Đánh giá thực tế</h2>
@@ -87,7 +86,6 @@
 
     <div class="reviews-container">
       <div class="reviews-track">
-        <!-- First set -->
         <div class="review-card" *ngFor="let review of featuredReviews; trackBy: trackByReviewId" (click)="onReviewClick(review)">
           <div class="review-image-wrap">
             <img [src]="review.productImageUrl || 'assets/images/placeholder.png'" [alt]="review.productName"
@@ -101,7 +99,6 @@
             <p class="review-content">{{ review.content }}</p>
           </div>
         </div>
-        <!-- Second set for infinite loop -->
         <div class="review-card" *ngFor="let review of featuredReviews; trackBy: trackByReviewId" (click)="onReviewClick(review)">
           <div class="review-image-wrap">
             <img [src]="review.productImageUrl || 'assets/images/placeholder.png'" [alt]="review.productName"

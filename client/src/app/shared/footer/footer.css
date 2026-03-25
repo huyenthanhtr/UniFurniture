@@ -1,6 +1,4 @@
-/* ===========================
-   PARTNER LOGOS SECTION
-=========================== */
+
 .partner-section {
     background: #FFFFFF;
     padding: 8px 0 10px;
@@ -73,9 +71,7 @@
     display: block;
 }
 
-/* ===========================
-   SERVICE BANNER
-=========================== */
+
 .service-banner {
     background: #FFFFFF;
     padding: 10px 0 20px;
@@ -139,9 +135,7 @@
     margin: 4px 0 0 0;
 }
 
-/* ===========================
-   FOOTER MAIN
-=========================== */
+
 .moho-footer {
     background: #F8F8F8;
     font-family: 'Montserrat', sans-serif;
@@ -160,7 +154,6 @@
     border-bottom: 1px solid #EEEEEE;
 }
 
-/* --- Columns --- */
 .footer-col {
     flex: 1;
     padding-right: 20px;
@@ -175,7 +168,6 @@
     padding-right: 0;
 }
 
-/* --- Headings --- */
 .footer-heading {
     font-family: 'Montserrat', sans-serif;
     font-weight: 600;
@@ -187,7 +179,6 @@
     margin: 0 0 18px 0;
 }
 
-/* --- Brand desc --- */
 .footer-desc {
     font-family: 'Montserrat', sans-serif;
     font-weight: 400;
@@ -197,7 +188,6 @@
     margin: 0 0 20px 0;
 }
 
-/* --- Badges --- */
 .footer-badge-link {
     display: inline-block;
     text-decoration: none;
@@ -219,7 +209,6 @@
     margin-top: 6px;
 }
 
-/* --- Policy list --- */
 .footer-list {
     list-style: none;
     margin: 0;
@@ -250,7 +239,6 @@
     line-height: 20px;
 }
 
-/* --- Contact list --- */
 .footer-contact-list {
     list-style: none;
     margin: 0;
@@ -282,7 +270,6 @@
     display: block;
 }
 
-/* --- Fanpage widget --- */
 .fanpage-box {
     border: 1px solid #EBEDF0;
     border-radius: 4px;
@@ -461,9 +448,6 @@
 
 
 
-/* ===========================
-   RESPONSIVE FOOTER
-=========================== */
 @media (max-width: 1280px) {
   .footer-main {
     padding: 36px 56px 20px;

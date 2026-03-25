@@ -258,7 +258,7 @@ export class PromotionsPageComponent implements OnInit, OnDestroy {
 
         if (!this.flashDeals.length && !this.vouchers.length && !this.collections.length) {
           this.errorMessage =
-            'Ch\u01B0a c\u00F3 d\u1EEF li\u1EC7u khuy\u1EBFn m\u00E3i t\u1EEB API.';
+            'Chưa có dữ liệu khuyến mãi từ API.';
         }
 
         this.loading = false;

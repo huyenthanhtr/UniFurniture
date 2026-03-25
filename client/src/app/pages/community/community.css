@@ -15,7 +15,6 @@ section {
   padding: 70px 8vw;
 }
 
-/* HERO - same layout rhythm as About */
 .community-hero {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -234,7 +233,6 @@ section {
   font-weight: 700;
 }
 
-/* CTA */
 .community-cta {
   margin-top: 40px;
   text-align: center;

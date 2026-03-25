@@ -59,8 +59,8 @@ export interface Product {
   name: string;
   price?: number;
   min_price?: number;
-  thumbnail?: string;      // actual DB field name
-  thumbnail_url?: string;  // keep for backward compat
+  thumbnail?: string;
+  thumbnail_url?: string;
   url?: string;
   slug?: string;
   brand?: string;

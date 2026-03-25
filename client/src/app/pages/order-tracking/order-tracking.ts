@@ -371,9 +371,9 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     try {
       await firstValueFrom(this.http.patch(`${API_BASE_URL}/orders/${order.id}/status`, { status: 'completed' }));
       order.backendStatus = 'completed';
-      order.statusLabel = 'Ho\u00e0n t\u1ea5t';
+      order.statusLabel = 'Hoàn tất';
     } catch {
-      this.errorMessage = 'Kh\u00f4ng th\u1ec3 c\u1eadp nh\u1eadt tr\u1ea1ng th\u00e1i ho\u00e0n t\u1ea5t l\u00fac n\u00e0y.';
+      this.errorMessage = 'Không thể cập nhật trạng thái hoàn tất lúc này.';
     }
   }
 

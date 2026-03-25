@@ -125,7 +125,7 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
       }
 
       if (slug) {
-        this.loadBySlug(slug); // Note: loadBySlug might need internal updates for sort if we want precise sorting there too
+        this.loadBySlug(slug); 
         return;
       }
 

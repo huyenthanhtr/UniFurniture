@@ -24,7 +24,6 @@
                 ký</button>
         </div>
 
-        <!-- Alert messages -->
         @if (errorMessage) {
         <div class="auth-alert error">{{ errorMessage }}</div>
         }
@@ -33,7 +32,6 @@
         }
 
 
-        <!-- LOGIN FORM -->
         @if (ui.authTab() === 'login') {
         <form class="auth-form" (ngSubmit)="onLogin()">
             <div class="form-group">
@@ -90,7 +88,6 @@
         </form>
         }
 
-        <!-- REGISTER FORM -->
         @if (ui.authTab() === 'register') {
         @if (!isOtpOpend) {
         <form class="auth-form" (ngSubmit)="onRegister()">
@@ -213,10 +210,8 @@
         }
         }
 
-        <!-- FORGOT PASSWORD FORM -->
         @if (ui.authTab() === 'forgot') {
 
-        <!-- Step 1: Enter phone -->
         @if (forgotStep === 'phone') {
         <form class="auth-form" (ngSubmit)="onForgotSendOtp()">
             <p class="auth-subtitle">Nhập số điện thoại đã đăng ký để nhận mã OTP:</p>
@@ -245,7 +240,6 @@
         </form>
         }
 
-        <!-- Step 2: Enter OTP -->
         @if (forgotStep === 'otp') {
         <form class="auth-form" (ngSubmit)="onForgotVerifyOtp()">
             <p class="auth-subtitle">Nhập mã OTP (6 số) đã được gửi đến số <strong>{{ forgotPhone }}</strong>:</p>
@@ -263,7 +257,6 @@
         </form>
         }
 
-        <!-- Step 3: Enter new password -->
         @if (forgotStep === 'newpass') {
         <form class="auth-form" (ngSubmit)="onResetPassword()">
             <p class="auth-subtitle">Nhập mật khẩu mới cho tài khoản:</p>
