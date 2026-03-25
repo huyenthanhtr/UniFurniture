@@ -41,7 +41,6 @@ export class ArViewer implements OnInit, AfterViewInit {
         this.activeFilter = cat;
     }
 
-    // --- 3D Room Designer State ---
     @ViewChild('rdCanvas') rdCanvas!: ElementRef<HTMLCanvasElement>;
     private renderer: any;
     private scene: any;
@@ -58,7 +57,6 @@ export class ArViewer implements OnInit, AfterViewInit {
     public rd_searchTerm = '';
     public rd_viewMode = 'perspective';
     
-    // Designer Interaction
     private isDragging = false;
     private isOrbiting = false;
     private dragPlane: any;
@@ -261,21 +259,18 @@ export class ArViewer implements OnInit, AfterViewInit {
         loader.load(product.src, (gltf: any) => {
             const model = gltf.scene;
             
-            // Normalize size
             const box = new THREE.Box3().setFromObject(model);
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
             const scale = 1.0 / maxDim; // Scale to ~1m
             model.scale.set(scale, scale, scale);
             
-            // Center bottom
             const newBox = new THREE.Box3().setFromObject(model);
             const center = newBox.getCenter(new THREE.Vector3());
             model.position.x = -center.x;
             model.position.y = -newBox.min.y;
             model.position.z = -center.z;
 
-            // Wrapper to handle pivot/rotation easily
             const wrapper = new THREE.Group();
             wrapper.add(model);
             wrapper.position.set(0, 0, 0);
@@ -288,7 +283,7 @@ export class ArViewer implements OnInit, AfterViewInit {
                 id: Date.now(), 
                 name: product.name, 
                 rotY: 0,
-                dims: { w: 1, h: 1, d: 1 } // Approximated
+                dims: { w: 1, h: 1, d: 1 }
             };
             
             this.placedObjects.push(obj);
