@@ -26,9 +26,6 @@ USER_FIELD = "account_id"
 print("Connected to MongoDB")
 
 
-# =========================
-# CLEAN TEXT
-# =========================
 def clean_text(text):
     if not text:
         return ""
@@ -37,9 +34,6 @@ def clean_text(text):
     return text
 
 
-# =========================
-# CONTENT-BASED
-# =========================
 def train_content_based():
     products = list(products_col.find({"status": "active"}))
     df = pd.DataFrame(products)
@@ -73,9 +67,6 @@ def train_content_based():
     return content_recs
 
 
-# =========================
-# ITEM-BASED (MAIN ENGINE)
-# =========================
 def train_item_based():
     orders = list(orders_col.find({}, {USER_FIELD: 1}))
     details = list(order_details_col.find({}))
@@ -128,9 +119,6 @@ def train_item_based():
     return item_recs
 
 
-# =========================
-# POPULAR PRODUCTS
-# =========================
 def get_popular_products():
     pipeline = [
         {
@@ -171,9 +159,6 @@ def get_popular_products():
     return [p["slug"] for p in products if p.get("slug")]
 
 
-# =========================
-# BUILD USER RECS (SMART)
-# =========================
 def build_user_recommendations(item_recs, content_recs):
     orders = list(orders_col.find({}, {USER_FIELD: 1}))
     details = list(order_details_col.find({}))
@@ -228,7 +213,6 @@ def build_user_recommendations(item_recs, content_recs):
 
         final = sorted(final, key=lambda x: x[1], reverse=True)[:10]
 
-        # fallback nếu vẫn thiếu
         if len(final) < 5:
             for p in popular[:5]:
                 if p not in items and p not in [s for s, _ in final]:
@@ -249,9 +233,6 @@ def build_user_recommendations(item_recs, content_recs):
     return user_recs
 
 
-# =========================
-# MAIN
-# =========================
 def main():
     print("Training content...")
     content_recs = train_content_based()

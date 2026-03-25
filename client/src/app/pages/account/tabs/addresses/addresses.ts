@@ -97,7 +97,7 @@ export class AccountAddressesTab implements OnInit {
   async bootstrap(): Promise<void> {
     const customerId = await this.ensureCustomerId();
     if (!customerId) {
-      this.error.set('Khong tim thay customer_id hop le de tai so dia chi.');
+      this.error.set('Không tìm thấy customer_id hợp lệ để tải sổ địa chỉ.');
       this.showModal('Không thể tải sổ địa chỉ', 'Không tìm thấy tài khoản khách hàng hợp lệ.', 'error');
       return;
     }
@@ -119,7 +119,7 @@ export class AccountAddressesTab implements OnInit {
       const rows = Array.isArray(res?.items) ? res.items : [];
       this.addresses.set(rows.map((row) => this.normalizeAddress(row)));
     } catch (err: any) {
-      this.error.set(err?.error?.message || 'Khong the tai danh sach dia chi.');
+      this.error.set(err?.error?.message || 'Không thể tải danh sách địa chỉ.');
       this.showModal('Không thể tải sổ địa chỉ', 'Vui lòng kiểm tra kết nối và thử lại.', 'error');
     } finally {
       this.loading.set(false);
@@ -153,7 +153,7 @@ export class AccountAddressesTab implements OnInit {
   async saveAddress(): Promise<void> {
     const customerId = this.resolvedCustomerId();
     if (!customerId) {
-      this.error.set('Thieu customer_id. Vui long dang nhap lai.');
+      this.error.set('Thiếu customer_id. Vui lòng đăng nhập lại.');
       this.showModal('Không thể lưu địa chỉ', 'Thiếu customer_id. Vui lòng đăng nhập lại.', 'error');
       return;
     }
@@ -190,7 +190,7 @@ export class AccountAddressesTab implements OnInit {
         'success'
       );
     } catch (err: any) {
-      this.error.set(err?.error?.message || 'Luu dia chi that bai.');
+      this.error.set(err?.error?.message || 'Lưu địa chỉ thất bại.');
       this.showModal('Không thể lưu địa chỉ', 'Vui lòng kiểm tra thông tin và thử lại.', 'error');
     } finally {
       this.saving.set(false);
@@ -266,7 +266,7 @@ export class AccountAddressesTab implements OnInit {
       await this.loadAddresses();
       this.showModal('Cập nhật thành công', 'Địa chỉ mặc định đã được thay đổi.', 'success');
     } catch (err: any) {
-      this.error.set(err?.error?.message || 'Khong the dat dia chi mac dinh.');
+      this.error.set(err?.error?.message || 'Không thể đặt địa chỉ mặc định.');
       this.showModal('Không thể cập nhật', 'Không thể đặt địa chỉ mặc định. Vui lòng thử lại.', 'error');
     }
   }
@@ -278,7 +278,7 @@ export class AccountAddressesTab implements OnInit {
       await this.loadAddresses();
       this.showModal('Xóa thành công', 'Địa chỉ đã được xóa khỏi tài khoản.', 'success');
     } catch (err: any) {
-      this.error.set(err?.error?.message || 'Khong the xoa dia chi.');
+      this.error.set(err?.error?.message || 'Không thể xóa địa chỉ.');
       this.showModal('Không thể xóa địa chỉ', 'Vui lòng thử lại sau.', 'error');
     }
   }
