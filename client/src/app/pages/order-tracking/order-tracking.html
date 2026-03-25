@@ -18,28 +18,21 @@
     </div>
   </section>
 
-  <!-- ══════════════════════════════════════════
-       PENDING QR BLOCK
-       Hiện khi: đơn đang chờ CK + còn trong 5 phút hiệu lực
-       (khách lỡ đóng tab khi đang ở trang checkout-payment)
-  ══════════════════════════════════════════ -->
+
   <section class="tracking-content" *ngIf="pendingQr">
     <div class="pending-qr-card">
 
-      <!-- Header -->
       <div class="pending-qr-header">
         <span class="pending-qr-icon"><i class="bi bi-bank2"></i></span>
         <div>
           <div class="fw-bold">Đơn hàng đang chờ thanh toán</div>
           <div class="small text-muted">Mã đơn: <strong>{{ pendingQr.orderCode }}</strong></div>
         </div>
-        <!-- Đồng hồ -->
         <div class="pending-qr-timer ms-auto" [class.urgent]="pendingQrSecondsLeft <= 60">
           {{ pendingQrTimerDisplay }}
         </div>
       </div>
 
-      <!-- Chọn cọc / full (chỉ khi > 10tr) -->
       <div *ngIf="pendingQr.requireDeposit" class="d-flex gap-3 my-3">
         <div
           class="pqr-choice flex-1"
@@ -65,13 +58,11 @@
         </div>
       </div>
 
-      <!-- Số tiền nổi bật -->
       <div class="pqr-payable my-3">
         <span class="small text-muted me-2">Số tiền cần chuyển:</span>
         <strong class="text-danger fs-6">{{ formatCurrency(pendingQrAmount) }}</strong>
       </div>
 
-      <!-- QR + STK -->
       <div class="pqr-bank-row">
         <img [src]="bankInfo.qrUrl" alt="QR" class="pqr-qr-img" />
         <table class="pqr-bank-table">
@@ -116,9 +107,7 @@
     </div>
   </section>
 
-  <!-- ══════════════════════════════════════════
-       ERROR / RESULTS
-  ══════════════════════════════════════════ -->
+
   <section class="tracking-content" id="tracking-feedback" *ngIf="errorMessage && !orders.length">
     <div class="alert error">{{ errorMessage }}</div>
   </section>

@@ -139,7 +139,7 @@ export class ProductComponent implements OnInit {
       return this.customTitle();
     }
     if (this.searchQuery()) {
-      return `K\u1ebft qu\u1ea3 t\u00ecm ki\u1ebfm cho: '${this.searchQuery()}'`;
+      return `Kết quả tìm kiếm cho: '${this.searchQuery()}'`;
     }
     if (this.selectedCategoryName()) {
       return this.selectedCategoryName();
@@ -150,7 +150,7 @@ export class ProductComponent implements OnInit {
     if (this.selectedGroupLabel()) {
       return this.selectedGroupLabel();
     }
-    return 'T\u1ea5t c\u1ea3 s\u1ea3n ph\u1ea9m';
+    return 'Tất cả sản phẩm';
   });
 
   readonly breadcrumbParentName = computed(() => {

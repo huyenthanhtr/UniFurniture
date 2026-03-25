@@ -17,7 +17,6 @@
   border: 1px solid rgba(232, 224, 216, 0.5);
 }
 
-/* Hiệu ứng Icon Check */
 .success-check-wrapper {
   margin-bottom: 24px;
   display: flex;
@@ -51,7 +50,6 @@
   margin-bottom: 24px;
 }
 
-/* Cái hộp mã đơn hàng nhìn sang hơn */
 .order-info-pill {
   display: inline-flex;
   align-items: center;
@@ -103,7 +101,7 @@
 }
 
 .btn-primary-luxe {
-  background: #111; /* Màu đen nhìn sang hơn màu vàng cũ */
+  background: #111;
   color: #fff;
   padding: 14px;
   border-radius: 12px;

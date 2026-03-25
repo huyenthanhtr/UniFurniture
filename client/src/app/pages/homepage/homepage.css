@@ -136,7 +136,6 @@
   background: #ef683a;
 }
 
-/* Loading overlay */
 .loading-overlay {
   display: flex;
   justify-content: center;
@@ -182,7 +181,6 @@
   cursor: pointer;
 }
 
-/* ===== Section Layout ===== */
 .product-section {
   margin-bottom: 40px;
 }
@@ -218,7 +216,6 @@
   opacity: 0.7;
 }
 
-/* ===== Product Grid ===== */
 .product-grid {
   display: grid;
   gap: 16px;
@@ -279,8 +276,6 @@
   }
 }
 
-/* ===== Product Card ===== */
-/* Product cards now use the shared <app-product-card> component */
 
 .empty-msg {
   color: #aaa;

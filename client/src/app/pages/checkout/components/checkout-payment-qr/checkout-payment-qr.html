@@ -1,14 +1,12 @@
 ﻿<div class="qr-page" *ngIf="qrState">
   <div class="qr-container">
 
-    <!-- ── Header: Mã đơn ── -->
     <div class="qr-header text-center mb-4">
       <div class="qr-icon mb-2"><i class="bi bi-bank2"></i></div>
       <h4 class="fw-bold mb-2">Thanh toán chuyển khoản</h4>
       <div class="order-code-badge">{{ qrState.orderCode }}</div>
     </div>
 
-    <!-- ── Đồng hồ đếm ngược ── -->
     <div class="timer-box mb-4 text-center" [class.urgent]="timerUrgent">
       <div class="timer-label small mb-1">Mã QR có hiệu lực trong</div>
       <div class="timer-display">{{ timerDisplay }}</div>
@@ -17,7 +15,6 @@
       </div>
     </div>
 
-    <!-- ── Chọn hình thức (CHỈ hiện khi đơn > 10tr) ── -->
     <div *ngIf="qrState.requireDeposit" class="choice-group mb-4">
       <div class="choice-label fw-semibold mb-2">Chọn hình thức thanh toán:</div>
       <div class="d-flex gap-3">
@@ -51,13 +48,11 @@
       </div>
     </div>
 
-    <!-- ── Số tiền cần chuyển (nổi bật) ── -->
     <div class="payable-box mb-4">
       <div class="payable-label">Số tiền cần chuyển</div>
       <div class="payable-value">{{ formatCurrency(amountToPay) }}</div>
     </div>
 
-    <!-- ── QR + Thông tin STK ── -->
     <div class="bank-card mb-4">
       <div class="row g-3 align-items-center">
 
@@ -103,7 +98,6 @@
       </div>
     </div>
 
-    <!-- ── Lưu ý ── -->
     <div class="notice-box small mb-4">
       <i class="bi bi-info-circle me-1"></i>
       Nhập <strong>đúng nội dung chuyển khoản</strong> để đơn được xử lý tự động.
@@ -114,12 +108,10 @@
       để xem lại mã QR trong thời gian còn hiệu lực.
     </div>
 
-    <!-- ── Lỗi hủy ── -->
     <div *ngIf="cancelError" class="alert alert-danger py-2 px-3 small mb-3">
       {{ cancelError }}
     </div>
 
-    <!-- ── Nút hủy ── -->
     <div class="text-center">
       <button
         type="button"

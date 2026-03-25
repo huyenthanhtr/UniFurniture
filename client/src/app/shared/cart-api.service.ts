@@ -47,19 +47,14 @@ export interface ActiveCartResponse {
 export class CartApiService {
     private readonly http = inject(HttpClient);
 
-    /**
-     * Returns the active cart for a customer (creates if not exists),
-     * with all items populated.
-     */
+
     async getActiveCart(customerId: string): Promise<ActiveCartResponse> {
         return firstValueFrom(
             this.http.get<ActiveCartResponse>(`${API}/cart/active?customer_id=${customerId}`)
         );
     }
 
-    /**
-     * Add or update a cart item (upsert by cart_id + variant_id).
-     */
+
     async upsertItem(params: {
         cart_id: string;
         variant_id: string;
@@ -71,10 +66,7 @@ export class CartApiService {
         );
     }
 
-    /**
-     * Update cart item's quantity or unit_price.
-     * Returns { merged: boolean, item: ServerCartItem }
-     */
+
     async updateItem(
         itemId: string,
         updates: { quantity?: number; unit_price?: number }
@@ -87,9 +79,6 @@ export class CartApiService {
         );
     }
 
-    /**
-     * Delete a cart item by its _id.
-     */
     async deleteItem(itemId: string): Promise<void> {
         await firstValueFrom(
             this.http.delete(`${API}/cart/items/${itemId}`)

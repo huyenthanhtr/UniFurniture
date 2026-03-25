@@ -1,12 +1,10 @@
 <div class="gallery-wrapper">
 
-    <!-- Thumbnails -->
     <div class="thumbnails" [style.max-height.px]="thumbnailMaxHeight || null">
         <img *ngFor="let img of images; let i = index" [src]="img" (click)="select(i)"
             [class.active]="i === selectedIndex" />
     </div>
 
-    <!-- Main Image -->
     <div class="main-image">
         <img #mainImageElement [src]="images[selectedIndex]" (load)="onMainImageLoad()" />
     </div>

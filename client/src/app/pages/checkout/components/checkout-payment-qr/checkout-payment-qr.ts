@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 const API_BASE_URL = 'http://localhost:3000/api';
-const QR_TTL_MS = 5 * 60 * 1000; // 5 phút
+const QR_TTL_MS = 5 * 60 * 1000;
 
 export type PaymentChoice = 'deposit' | 'full';
 
@@ -16,7 +16,7 @@ interface QrState {
   requireDeposit: boolean;
   depositAmount: number;
   phone?: string;
-  createdAt: number; // Date.now() lúc tạo đơn
+  createdAt: number;
 }
 
 @Component({
@@ -209,7 +209,6 @@ export class CheckoutPaymentQrComponent implements OnInit, OnDestroy {
     try {
       await firstValueFrom(this.http.post(`${API_BASE_URL}/orders/${orderId}/demo-transfer-timeout`, {}));
     } catch {
-      // Demo mode: b? qua l?i ??ng b? backend, v?n cho lu?ng UI ch?y ti?p
     }
   }
 }

@@ -376,23 +376,23 @@ function checkCancelEligibility(order) {
   if (status === "confirmed") {
     const confirmedAt = getConfirmedAt(order);
     if (!confirmedAt) {
-      return { allowed: false, message: "Khong xac dinh duoc thoi diem xac nhan don." };
+      return { allowed: false, message: "Không xác định được thời điểm xác nhận đơn." };
     }
 
     const elapsedMs = Date.now() - confirmedAt.getTime();
     const withinWindow = elapsedMs <= CANCELLATION_GRACE_HOURS * 60 * 60 * 1000;
     if (!withinWindow) {
-      return { allowed: false, message: "Don da qua 24h ke tu luc xac nhan nen khong the yeu cau huy." };
-    }
+        return { allowed: false, message: "Đơn đã quá 24 giờ kể từ lúc xác nhận nên không thể yêu cầu hủy." };
+      }
 
     return { allowed: true, message: "" };
   }
 
   if (status === "cancel_pending") {
-    return { allowed: false, message: "Don dang cho xac nhan huy." };
+    return { allowed: false, message: "Đơn đang chờ xác nhận hủy." };
   }
 
-  return { allowed: false, message: "Don hang khong con trong thoi han cho phep huy." };
+  return { allowed: false, message: "Đơn hàng không còn trong thời hạn cho phép hủy." };
 }
 
 async function resolveProfile(order, customerId) {
@@ -481,7 +481,7 @@ function buildDisplay(order, customer, profile) {
     order?.shipping_name ||
     customer?.full_name ||
     profile?.full_name ||
-    "KhÃ¡ch khÃ´ng Ä‘Äƒng nháº­p";
+    "Khách không đăng nhập";
 
   const phone =
     order?.shipping_phone ||
@@ -1049,11 +1049,11 @@ async function requestCancelOrder(req, res, next) {
     }
 
     if (!reason) {
-      return res.status(400).json({ error: "Ly do huy la bat buoc." });
+      return res.status(400).json({ error: "Lý do hủy là bắt buộc." });
     }
 
     if (!phone) {
-      return res.status(400).json({ error: "So dien thoai xac nhan la bat buoc." });
+      return res.status(400).json({ error: "Số điện thoại xác nhận là bắt buộc." });
     }
 
     const order = await Order.findById(id);
@@ -1063,7 +1063,7 @@ async function requestCancelOrder(req, res, next) {
 
     const eligibility = checkCancelEligibility(order);
     if (!eligibility.allowed) {
-      return res.status(400).json({ error: eligibility.message || "Don hang khong the yeu cau huy." });
+      return res.status(400).json({ error: eligibility.message || "Đơn hàng không thể yêu cầu hủy." });
     }
 
     const previousStatus = String(order.status || "").toLowerCase();
@@ -1166,7 +1166,7 @@ async function patchOrderStatus(req, res, next) {
       const existingReason = String(existingCancellation.reason || "").trim();
 
       if (!statusReason && !existingReason) {
-        return res.status(400).json({ error: "LÃ½ do huá»· Ä‘Æ¡n lÃ  báº¯t buá»™c." });
+        return res.status(400).json({ error: "Lý do hủy đơn là bắt buộc." });
       }
 
       const over10mWithDeposit =
@@ -1185,7 +1185,7 @@ async function patchOrderStatus(req, res, next) {
 
     if (nextStatus === "exchanged") {
       if (!statusReason) {
-        return res.status(400).json({ error: "LÃ½ do Ä‘á»•i hÃ ng lÃ  báº¯t buá»™c." });
+        return res.status(400).json({ error: "Lý do đổi hàng là bắt buộc." });
       }
 
       doc.exchange_request = {
@@ -1556,7 +1556,7 @@ async function demoTransferTimeoutComplete(req, res, next) {
     const payment_summary = buildPaymentSummary(order, refreshedPayments);
 
     return res.status(200).json({
-      message: 'Da cap nhat trang thai thanh toan demo.',
+      message: 'Đã cập nhật trạng thái thanh toán demo.',
       order_id: orderId,
       payment_summary,
     });

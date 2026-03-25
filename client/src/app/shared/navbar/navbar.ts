@@ -41,8 +41,8 @@ export class Navbar implements OnInit {
   readonly productGroups = signal<NavGroupItem[]>([]);
   readonly activeGroupSlug = signal('');
   readonly isProductsMenuOpen = signal(false);
-  readonly isProductsExpanded = signal(false); // Mobile accordion
-  readonly expandedGroupSlugs = signal<Set<string>>(new Set());      // Mobile sub-accordions
+  readonly isProductsExpanded = signal(false);
+  readonly expandedGroupSlugs = signal<Set<string>>(new Set());
   readonly isHidden = signal(false);
   private lastScrollY = 0;
 
@@ -156,8 +156,6 @@ export class Navbar implements OnInit {
   }
 
   onMobileNavClick(): void {
-    // If we're on mobile, don't automatically close if we just expanded a menu
-    // But for simplicity in this implementation, we close when a real nav happens
     this.ui.closeMobileMenu();
     this.isProductsExpanded.set(false);
     this.expandedGroupSlugs.set(new Set());
@@ -184,7 +182,6 @@ export class Navbar implements OnInit {
       return next;
     });
     
-    // Also set active group for the mega menu content if needed
     this.setActiveGroup(slug);
   }
 

@@ -15,7 +15,7 @@ async function sendOtpSms(toPhone, otp) {
     }
     const to = toAreaCode.replace('+', '');
 
-    const text = `Ma xac nhan dang ky UniFurniture cua ban la: ${otp}`;
+    const text = `Mã xác nhận đăng ký UniFurniture của bạn là: ${otp}`;
     console.log(`[OTP DEBUG] Phone: ${to}, OTP: ${otp}`);
 
     try {

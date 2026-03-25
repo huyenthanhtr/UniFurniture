@@ -24,7 +24,6 @@
   box-shadow: 0 4px 24px rgba(63,47,35,0.1);
 }
 
-/* â”€â”€ Header â”€â”€ */
 .qr-icon {
   font-size: 2.5rem;
   line-height: 1;
@@ -41,7 +40,6 @@
   letter-spacing: 0.5px;
 }
 
-/* â”€â”€ Timer â”€â”€ */
 .timer-box {
   background: #f0fdf4;
   border: 1.5px solid #86efac;
@@ -72,7 +70,6 @@
 
 .timer-box.urgent .timer-display { color: #92400e; }
 
-/* â”€â”€ Choice group â”€â”€ */
 .choice-group { }
 
 .choice-option {
@@ -140,7 +137,6 @@
   margin-top: 4px;
 }
 
-/* â”€â”€ Bank card â”€â”€ */
 .bank-card {
   background: #fafaf8;
   border: 1.5px solid var(--border);
@@ -184,7 +180,6 @@
 }
 .btn-copy:hover { background: #e5e7eb; }
 
-/* â”€â”€ Notice â”€â”€ */
 .notice-box {
   background: #eff6ff;
   border: 1px solid #bfdbfe;
@@ -196,7 +191,6 @@
 
 .notice-box a { color: #1d4ed8; font-weight: 600; }
 
-/* â”€â”€ Cancel button â”€â”€ */
 .btn-cancel-order {
   background: none;
   border: 1.5px solid #fca5a5;
@@ -212,7 +206,6 @@
 .btn-cancel-order:hover:not(:disabled) { background: #fef2f2; border-color: #f87171; }
 .btn-cancel-order:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 480px) {
   .qr-container { padding: 24px 16px; }
   .d-flex.gap-3 { flex-direction: column; }
