@@ -8,14 +8,14 @@ export interface Review {
       order_code: string;
       shipping_name: string;
       shipping_email: string;
-    };
-  };
+    } | null;
+  } | null;
   customer_id?: {
     _id: string;
     customer_code: string;
     full_name: string;
     phone: string;
-  };
+  } | null;
   productImageUrl?: string;
   rating: number;
   content: string;
@@ -25,6 +25,6 @@ export interface Review {
   reply?: {
     content: string;
     repliedAt: Date;
-  };
+  } | null;
   createdAt: Date;
 }
