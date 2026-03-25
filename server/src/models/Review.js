@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const reviewSchema = new mongoose.Schema({
   order_detail_id: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'OrderDetail', // Đảm bảo bạn đã có model OrderDetail
+    ref: 'OrderDetail',
     required: true 
   },
   user_id: { 
@@ -12,7 +12,7 @@ const reviewSchema = new mongoose.Schema({
   },
   customer_id: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Customer' // Thêm dòng này để khớp với data JSON
+    ref: 'Customer'
   },
   rating: { 
     type: Number, 
@@ -24,7 +24,6 @@ const reviewSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },
-  // THÊM TRƯỜNG LƯU ẢNH KHÁCH HÀNG UPLOAD
   images: [{ 
     type: String 
   }],

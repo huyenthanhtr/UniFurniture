@@ -1,6 +1,6 @@
 const Collection = require('../models/Collection');
 const slugify = require('slugify');
-const Product = require('../models/Product') // đổi lại đúng tên file model của bạn
+const Product = require('../models/Product')
 const mongoose = require('mongoose');
 
 exports.getProductsByCollection = async (req, res) => {
@@ -30,7 +30,6 @@ exports.getProductsByCollection = async (req, res) => {
     });
   }
 };
-// Lấy tất cả bộ sưu tập
 exports.getAllCollections = async (req, res) => {
     try {
         const collections = await Collection.find();
@@ -40,12 +39,10 @@ exports.getAllCollections = async (req, res) => {
     }
 };
 
-// Tạo bộ sưu tập mới
 exports.createCollection = async (req, res) => {
     try {
         const collectionData = { ...req.body };
 
-        // KIỂM TRA: Nếu có file ảnh được tải lên (tên là 'banner')
         if (req.file) {
             collectionData.banner_url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
         }
@@ -59,19 +56,16 @@ exports.createCollection = async (req, res) => {
     }
 };
 
-// Cập nhật bộ sưu tập
 exports.updateCollection = async (req, res) => {
     try {
         const collectionData = { ...req.body };
 
-        // Nếu admin đổi tên, tự động cập nhật lại slug và url
         if (collectionData.name) {
             const newSlug = slugify(collectionData.name, { lower: true, strict: true });
             collectionData.slug = newSlug;
             collectionData.url = `/collections/${newSlug}`;
         }
 
-        // KIỂM TRA: Nếu Admin tải lên một ảnh banner mới
         if (req.file) {
             collectionData.banner_url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
         }
@@ -79,7 +73,7 @@ exports.updateCollection = async (req, res) => {
         const updatedCollection = await Collection.findByIdAndUpdate(
             req.params.id, 
             collectionData, 
-            { returnDocument: 'after' } // Trả về data mới nhất sau khi update
+            { returnDocument: 'after' }
         );
 
         if (!updatedCollection) {
@@ -92,7 +86,6 @@ exports.updateCollection = async (req, res) => {
     }
 };
 
-// Xóa bộ sưu tập
 exports.deleteCollection = async (req, res) => {
     try {
         const deletedCollection = await Collection.findByIdAndDelete(req.params.id);

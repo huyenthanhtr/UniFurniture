@@ -10,12 +10,11 @@ const categorySchema = new mongoose.Schema({
     room: { 
         type: String, 
         enum: ['Phòng khách', 'Phòng ăn', 'Phòng ngủ', 'Phòng làm việc'],
-        required: false // Nếu bạn muốn bắt buộc nhập, nếu không thì đổi thành false
+        required: false
     },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' }
 }, { timestamps: true });
 
-// Tự động tạo slug từ name trước khi lưu
 categorySchema.pre('save', function(next) {
     if (this.name) {
         this.slug = slugify(this.name, { lower: true, strict: true });

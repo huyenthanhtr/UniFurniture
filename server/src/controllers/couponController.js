@@ -1,10 +1,8 @@
 const Coupon = require('../models/Coupon');
 
-// 1. Lấy tất cả mã khuyến mãi (Dùng cho trang Admin chính)
 exports.getAllCoupons = async (req, res) => {
     try {
         const now = new Date();
-        // Tự động cập nhật trạng thái expired cho các mã đã quá hạn mà chưa là expired
         await Coupon.updateMany(
             { end_at: { $lt: now }, status: { $ne: 'expired' } },
             { $set: { status: 'expired' } }
@@ -16,16 +14,13 @@ exports.getAllCoupons = async (req, res) => {
         res.status(500).json({ message: "Lỗi hệ thống: " + error.message });
     }
 };
-// 2. Tạo mã mới
 exports.createCoupon = async (req, res) => {
     try {
         const { code, discount_type, discount_value } = req.body;
         
-        // Kiểm tra mã trùng
         const existing = await Coupon.findOne({ code: code.toUpperCase() });
         if (existing) return res.status(400).json({ message: "Mã này đã tồn tại!" });
 
-        // Logic bảo vệ: Nếu là giảm cố định thì max_discount_amount chính là giá trị giảm
         let finalData = { ...req.body };
         if (discount_type === 'fixed') {
             finalData.max_discount_amount = discount_value;
@@ -39,7 +34,6 @@ exports.createCoupon = async (req, res) => {
     }
 };
 
-// 3. Cập nhật mã (Ví dụ: gia hạn ngày hoặc tăng giới hạn lượt dùng)
 exports.updateCoupon = async (req, res) => {
     try {
         const updatedCoupon = await Coupon.findByIdAndUpdate(
@@ -54,7 +48,6 @@ exports.updateCoupon = async (req, res) => {
     }
 };
 
-// 4. Xóa mã
 exports.deleteCoupon = async (req, res) => {
     try {
         const coupon = await Coupon.findByIdAndDelete(req.params.id);

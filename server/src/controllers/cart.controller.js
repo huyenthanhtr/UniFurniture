@@ -4,7 +4,6 @@ const CartItem = require("../models/CartItem");
 const ProductVariant = require("../models/ProductVariant");
 const Product = require("../models/Product");
 
-// Helper function to manually populate a cart item so it works even if variant_id is actually a Product ID
 async function populateCartItem(item) {
   let doc = item.toObject ? item.toObject() : item;
   
@@ -17,7 +16,6 @@ async function populateCartItem(item) {
     product = await Product.findById(variant.product_id).lean();
     doc.variant_id = { ...variant, product_id: product };
   } else {
-    // If no variant found, check if variant_id is actually a product
     product = await Product.findById(doc.variant_id).lean();
     if (product) {
       doc.variant_id = { _id: null, product_id: product };
@@ -29,9 +27,7 @@ async function populateCartItem(item) {
   return doc;
 }
 
-/**
- * GET /api/cart/active?customer_id=X
- */
+
 async function getActiveCart(req, res) {
   try {
     const { customer_id } = req.query;
@@ -54,9 +50,7 @@ async function getActiveCart(req, res) {
   }
 }
 
-/**
- * POST /api/cart/items/upsert
- */
+
 async function upsertCartItem(req, res) {
   try {
     const { cart_id, variant_id, quantity, unit_price } = req.body;
@@ -88,9 +82,7 @@ async function upsertCartItem(req, res) {
   }
 }
 
-/**
- * PATCH /api/cart/items/:id
- */
+
 async function updateCartItem(req, res) {
   try {
     const { id } = req.params;
@@ -115,9 +107,7 @@ async function updateCartItem(req, res) {
   }
 }
 
-/**
- * DELETE /api/cart/items/:id
- */
+
 async function deleteCartItem(req, res) {
   try {
     const { id } = req.params;

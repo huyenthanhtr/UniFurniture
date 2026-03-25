@@ -1,5 +1,5 @@
 export interface Category {
-  _id?: string; // Dấu ? vì khi thêm mới chưa có ID
+  _id?: string;
   category_code: string;
   name: string;
   slug?: string;

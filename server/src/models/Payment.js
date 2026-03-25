@@ -49,7 +49,6 @@ PaymentSchema.pre("save", async function preSave() {
   const identity = await buildPaymentIdentity(this.order_id, this.type);
   if (!identity) return;
 
-  // Keep payment_code and transaction_id consistent by rule: ORDERCODE-DEP/FULL/REM
   if (!this.payment_code || this.isModified("order_id") || this.isModified("type")) {
     this.payment_code = identity;
   }

@@ -1,4 +1,4 @@
-/* GIAO DIỆN CHUNG TỪ ADMIN-COUPONS & ADMIN-CUSTOMERS */
+
 .page {
   padding: 16px;
 }
@@ -25,7 +25,7 @@
   padding: 14px;
 }
 
-/* THANH LỌC (FILTER BAR) */
+
 .filter-wrapper {
   display: flex;
   flex-wrap: wrap;
@@ -83,7 +83,7 @@
 .text-uppercase { text-transform: uppercase; }
 .text-center { text-align: center; }
 
-/* NÚT BẤM (BUTTONS) */
+
 .btn {
   padding: 10px 16px;
   border-radius: 12px;
@@ -112,7 +112,7 @@
 .btn-icon { width: 42px; height: 42px; padding: 0; }
 .btn-icon-only { width: 34px; height: 34px; padding: 0; border-radius: 8px; font-size: 14px; }
 
-/* BẢNG DỮ LIỆU (TABLE) */
+
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -122,7 +122,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   min-width: 800px;
-  table-layout: fixed; /* THÊM DÒNG NÀY: Khóa cứng toàn bộ khung bảng */
+  table-layout: fixed; 
 }
 
 th, td {
@@ -142,13 +142,13 @@ th {
 tbody tr:last-child td { border-bottom: none; }
 .cell-title { cursor: pointer; }
 
-/* Thumbnail hình ảnh Category */
+
 .img-thumbnail-custom {
-  /* Thay đổi chiều rộng để tạo hình chữ nhật, ví dụ: gấp 1.5 hoặc 2 lần chiều cao */
-  width: 100px;  /* Tăng chiều rộng lên */
-  height: 50px; /* Giữ nguyên hoặc điều chỉnh chiều cao cho phù hợp */
   
-  object-fit: cover; /* Đảm bảo hình ảnh lấp đầy khung mà không bị méo */
+  width: 100px;  
+  height: 50px; 
+  
+  object-fit: cover; 
   border-radius: 8px;
   border: 1px solid #ddd2c6;
 }
@@ -163,7 +163,7 @@ tbody tr:last-child td { border-bottom: none; }
 .actions { display: flex; align-items: center; gap: 8px; }
 .justify-content-center { justify-content: center; }
 
-/* TRẠNG THÁI (STATUS DROPDOWN) */
+
 .status-dropdown {
   appearance: none;
   -webkit-appearance: none;
@@ -183,7 +183,7 @@ tbody tr:last-child td { border-bottom: none; }
 .status-dropdown.active { color: #166534; background: #ecfdf3; border-color: #86efac; }
 .status-dropdown.inactive { color: #b42318; background: #fff1f0; border-color: #f3c7c3; }
 
-/* PHÂN TRANG (PAGINATION) */
+
 .pagination {
   display: flex;
   justify-content: center;
@@ -208,7 +208,7 @@ tbody tr:last-child td { border-bottom: none; }
 .pg:disabled { opacity: 0.45; cursor: not-allowed; }
 .pg-arrow { font-size: 18px; }
 
-/* MODAL & POPUP CHUẨN MỚI */
+
 .modal-overlay, .confirm-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
@@ -240,7 +240,7 @@ tbody tr:last-child td { border-bottom: none; }
 
 .modal-card-footer { padding: 16px 24px; border-top: 1px solid #f2ede8; background: #faf7f3; display: flex; justify-content: flex-end; gap: 10px; }
 
-/* POPUP THÔNG BÁO NHỎ */
+
 .confirm-box, .result-box {
   background: #fff; padding: 30px; border-radius: 16px; text-align: center;
   width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
@@ -270,15 +270,15 @@ tbody tr:last-child td { border-bottom: none; }
   .modal-form-grid { grid-template-columns: 1fr; }
   .full-width { grid-column: span 1; }
 }
-/* --- HIỆU ỨNG HOVER CHO BẢNG SẢN PHẨM TRONG MODAL --- */
+
 .product-row {
   background: #fff;
-  cursor: pointer; /* Biến con trỏ chuột thành hình bàn tay */
+  cursor: pointer; 
   transition: background-color 0.2s ease;
 }
 
 .product-row:hover {
-  background-color: #faf7f3 !important; /* Đổi màu nền sang tone nâu nhạt khi di chuột vào */
+  background-color: #faf7f3 !important; 
 }
 .text-highlight {
     color: #908372;

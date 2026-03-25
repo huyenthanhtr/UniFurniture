@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const { Readable } = require("stream");
 const ProductModel3D = require("../models/ProductModel3D");
 
-// Upload 3D model - Manual GridFS Push
 const uploadModel3D = async (req, res) => {
   try {
     const { product_id, variant_id } = req.body;
@@ -15,15 +14,12 @@ const uploadModel3D = async (req, res) => {
        return res.status(400).json({ message: "Thiếu product_id" });
     }
 
-    // Kết nối GridFSBucket
     const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
       bucketName: "uploads",
     });
 
-    // Tạo tên file duy nhất
     const filename = `model3d-${Date.now()}-${req.file.originalname}`;
     
-    // Tạo luồng upload stream vào GridFS
     const uploadStream = bucket.openUploadStream(filename, {
         contentType: req.file.mimetype,
         metadata: {
@@ -32,19 +28,16 @@ const uploadModel3D = async (req, res) => {
         }
     });
 
-    // Chuyển buffer file từ req sang stream và đẩy vào GridFS
     const readableFileStream = new Readable();
     readableFileStream.push(req.file.buffer);
     readableFileStream.push(null);
     
     readableFileStream.pipe(uploadStream);
 
-    // Đợi upload hoàn tất để lấy file_id
     uploadStream.on("finish", async () => {
       try {
         const file_id = uploadStream.id;
 
-        // Lưu bản ghi vào collection product_models_3d
         const newModel = new ProductModel3D({
           product_id,
           variant_id: variant_id || null,
@@ -59,7 +52,6 @@ const uploadModel3D = async (req, res) => {
           data: newModel,
         });
       } catch (saveError) {
-        // Nếu lưu bản ghi lỗi, hãy xóa file vừa upload lên GridFS
         await bucket.delete(uploadStream.id);
         res.status(500).json({ message: "Lỗi khi lưu thông tin model", error: saveError.message });
       }
@@ -75,7 +67,6 @@ const uploadModel3D = async (req, res) => {
   }
 };
 
-// Lấy thông tin model của một sản phẩm
 const getModelsByProduct = async (req, res) => {
   try {
     const { product_id } = req.params;
@@ -86,7 +77,6 @@ const getModelsByProduct = async (req, res) => {
   }
 };
 
-// Stream file GLB từ GridFS
 const streamModelFile = async (req, res) => {
   try {
     const { file_id } = req.params;
@@ -106,7 +96,6 @@ const streamModelFile = async (req, res) => {
       return res.status(404).json({ message: "File không tồn tại" });
     }
 
-    // Set content type thích hợp
     if (files[0].filename.toLowerCase().endsWith(".glb")) {
       res.set("Content-Type", "model/gltf-binary");
     } else if (files[0].filename.toLowerCase().endsWith(".gltf")) {
@@ -125,7 +114,6 @@ const streamModelFile = async (req, res) => {
   }
 };
 
-// Xóa model
 const deleteModel3D = async (req, res) => {
   try {
     const { id } = req.params;

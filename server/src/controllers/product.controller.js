@@ -220,11 +220,9 @@ async function getProducts(req, res, next) {
           });
           pipeline.push({ $sort: { rec_score: -1, sold: -1, _id: -1 } });
         } else {
-          // Fallback if no specific user recs
           pipeline.push({ $sort: { sold: -1, min_price: 1, _id: -1 } });
         }
       } else {
-        // Unauthenticated fallback: High sold and low price
         pipeline.push({ $sort: { sold: -1, min_price: 1, _id: -1 } });
       }
     } else {
@@ -291,7 +289,6 @@ async function getProducts(req, res, next) {
       Product.countDocuments(query),
     ]);
 
-    // Batch-fetch variant colors for the returned product IDs
     const productIds = items.map((p) => p._id);
     const variantColorDocs = productIds.length
       ? await ProductVariant.find(
@@ -306,7 +303,6 @@ async function getProducts(req, res, next) {
       ).lean()
       : [];
 
-    // Build image map variant_id -> first image_url
     const variantImages = new Map();
     for (const img of imageDocs) {
       if (img.variant_id && img.image_url) {
@@ -316,7 +312,6 @@ async function getProducts(req, res, next) {
       }
     }
 
-    // Build a map: productId -> unique [{name, hex, price, originalPrice, imageUrl}]
     const colorsByProduct = new Map();
     for (const v of variantColorDocs) {
       const pid = String(v.product_id);
@@ -485,14 +480,12 @@ async function getProductRecommendations(req, res, next) {
     const Recommendation = require('./../models/Recommendation');
     const UserRec = require('./../models/UserRecommendation');
 
-    // 1. Fetch item-based/content-based recommendations
     const itemRecs = await Recommendation
       .find({ product_slug: slug })
       .sort({ score: -1 })
       .limit(10)
       .lean();
 
-    // 2. If user is logged in, fetch their personalized recommendations
     let personalRecs = [];
     if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
       personalRecs = await UserRec.find({ user_id }).lean();
@@ -518,7 +511,6 @@ async function getProductRecommendations(req, res, next) {
       const itemRec = itemRecs.find(r => r.recommended_slug === product.slug);
       const personalRec = personalRecs.find(r => r.recommended_slug === product.slug);
 
-      // Score combination: Item Similarity + (Personal affinity * 2)
       let finalScore = (itemRec ? itemRec.score : 0);
       if (personalRec) {
         finalScore += (personalRec.score * 2);

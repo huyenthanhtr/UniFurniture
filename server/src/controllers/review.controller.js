@@ -343,7 +343,7 @@ exports.getAllReviews = async (req, res) => {
       .populate('customer_id', 'customer_code full_name phone')
       .populate({
         path: 'order_detail_id',
-        select: 'product_name order_id variant_id', // Thêm variant_id để lấy ảnh
+        select: 'product_name order_id variant_id',
         populate: [
           {
             path: 'order_id',
@@ -362,7 +362,6 @@ exports.getAllReviews = async (req, res) => {
       .sort({ createdAt: -1 });
 
     const normalized = reviews.map((review) => {
-      // Tìm ảnh sản phẩm từ biến thể (variant) hoặc sản phẩm gốc (product)
       let productImageUrl = '';
       if (review.order_detail_id?.variant_id) {
         const variant = review.order_detail_id.variant_id;
@@ -376,7 +375,7 @@ exports.getAllReviews = async (req, res) => {
 
       return {
         ...review.toObject(),
-        productImageUrl: toPublicAssetUrl(req, productImageUrl), // Trả về frontend
+        productImageUrl: toPublicAssetUrl(req, productImageUrl),
         images: Array.isArray(review.images)
           ? review.images.map((image) => toPublicAssetUrl(req, image)).filter(Boolean)
           : [],
@@ -409,10 +408,9 @@ exports.getFeaturedReviews = async (req, res) => {
         }
       })
       .sort({ createdAt: -1 })
-      .limit(10); // get top 10
+      .limit(10);
 
     const normalized = reviews.map((review) => {
-      // Find a product image URL
       let productImageUrl = '';
       let productSlug = '';
       let productId = '';

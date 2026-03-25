@@ -20,10 +20,9 @@ export class AdminLayout implements OnInit {
   currentUser: any = { fullname: 'Admin', role: 'admin' };
   isMobileMenuOpen = false;
   showLogoutConfirmPopup = false;
-  showUserOptions = false; // Biến điều khiển menu con
+  showUserOptions = false;
   currentUrl = '';
 
-  // Auth popup logic
   showLoginModal = false;
   loginData = { email: '', password: '' };
   loginErrorMessage = '';
@@ -36,7 +35,7 @@ export class AdminLayout implements OnInit {
       filter((event): event is NavigationEnd => event instanceof NavigationEnd)
     ).subscribe((event: NavigationEnd) => {
       this.currentUrl = event.urlAfterRedirects;
-      this.showUserOptions = false; // Đóng menu khi chuyển trang
+      this.showUserOptions = false;
       this.checkAuth();
     });
   }
@@ -85,7 +84,6 @@ export class AdminLayout implements OnInit {
     });
   }
 
-  // Click ra ngoài thì đóng menu
   @HostListener('document:click', ['$event'])
   clickout(event: any) {
     if (!event.target.closest('.admin-footer')) {
@@ -107,12 +105,10 @@ export class AdminLayout implements OnInit {
   }
 
   goToHomePage() {
-    // Tạm thời log ra, sau này bạn gắn router.navigate hoặc window.location
     console.log("Navigating to Home Page...");
     this.showUserOptions = false;
     const clientUrl = 'http://localhost:4200';
     window.open(clientUrl, '_blank');
-    // this.router.navigate(['/']); 
   }
 
   logout() {

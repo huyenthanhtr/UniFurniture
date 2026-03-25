@@ -1,4 +1,4 @@
-/* GIAO DIỆN CHUNG TỪ ADMIN-CUSTOMERS */
+
 .page {
   padding: 16px;
 }
@@ -25,7 +25,7 @@
   padding: 14px;
 }
 
-/* TOOLBAR COUPONS - Đã cân chỉnh */
+
 .toolbar {
   display: grid;
   gap: 10px;
@@ -34,7 +34,7 @@
 }
 
 .coupon-toolbar {
-  /* Khung grid chia đều: Search | Type | Status | DateRange | Nút Reset */
+  
   grid-template-columns: minmax(200px, 1fr) 150px 160px 280px 42px;
 }
 
@@ -87,7 +87,7 @@
 .text-primary { color: #908372; }
 .text-center { text-align: center; }
 
-/* NÚT BẤM (BUTTONS) */
+
 .btn {
   padding: 10px 16px;
   border-radius: 12px;
@@ -139,10 +139,10 @@
   padding: 0;
 }
 
-/* BẢNG DỮ LIỆU (TABLE) */
+
 .table-wrap {
-overflow-x: auto; /* Thay đổi từ hidden thành auto */
-  -webkit-overflow-scrolling: touch; /* Giúp trượt mượt hơn trên thiết bị cảm ứng */
+overflow-x: auto; 
+  -webkit-overflow-scrolling: touch; 
 }
 
 table {
@@ -162,7 +162,7 @@ th {
   background: #faf7f3;
   color: #444;
   white-space: nowrap;
-  text-align: center; /* Thêm dòng này để canh giữa */
+  text-align: center; 
 }
 
 tbody tr:last-child td {
@@ -196,7 +196,7 @@ tbody tr:last-child td {
 }
 .justify-content-center { justify-content: center; }
 
-/* TRẠNG THÁI (STATUS DROPDOWN) - Bảng chọn có giao diện của Badge */
+
 .status-dropdown {
   appearance: none;
   -webkit-appearance: none;
@@ -215,14 +215,14 @@ tbody tr:last-child td {
 
 .status-dropdown.active { color: #166534; background: #ecfdf3; border-color: #86efac; }
 .status-dropdown.inactive { color: #b42318; background: #fff1f0; border-color: #f3c7c3; }
-.status-dropdown.expired { color: #92400e; background: #fffbeb; border-color: #fcd34d; opacity: 0.8; cursor: not-allowed; /* Thêm dòng này để hiện dấu cấm */}
+.status-dropdown.expired { color: #92400e; background: #fffbeb; border-color: #fcd34d; opacity: 0.8; cursor: not-allowed; }
 
-/* THANH TIẾN ĐỘ (PROGRESS) */
+
 .usage-text { font-size: 13px; margin-bottom: 4px; text-align: center;}
 .progress-mini { height: 6px; background: #f2ede8; border-radius: 10px; overflow: hidden; }
 .progress-bar { height: 100%; background: #908372; border-radius: 10px; transition: width 0.3s ease; }
 
-/* MODAL & POPUP CHUẨN MỚI */
+
 .modal-overlay, .confirm-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
@@ -257,7 +257,7 @@ tbody tr:last-child td {
 
 .modal-card-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
 
-/* Grid cho Form Modal thay thế Bootstrap */
+
 .modal-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -277,7 +277,7 @@ tbody tr:last-child td {
   display: flex; justify-content: flex-end; gap: 10px;
 }
 
-/* POPUP THÔNG BÁO NHỎ */
+
 .confirm-box, .result-box {
   background: #fff; padding: 30px; border-radius: 16px; text-align: center;
   width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
@@ -303,7 +303,7 @@ tbody tr:last-child td {
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Responsive */
+
 @media (max-width: 1200px) {
   .coupon-toolbar { grid-template-columns: 1fr 1fr 1fr; }
   .date-range-wrap { grid-column: span 2; }
@@ -315,7 +315,7 @@ tbody tr:last-child td {
   .modal-form-grid { grid-template-columns: 1fr; }
   .full-width { grid-column: span 1; }
 }
-/* --- CẤU TRÚC THANH LỌC (FLEX-WRAP CŨ) --- */
+
 .filter-wrapper {
   display: flex;
   flex-wrap: wrap;
@@ -336,32 +336,32 @@ tbody tr:last-child td {
   flex: 1;
 }
 
-/* Đảm bảo mọi input trong thanh lọc có chiều cao và bo góc đồng bộ */
+
 .filter-wrapper .search-input,
 .filter-wrapper .toolbar-select {
   width: 100%;
 }
-/* --- ĐỊNH DẠNG CHO CÁC Ô BỊ KHÓA (DISABLED) --- */
+
 .search-input:disabled,
 .toolbar-select:disabled,
 .status-dropdown:disabled {
-  cursor: not-allowed;       /* Hiển thị con trỏ dấu cấm */
-  border-color: #e8e4df;     /* Viền nhạt hơn */
+  cursor: not-allowed;       
+  border-color: #e8e4df;     
 }
 
-/* Đảm bảo chữ trong ô khóa không bị bôi đen gây khó chịu */
+
 .search-input:disabled {
   user-select: none;
 }
-/* Thêm vào cuối file admin-coupons.css nếu chưa có */
 
-/* PHÂN TRANG (PAGINATION) - Đồng bộ với Category */
+
+
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 10px;
-  margin-top: 20px; /* Tăng khoảng cách với bảng */
+  margin-top: 20px; 
 }
 
 .pg {
