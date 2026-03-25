@@ -83,7 +83,7 @@ export class CouponPickerComponent implements OnInit, OnChanges, OnDestroy {
 
   get availableCoupons(): Coupon[] {
     const mapped = this.couponsFromApi
-      .filter((coupon) => this.isCouponEligible(coupon))
+      .filter((coupon) => this.isCouponEligibleForList(coupon))
       .map((coupon) => this.mapCoupon(coupon));
 
     if (!mapped.length) return [];
@@ -105,7 +105,15 @@ export class CouponPickerComponent implements OnInit, OnChanges, OnDestroy {
   get selectedCoupon(): Coupon | null {
     const code = this.selectedCode || String(this.appliedCode || '').trim().toUpperCase();
     if (!code) return null;
-    return this.availableCoupons.find((coupon) => coupon.code === code) || null;
+    const inList = this.availableCoupons.find((coupon) => coupon.code === code);
+    if (inList) return inList;
+
+    const manualCandidate = this.couponsFromApi.find(
+      (item) => String(item.code || '').trim().toUpperCase() === code,
+    );
+    if (!manualCandidate) return null;
+    if (!this.isCouponEligibleForManual(manualCandidate)) return null;
+    return this.mapCoupon(manualCandidate);
   }
 
   openModal(): void {
@@ -153,7 +161,7 @@ export class CouponPickerComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
-    if (!this.isCouponEligible(found)) {
+    if (!this.isCouponEligibleForManual(found)) {
       this.manualError = 'Mã này chưa đủ điều kiện áp dụng cho đơn hàng hiện tại.';
       return;
     }
@@ -188,7 +196,15 @@ export class CouponPickerComponent implements OnInit, OnChanges, OnDestroy {
       });
   }
 
-  private isCouponEligible(coupon: CouponApi): boolean {
+  private isCouponEligibleForList(coupon: CouponApi): boolean {
+    return this.isCouponEligible(coupon, false);
+  }
+
+  private isCouponEligibleForManual(coupon: CouponApi): boolean {
+    return this.isCouponEligible(coupon, true);
+  }
+
+  private isCouponEligible(coupon: CouponApi, allowInactive: boolean): boolean {
     const code = String(coupon.code || '').trim();
     if (!code) return false;
 
@@ -200,7 +216,8 @@ export class CouponPickerComponent implements OnInit, OnChanges, OnDestroy {
     if (totalLimit > 0 && used >= totalLimit) return false;
 
     const status = String(coupon.status || '').trim().toLowerCase();
-    if (status === 'inactive') return false;
+    if (status === 'expired') return false;
+    if (!allowInactive && status === 'inactive') return false;
 
     const now = Date.now();
     const startAt = this.toTimestamp(coupon.start_at);

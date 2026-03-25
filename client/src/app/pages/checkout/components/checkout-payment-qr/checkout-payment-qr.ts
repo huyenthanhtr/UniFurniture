@@ -36,6 +36,7 @@ export class CheckoutPaymentQrComponent implements OnInit, OnDestroy {
   paymentChoice: PaymentChoice = 'deposit';
   expired = false;
   cancelling = false;
+  showCancelConfirm = false;
   cancelError = '';
 
   secondsLeft = 0;
@@ -123,10 +124,21 @@ export class CheckoutPaymentQrComponent implements OnInit, OnDestroy {
     }
   }
 
+  requestCancelOrder(): void {
+    if (!this.qrState || this.cancelling) return;
+    this.showCancelConfirm = true;
+  }
+
+  closeCancelConfirm(): void {
+    if (this.cancelling) return;
+    this.showCancelConfirm = false;
+  }
+
   async cancelOrder(): Promise<void> {
     if (!this.qrState || this.cancelling) return;
 
     this.cancelling = true;
+    this.showCancelConfirm = false;
     this.cancelError = '';
     this.stopTimer();
 

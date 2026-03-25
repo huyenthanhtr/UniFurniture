@@ -97,13 +97,22 @@
       <article
         class="voucher-card"
         *ngFor="let voucher of vouchers; trackBy: trackByVoucher"
+        [class.is-copyable]="voucher.availability === 'active'"
         [class.is-expired]="voucher.isExpired"
         (click)="copyVoucherCode(voucher)"
       >
         <div class="voucher-head">
           <p class="voucher-code" [style.color]="voucher.color">{{ voucher.code }}</p>
           <span class="voucher-copy-state" [class.active]="copiedCode === voucher.code" [class.expired]="voucher.isExpired">
-            {{ voucher.isExpired ? 'Đã hết' : (copiedCode === voucher.code ? 'Đã copy' : 'Copy mã') }}
+            {{
+              voucher.availability === 'not_started'
+                ? 'Chưa có hiệu lực'
+                : (voucher.availability === 'expired'
+                ? 'Hết hạn'
+                : (voucher.availability === 'sold_out'
+                  ? 'Đã hết'
+                  : (copiedCode === voucher.code ? 'Đã copy' : 'Copy mã')))
+            }}
           </span>
         </div>
         <h3>{{ voucher.label }}</h3>

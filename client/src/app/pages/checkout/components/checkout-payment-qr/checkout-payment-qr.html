@@ -3,7 +3,7 @@
 
     <!-- ── Header: Mã đơn ── -->
     <div class="qr-header text-center mb-4">
-      <div class="qr-icon mb-2">🏦</div>
+      <div class="qr-icon mb-2"><i class="bi bi-bank2"></i></div>
       <h4 class="fw-bold mb-2">Thanh toán chuyển khoản</h4>
       <div class="order-code-badge">{{ qrState.orderCode }}</div>
     </div>
@@ -78,7 +78,8 @@
                 <span class="fw-semibold me-2">{{ bankInfo.accountNumber }}</span>
                 <button type="button" class="btn-copy"
                   (click)="copyValue(bankInfo.accountNumber, 'account', $event)">
-                  {{ copiedField === 'account' ? '✓ Đã copy' : 'Copy' }}
+                  <i class="bi" [ngClass]="copiedField === 'account' ? 'bi-check2' : 'bi-copy'"></i>
+                  {{ copiedField === 'account' ? 'Đã copy' : 'Copy' }}
                 </button>
               </td>
             </tr>
@@ -92,7 +93,8 @@
                 <span class="text-danger fw-semibold me-2">{{ transferContent }}</span>
                 <button type="button" class="btn-copy"
                   (click)="copyValue(transferContent, 'content', $event)">
-                  {{ copiedField === 'content' ? '✓ Đã copy' : 'Copy' }}
+                  <i class="bi" [ngClass]="copiedField === 'content' ? 'bi-check2' : 'bi-copy'"></i>
+                  {{ copiedField === 'content' ? 'Đã copy' : 'Copy' }}
                 </button>
               </td>
             </tr>
@@ -122,12 +124,24 @@
       <button
         type="button"
         class="btn-cancel-order"
-        (click)="cancelOrder()"
+        (click)="requestCancelOrder()"
         [disabled]="cancelling"
       >
         {{ cancelling ? 'Đang hủy...' : 'Hủy đơn hàng' }}
       </button>
     </div>
 
+  </div>
+</div>
+
+<div class="cancel-confirm-backdrop" *ngIf="showCancelConfirm" (click)="closeCancelConfirm()">
+  <div class="cancel-confirm-modal" (click)="$event.stopPropagation()">
+    <div class="cancel-confirm-modal__icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+    <h3>Bạn muốn hủy đơn hàng?</h3>
+    <p>Đơn hàng sẽ được hủy khỏi phiên thanh toán hiện tại.</p>
+    <div class="cancel-confirm-modal__actions">
+      <button type="button" class="cancel-confirm-btn cancel-confirm-btn--ghost" (click)="closeCancelConfirm()">Không hủy</button>
+      <button type="button" class="cancel-confirm-btn cancel-confirm-btn--danger" (click)="cancelOrder()">Xác nhận hủy</button>
+    </div>
   </div>
 </div>

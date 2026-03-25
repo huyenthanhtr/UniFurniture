@@ -5,6 +5,7 @@ const {
   buildCreateHandler,
   buildUpdateHandler,
   buildPatchHandler,
+  buildDeleteHandler,
 } = require("../controllers/generic.controller");
 
 function makeGenericRouter(Model) {
@@ -16,6 +17,7 @@ function makeGenericRouter(Model) {
   router.post("/", buildCreateHandler(Model));
   router.put("/:id", buildUpdateHandler(Model));
   router.patch("/:id", buildPatchHandler(Model));
+  router.delete("/:id", buildDeleteHandler(Model));
 
   return router;
 }

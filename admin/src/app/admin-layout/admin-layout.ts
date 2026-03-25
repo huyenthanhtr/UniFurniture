@@ -29,6 +29,21 @@ export class AdminLayout implements OnInit {
   isLoggingIn = false;
 
   ngOnInit() {
+    // Start of URL profile interception
+    const urlParams = new URLSearchParams(window.location.search);
+    const profileParam = urlParams.get('profile');
+    if (profileParam) {
+      try {
+        const decodedProfile = JSON.parse(decodeURIComponent(profileParam));
+        if (decodedProfile && decodedProfile.role === 'admin') {
+          localStorage.setItem('user_profile', JSON.stringify(decodedProfile));
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      } catch (e) {
+        console.error('Lỗi khi parse profile từ URL', e);
+      }
+    }
+
     this.checkAuth();
     this.currentUrl = this.router.url;
     this.router.events.pipe(

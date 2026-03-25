@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --cm-red-700: #b5202a;
   --cm-red-800: #8f1820;
   --cm-cream: #fff7f2;
@@ -175,7 +175,7 @@ section {
 .program-grid {
   display: grid;
   gap: 20px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .program-card {
@@ -212,7 +212,7 @@ section {
 .timeline-grid {
   display: grid;
   gap: 18px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .timeline-item {
@@ -266,6 +266,20 @@ section {
   }
 
   .hero-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .program-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .timeline-grid {
     grid-template-columns: 1fr;
   }
 }
