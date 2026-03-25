@@ -1,4 +1,4 @@
-/* GIAO DIỆN CHUNG TỪ ADMIN-COUPONS & ADMIN-CATEGORIES */
+
 .page {
   padding: 16px;
 }
@@ -25,7 +25,7 @@
   padding: 14px;
 }
 
-/* THANH LỌC (FILTER BAR) */
+
 .filter-wrapper {
   display: flex;
   flex-wrap: wrap;
@@ -84,7 +84,7 @@
 .text-center { text-align: center; }
 .text-primary { color: #908372; }
 
-/* NÚT BẤM (BUTTONS) */
+
 .btn {
   padding: 10px 16px;
   border-radius: 12px;
@@ -108,7 +108,7 @@
 .btn-icon { width: 42px; height: 42px; padding: 0; }
 .btn-icon-only { width: 34px; height: 34px; padding: 0; border-radius: 8px; font-size: 14px; }
 
-/* BẢNG DỮ LIỆU (TABLE) */
+
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -136,7 +136,7 @@ th {
 tbody tr:last-child td { border-bottom: none; }
 .cell-title { cursor: pointer; }
 
-/* Thumbnail hình ảnh (Hình chữ nhật) */
+
 .img-thumbnail-custom {
   width: 100px;
   height: 50px;
@@ -155,7 +155,7 @@ tbody tr:last-child td { border-bottom: none; }
 .actions { display: flex; align-items: center; gap: 8px; }
 .justify-content-center { justify-content: center; }
 
-/* HIỆU ỨNG HOVER SẢN PHẨM TRONG MODAL */
+
 .product-row {
   background: #fff;
   cursor: pointer;
@@ -165,7 +165,7 @@ tbody tr:last-child td { border-bottom: none; }
   background-color: #faf7f3 !important;
 }
 
-/* TRẠNG THÁI (STATUS DROPDOWN) */
+
 .status-dropdown {
   appearance: none;
   -webkit-appearance: none;
@@ -185,7 +185,7 @@ tbody tr:last-child td { border-bottom: none; }
 .status-dropdown.active { color: #166534; background: #ecfdf3; border-color: #86efac; }
 .status-dropdown.inactive { color: #b42318; background: #fff1f0; border-color: #f3c7c3; }
 
-/* PHÂN TRANG (PAGINATION) */
+
 .pagination {
   display: flex;
   justify-content: center;
@@ -210,7 +210,7 @@ tbody tr:last-child td { border-bottom: none; }
 .pg:disabled { opacity: 0.45; cursor: not-allowed; }
 .pg-arrow { font-size: 18px; }
 
-/* MODAL & POPUP CHUẨN MỚI */
+
 .modal-overlay, .confirm-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
@@ -242,7 +242,7 @@ tbody tr:last-child td { border-bottom: none; }
 
 .modal-card-footer { padding: 16px 24px; border-top: 1px solid #f2ede8; background: #faf7f3; display: flex; justify-content: flex-end; gap: 10px; }
 
-/* POPUP THÔNG BÁO NHỎ */
+
 .confirm-box, .result-box {
   background: #fff; padding: 30px; border-radius: 16px; text-align: center;
   width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);

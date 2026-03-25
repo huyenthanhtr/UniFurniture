@@ -10,14 +10,13 @@ export interface Review {
       shipping_email: string;
     };
   };
-  // DÙNG KHỐI NÀY ĐỂ CHỨA THÔNG TIN KHÁCH TỪ BẢNG CUSTOMERS
   customer_id?: {
     _id: string;
     customer_code: string;
     full_name: string;
     phone: string;
   };
-  productImageUrl?: string; // BỔ SUNG TRƯỜNG NÀY
+  productImageUrl?: string;
   rating: number;
   content: string;
   status: 'pending' | 'approved' | 'rejected';

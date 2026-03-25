@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CategoryService } from '../../services/admin-categories';
 import { Category } from '../../models/category.model';
-import { AdminProductsService } from '../../services/admin-products'; // Đổi đường dẫn và tên cho đúng dự án của bạn
+import { AdminProductsService } from '../../services/admin-products';
 import { Router } from '@angular/router';
 
 @Component({
@@ -42,26 +42,24 @@ export class AdminCategoryList implements OnInit {
   resultMessage = { title: '', message: '', type: '' as 'success' | 'error' };
   pendingStatusChange: { item: any, newStatus: string } | null = null; 
 
-  // --- BIẾN CHO MODAL XEM SẢN PHẨM ---
   showProductsModal: boolean = false;
   isLoadingProducts: boolean = false;
   selectedCategoryForProducts: Category | null = null;
-  categoryProducts: any[] = []; // Chứa danh sách sản phẩm lấy từ API
+  categoryProducts: any[] = [];
 
   constructor(
     private categoryService: CategoryService,
     private cdr: ChangeDetectorRef, 
-    private productService: AdminProductsService, // THÊM DÒNG NÀY ĐỂ GỌI API SẢN PHẨM
-    private router: Router // 2. THÊM DÒNG NÀY VÀO CONSTRUCTOR
+    private productService: AdminProductsService,
+    private router: Router
   ) { }
 
 ngOnInit(): void {
-    // 1. Đọc trang hiện tại từ sessionStorage
     const savedPage = sessionStorage.getItem('adminCategoryPage');
     if (savedPage) {
       this.currentPage = parseInt(savedPage, 10);
     }
-    this.loadCategories(); // Hàm gọi API lấy danh sách danh mục của bạn
+    this.loadCategories();
   }
   loadCategories() {
     this.categoryService.getAllCategories().subscribe(data => {
@@ -97,7 +95,6 @@ applyFilters(resetPage: boolean = false): void {
     });
   }
 
-  // QUAN TRỌNG: gán dữ liệu đã lọc cho filteredCategories
   this.filteredCategories = filtered;
 
   if (resetPage) {
@@ -113,9 +110,7 @@ applyFilters(resetPage: boolean = false): void {
 
   this.cdr.detectChanges();
 }
-// 3. THÊM CÁC HÀM XỬ LÝ PHÂN TRANG MỚI
   get totalPages(): number {
-    // Thay this.filteredCategories bằng mảng dữ liệu đã lọc của bạn
     return Math.ceil(this.filteredCategories.length / this.itemsPerPage);
   }
 
@@ -170,7 +165,6 @@ get paginatedCategories(): any[] {
   }
 
 
-  // GETTER KHÓA NÚT LƯU
   get isFormValid(): boolean {
     const c = this.currentCategory;
     if (!c) return false;
@@ -316,7 +310,6 @@ get paginatedCategories(): any[] {
       reader.readAsDataURL(file);
     }
   }
-  // --- HÀM XỬ LÝ ---
 viewProducts(category: Category) {
   if (!category._id) return;
 
@@ -348,16 +341,11 @@ viewProducts(category: Category) {
     this.cdr.detectChanges();
   }
 
-  // HÀM CHUYỂN HƯỚNG ĐẾN TRANG CHI TIẾT SẢN PHẨM
   goToProductDetail(prod: any) {
-    // 1. Đóng modal danh sách sản phẩm
     this.closeProductsModal();
     
-    // 2. Lấy ID của sản phẩm (Xử lý linh hoạt cho cả data mock json hoặc ID chuẩn từ Database)
     const productId = prod._id?.$oid || prod._id || prod.slug; 
     
-    // 3. Chuyển hướng 
-    // (Lưu ý: Nếu đường dẫn trang chi tiết sản phẩm của bạn khác '/admin/products', hãy sửa lại cho khớp nhé)
     this.router.navigate(['/admin/products', productId]);
   }
 }

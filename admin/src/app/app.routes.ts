@@ -49,5 +49,5 @@ export const routes: Routes = [
       { path: 'customers/:id/addresses/:addressId', component: AdminCustomerAddressDetail },
     ],
   },
-  { path: '', redirectTo: '/admin/products', pathMatch: 'full' },
+  { path: '', redirectTo: '/admin/dashboard', pathMatch: 'full' },
 ];

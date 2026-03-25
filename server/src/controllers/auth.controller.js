@@ -5,7 +5,7 @@ const { sendOtpSms } = require("../utils/sms.utils");
 const mongoose = require("mongoose");
 
 function generateOTP() {
-    return Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
+    return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 function hashValue(value) {
@@ -34,9 +34,8 @@ async function register(req, res) {
             return res.status(400).json({ message: "Định dạng email không hợp lệ." });
         }
 
-        // Phone validation (Vietnamese format or just digits)
         const phoneDigits = phone.replace(/\D/g, '');
-        if (phoneDigits.length < 10 || phoneDigits.length > 12) { // 84 + 9 digits = 11, etc.
+        if (phoneDigits.length < 10 || phoneDigits.length > 12) {
              return res.status(400).json({ message: "Số điện thoại không hợp lệ." });
         }
 
@@ -51,11 +50,9 @@ async function register(req, res) {
             return res.status(400).json({ message: "Phone or email already registered." });
         }
 
-        // Generate OTP
         const otp = generateOTP();
         const otp_hash = hashValue(otp);
 
-        // Save registration payload directly into OTP table (Expires in 5 mins)
         await Otp.deleteMany({ phone });
 
         const hashedPassword = hashValue(password_hash);
@@ -72,7 +69,6 @@ async function register(req, res) {
             expireAt: new Date(Date.now() + 5 * 60 * 1000)
         });
 
-        // Send SMS
         const smsSent = await sendOtpSms(phone, otp);
         if (!smsSent) {
             console.error("SMS failed to send for phone:", phone);
@@ -97,7 +93,6 @@ async function verifyOtp(req, res) {
 
         const otp_hash = hashValue(otp);
 
-        // Find OTP record
         const otpRecord = await Otp.findOne({ phone, otp_hash });
 
         if (!otpRecord) {

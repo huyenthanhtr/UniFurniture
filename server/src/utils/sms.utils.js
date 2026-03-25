@@ -13,7 +13,7 @@ async function sendOtpSms(toPhone, otp) {
     } else if (!toAreaCode.startsWith('84') && !toAreaCode.startsWith('+')) {
         toAreaCode = '84' + toAreaCode;
     }
-    const to = toAreaCode.replace('+', ''); // Vonage expects no plus sign usually
+    const to = toAreaCode.replace('+', '');
 
     const text = `Ma xac nhan dang ky UniFurniture cua ban la: ${otp}`;
     console.log(`[OTP DEBUG] Phone: ${to}, OTP: ${otp}`);

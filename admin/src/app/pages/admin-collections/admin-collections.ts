@@ -2,8 +2,8 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CollectionService } from '../../services/admin-collections'; 
-import { AdminProductsService } from '../../services/admin-products'; // Import service sản phẩm
-import { Router } from '@angular/router'; // Import Router chuyển trang
+import { AdminProductsService } from '../../services/admin-products';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-admin-collections',
@@ -26,7 +26,6 @@ export class AdminCollections implements OnInit {
   itemsPerPage: number = 10;
   Math = Math;
 
-  // --- QUẢN LÝ POPUP & FORM ---
   showModal: boolean = false;
   isEditMode: boolean = false;
   currentCollection: any = {};
@@ -40,7 +39,6 @@ export class AdminCollections implements OnInit {
   resultMessage = { title: '', message: '', type: '' as 'success' | 'error' };
   pendingStatusChange: { item: any, newStatus: string } | null = null; 
 
-  // --- BIẾN CHO MODAL XEM SẢN PHẨM ---
   showProductsModal: boolean = false;
   isLoadingProducts: boolean = false;
   selectedCollectionForProducts: any = null;
@@ -54,12 +52,11 @@ export class AdminCollections implements OnInit {
   ) { }
 
 ngOnInit(): void {
-    // 1. Đọc trang hiện tại từ sessionStorage để giữ state khi quay lại
     const savedPage = sessionStorage.getItem('adminCollectionsPage');
     if (savedPage) {
       this.currentPage = parseInt(savedPage, 10);
     }
-    this.loadCollections(); // Gọi hàm load dữ liệu của bạn
+    this.loadCollections();
   }
   loadCollections() {
     this.collectionService.getAllCollections().subscribe({
@@ -93,7 +90,6 @@ applyFilters(resetPage: boolean = false): void {    let filtered = this.collecti
       this.currentPage = 1;
       sessionStorage.setItem('adminCollectionsPage', '1');
     } else {
-      // Đảm bảo currentPage không bị vượt quá tổng số trang đang có
       const maxPage = Math.max(1, this.totalPages);
       if (this.currentPage > maxPage) {
         this.currentPage = maxPage;
@@ -149,14 +145,13 @@ get totalPages(): number {
 
 changePage(page: number): void {
     this.currentPage = page;
-    sessionStorage.setItem('adminCollectionsPage', page.toString()); // Lưu trạng thái
+    sessionStorage.setItem('adminCollectionsPage', page.toString());
   }  
   get paginatedCollections() {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     return this.filteredCollections.slice(startIndex, startIndex + this.itemsPerPage);
   }
 
-  // KHÓA NÚT LƯU
   get isFormValid(): boolean {
     const c = this.currentCollection;
     if (!c || !c.name || c.name.toString().trim() === '') return false;
@@ -317,8 +312,6 @@ private belongsToCollection(product: any, targetId: string): boolean {
 
   return candidates.some(candidate => this.normalizeId(candidate) === targetId);
 }
-  // --- XỬ LÝ MODAL SẢN PHẨM ---
-// --- XỬ LÝ MODAL SẢN PHẨM ---
 viewProducts(collection: any): void {
   this.selectedCollectionForProducts = collection;
   this.showProductsModal = true;

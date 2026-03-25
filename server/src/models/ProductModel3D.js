@@ -4,7 +4,7 @@ const ProductModel3DSchema = new mongoose.Schema(
   {
     product_id: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
     variant_id: { type: mongoose.Schema.Types.ObjectId, ref: "ProductVariant", default: null },
-    file_id: { type: mongoose.Schema.Types.ObjectId, required: true }, // ID của file trong GridFS
+    file_id: { type: mongoose.Schema.Types.ObjectId, required: true },
     filename: { type: String, required: true },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
   },

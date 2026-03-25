@@ -200,18 +200,15 @@ function buildStatusStats(orders) {
 }
 
 function buildInventoryAlerts(variants, products) {
-    // Tạo Map để tra cứu thông tin sản phẩm cha nhanh hơn
     const productsMap = new Map(
         products.map(product => [String(product._id), product])
     );
 
-    // BƯỚC 1: Lọc và làm giàu dữ liệu (Gán vào biến enriched)
     const enriched = variants
-        .filter(v => v.variant_status === 'active') // CHỈ LẤY BIẾN THỂ ĐANG BÁN
+        .filter(v => v.variant_status === 'active')
         .map(variant => {
             const parentProduct = productsMap.get(String(variant.product_id));
             
-            // Ép kiểu về Number để so sánh chính xác
             const stock = Number(variant.stock_quantity || 0);
             const threshold = Number(variant.low_stock_threshold || 5);
 
@@ -223,7 +220,6 @@ function buildInventoryAlerts(variants, products) {
             };
         });
 
-    // BƯỚC 2: Phân loại dựa trên mảng 'enriched' đã hoàn tất khởi tạo
     const needRestockItems = enriched.filter(item => item.stock <= 3);
     
     const lowStockItems = enriched.filter(item => 

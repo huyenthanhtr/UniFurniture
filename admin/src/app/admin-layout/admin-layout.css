@@ -1,4 +1,4 @@
-/* 1. RESET & LAYOUT CHÍNH */
+
 *, *::before, *::after {
     box-sizing: border-box;
 }
@@ -9,17 +9,17 @@ body, html {
     height: 100vh;
     width: 100vw;
     font-family: 'Inter', sans-serif;
-    overflow: hidden; /* Ngăn chặn scroll toàn trang */
+    overflow: hidden; 
 }
 
 .admin {
     display: flex;
-    background-color: #908372; /* Mã màu chủ đạo nội thất */
+    background-color: #908372; 
     height: 100vh;
     width: 100vw;
 }
 
-/* 2. SIDEBAR */
+
 .sidebar {
     width: 260px;
     height: 100vh;
@@ -30,12 +30,12 @@ body, html {
     border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Header cho Mobile */
+
 .sidebar-header-mobile {
-    display: none; /* Mặc định ẩn trên Desktop */
+    display: none; 
 }
 
-/* Logo Desktop */
+
 .sidebar-logo-desktop {
     padding: 20px 10px;
     text-align: center;
@@ -48,13 +48,13 @@ body, html {
     margin: 0 auto;
 }
 
-/* 3. MENU CHÍNH */
+
 .sidebar-menu-container {
     flex: 1;
     display: flex;
     flex-direction: column;
     padding: 0 12px;
-    overflow-y: auto; /* Chỉ scroll trong vùng menu nếu danh mục quá dài */
+    overflow-y: auto; 
 }
 
 .sidebar-menu {
@@ -88,9 +88,9 @@ body, html {
     font-size: 16px;
 }
 
-/* 4. ADMIN FOOTER & USER OPTIONS */
+
 .admin-footer {
-    margin-top: auto; /* Đẩy xuống đáy sidebar */
+    margin-top: auto; 
     position: relative;
     padding: 15px 0;
 }
@@ -101,7 +101,7 @@ body, html {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: rgba(0, 0, 0, 0.15); /* Làm đậm vùng user để tách biệt */
+    background: rgba(0, 0, 0, 0.15); 
     cursor: pointer;
     transition: 0.3s;
     border-radius: 12px;
@@ -152,10 +152,10 @@ body, html {
     transform: rotate(90deg);
 }
 
-/* Khung lựa chọn (Popup menu) */
+
 .user-options-menu {
     position: absolute;
-    bottom: 75px; /* Hiển thị phía trên vùng admin-info */
+    bottom: 75px; 
     left: 8px;
     right: 8px;
     background: #ffffff;
@@ -192,12 +192,12 @@ body, html {
     border-top: 1px solid #f0f0f0;
 }
 
-/* 5. VÙNG NỘI DUNG CHÍNH (MAIN) */
+
 .main {
     flex: 1;
     height: 100vh;
     padding: 20px;
-    background-color: #f6f4f2; /* Màu nền xám kem sang trọng */
+    background-color: #f6f4f2; 
     overflow-y: auto;
 }
 
@@ -209,22 +209,22 @@ body, html {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
-/* 6. RESPONSIVE MOBILE */
+
 @media (max-width: 992px) {
-    /* Chuyển Sidebar thành dạng Side-drawer ẩn đi */
+    
     .sidebar {
         position: fixed;
-        left: -260px; /* Ẩn sang trái */
+        left: -260px; 
         top: 0;
         z-index: 1001;
     }
 
-    /* Khi Mobile Menu Open, Sidebar trượt ra */
+    
     .sidebar-menu-container.show-sidebar {
         left: 0;
     }
 
-    /* Hiện Header Mobile trên cùng */
+    
     .sidebar-header-mobile {
         display: flex;
         width: 100%;
@@ -253,12 +253,12 @@ body, html {
         cursor: pointer;
     }
 
-    /* Đẩy vùng Main xuống dưới Header Mobile */
+    
     .main {
-        padding: 80px 15px 20px 15px; /* Thêm padding top để không bị đè */
+        padding: 80px 15px 20px 15px; 
     }
 
-    /* Sidebar khi mở trên Mobile */
+    
     .sidebar-menu-container {
         position: fixed;
         top: 0;
@@ -275,7 +275,7 @@ body, html {
     }
 
     .sidebar-logo-desktop {
-        display: none; /* Trên mobile dùng logo header */
+        display: none; 
     }
 
     .content-surface {
@@ -284,11 +284,11 @@ body, html {
     }
 }
 
-/* Nhỏ hơn nữa (Mobile nhỏ) */
+
 @media (max-width: 480px) {
     .main { padding: 75px 10px 10px 10px; }
 }
-/* 7. POPUP XÁC NHẬN ĐĂNG XUẤT */
+
 .popup-overlay {
     position: fixed;
     top: 0; left: 0;

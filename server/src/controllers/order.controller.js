@@ -1540,9 +1540,6 @@ async function demoTransferTimeoutComplete(req, res, next) {
       return payment;
     };
 
-    // Demo fixed rule:
-    // - ??n < 10tr: t? x?c nh?n full (t?t to?n) khi h?t 5 ph?t
-    // - ??n >= 10tr: t? x?c nh?n ?? c?c khi h?t 5 ph?t
     if (requireDeposit && expectedDeposit > 0) {
       const depositPayment = await ensurePayment('deposit', expectedDeposit);
       depositPayment.status = 'paid';

@@ -4,7 +4,7 @@ const couponSchema = new mongoose.Schema({
     code: { type: String, required: true, unique: true, uppercase: true },
     discount_type: { type: String, enum: ['percent', 'fixed'], required: true },
     discount_value: { type: Number, required: true },
-    max_discount_amount: { type: Number, default: null }, // Chỉ áp dụng cho 'percent'
+    max_discount_amount: { type: Number, default: null },
     min_order_value: { type: Number, default: 0 },
     used: { type: Number, default: 0 },
     total_limit: { type: Number, required: true },

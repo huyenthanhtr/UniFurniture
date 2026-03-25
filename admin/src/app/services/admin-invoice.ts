@@ -283,7 +283,6 @@ export class AdminInvoiceService {
     ctx.font = `${italic}${weight} ${size}px ${this.fontFamily}`;
     ctx.textAlign = opts.align || 'left';
     const lines = this.wrapText(ctx, String(value || '-'), opts.maxWidth || 9999);
-    // @ts-ignore
     lines.forEach((line: any, index: number) => {
       ctx.fillText(line, x, y + index * (size + 6));
     });
