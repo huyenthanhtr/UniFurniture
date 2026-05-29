@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: unifurniture-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: unifurniture-server
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://mongodb:27017/ecommerce
+    depends_on:
+      - mongodb
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: unifurniture-client
+    restart: always
+    ports:
+      - "4200:4200"
+    depends_on:
+      - server
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    container_name: unifurniture-admin
+    restart: always
+    ports:
+      - "4201:4201"
+    depends_on:
+      - server
+
+volumes:
+  mongo_data:
